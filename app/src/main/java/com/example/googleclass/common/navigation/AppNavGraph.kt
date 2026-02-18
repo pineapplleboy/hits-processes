@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.googleclass.feature.authorization.presentation.AuthorizationScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -12,7 +13,7 @@ fun AppNavGraph(navController: NavHostController) {
         startDestination = ScreenRoute.Authorization.route,
     ) {
         composable(ScreenRoute.Authorization.route) {
-
+            AuthorizationScreen()
         }
     }
 }

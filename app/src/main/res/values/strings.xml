@@ -1,3 +1,16 @@
 <resources>
-    <string name="app_name">Google Class</string>
+    <string name="app_name">HITs Class</string>
+    <string name="login">Логин</string>
+    <string name="password">Пароль</string>
+    <string name="hide_password">Скрыть</string>
+    <string name="show_password">Показать</string>
+    <string name="login_button">Войти</string>
+    <string name="email">Электронная почта</string>
+    <string name="tab_login">Вход</string>
+    <string name="tab_register">Регистрация</string>
+    <string name="register_button">Зарегистрироваться</string>
+    <string name="full_name">Имя и фамилия</string>
+    <string name="birth_date">Дата рождения</string>
+    <string name="city">Город проживания</string>
+    <string name="full_name_error">ФИО должно быть в формате &quot;ИМЯ ФАМИЛИЯ&quot;, только кириллица, минимум две буквы в имени и фамилии</string>
 </resources>
