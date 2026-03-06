@@ -4,17 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.example.googleclass.feature.authorization.presentation.AuthorizationScreen
-import com.example.googleclass.feature.course.domain.model.AssignmentStatus
-import com.example.googleclass.feature.course.domain.model.AssignmentStatusInfo
-import com.example.googleclass.feature.course.domain.model.Course
-import com.example.googleclass.feature.course.domain.model.CourseParticipant
-import com.example.googleclass.feature.course.domain.model.PublicationType
-import com.example.googleclass.feature.course.domain.model.User
-import com.example.googleclass.feature.course.domain.model.UserRole
-import com.example.googleclass.feature.course.presentation.CourseScreen
-import com.example.googleclass.feature.courses.presentation.CoursesScreen
 
 @Composable
 fun AppNavGraph(
@@ -59,6 +49,11 @@ fun AppNavGraph(
                 onAssignmentClick = { },
                 onCreatePublication = { _, _, _, _ -> },
                 onAddComment = { _, _ -> }
+            )
+        }
+        composable(ScreenRoute.TaskDetail.route) {
+            TaskDetailScreen(
+                onNavigateBack = { navController.popBackStack() },
             )
         }
     }

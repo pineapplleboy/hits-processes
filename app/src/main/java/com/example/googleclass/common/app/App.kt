@@ -4,6 +4,7 @@ import android.app.Application
 import com.example.googleclass.feature.authorization.authorizationModule
 import com.example.googleclass.feature.authorization.data.network.networkModule
 import com.example.googleclass.feature.courses.coursesModule
+import com.example.googleclass.feature.taskdetail.taskDetailModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
@@ -16,6 +17,7 @@ class App : Application() {
             modules(
                 networkModule,
                 authorizationModule,
+                taskDetailModule,
                 coursesModule,
             )
         }
