@@ -1,77 +1,122 @@
 package com.example.googleclass.feature.taskdetail.presentation
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
 import com.example.googleclass.feature.taskdetail.domain.model.SubmissionStatus
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 
 class TaskDetailViewModel : ViewModel() {
 
-    private val _state: MutableStateFlow<TaskDetailScreenState> =
-        MutableStateFlow(TaskDetailScreenState.Loading)
-    val state: StateFlow<TaskDetailScreenState> = _state.asStateFlow()
+    private val _uiState: MutableStateFlow<TaskDetailUiState> =
+        MutableStateFlow(TaskDetailUiState.Loading)
+    val uiState: StateFlow<TaskDetailUiState> = _uiState.asStateFlow()
+
+    private val _uiEffect = Channel<TaskDetailUiEffect>()
+    val uiEffect = _uiEffect.receiveAsFlow()
 
     init {
-        loadStudentMockData()
+        loadStudentNotSubmittedMockData()
     }
 
-    fun onStudentTabSelected(tab: StudentTab) {
-        val currentState = _state.value
-        if (currentState is TaskDetailScreenState.StudentView) {
-            _state.value = currentState.copy(selectedTab = tab)
+    fun onEvent(event: TaskDetailUiEvent) {
+        when (event) {
+            is TaskDetailUiEvent.NavigateBack -> sendEffect(TaskDetailUiEffect.NavigateBack)
+            is TaskDetailUiEvent.SubmitWork -> handleSubmitWork()
+            is TaskDetailUiEvent.SendComment -> handleSendComment()
+            is TaskDetailUiEvent.FileAttached -> handleFileAttached(event.uri, event.displayName)
+            is TaskDetailUiEvent.FileRemoved -> handleFileRemoved(event.uri)
+            is TaskDetailUiEvent.CommentInputChanged -> handleCommentInput(event.text)
+            is TaskDetailUiEvent.StudentTabSelected -> handleStudentTab(event.tab)
+            is TaskDetailUiEvent.TeacherTabSelected -> handleTeacherTab(event.tab)
+            is TaskDetailUiEvent.OpenStudentChat -> sendEffect(
+                TaskDetailUiEffect.NavigateToStudentChat(event.studentId)
+            )
         }
     }
 
-    fun onTeacherTabSelected(tab: TeacherTab) {
-        val currentState = _state.value
-        if (currentState is TaskDetailScreenState.TeacherView) {
-            _state.value = currentState.copy(selectedTab = tab)
+    private fun handleStudentTab(tab: StudentTab) {
+        val state = _uiState.value
+        if (state is TaskDetailUiState.StudentView) {
+            _uiState.value = state.copy(selectedTab = tab)
         }
     }
 
-    fun onCommentInputChange(text: String) {
-        val currentState = _state.value
-        when (currentState) {
-            is TaskDetailScreenState.StudentView -> {
-                _state.value = currentState.copy(commentInput = text)
+    private fun handleTeacherTab(tab: TeacherTab) {
+        val state = _uiState.value
+        if (state is TaskDetailUiState.TeacherView) {
+            _uiState.value = state.copy(selectedTab = tab)
+        }
+    }
+
+    private fun handleCommentInput(text: String) {
+        when (val state = _uiState.value) {
+            is TaskDetailUiState.StudentView -> _uiState.value = state.copy(commentInput = text)
+            is TaskDetailUiState.TeacherView -> _uiState.value = state.copy(commentInput = text)
+            else -> Unit
+        }
+    }
+
+    private fun handleFileAttached(uri: Uri, displayName: String) {
+        val state = _uiState.value
+        if (state is TaskDetailUiState.StudentView && state.submission == null) {
+            val newFile = AttachedFile(uri = uri, displayName = displayName)
+            _uiState.value = state.copy(
+                attachedFiles = state.attachedFiles + newFile,
+            )
+        }
+    }
+
+    private fun handleFileRemoved(uri: Uri) {
+        val state = _uiState.value
+        if (state is TaskDetailUiState.StudentView) {
+            _uiState.value = state.copy(
+                attachedFiles = state.attachedFiles.filter { it.uri != uri },
+            )
+        }
+    }
+
+    private fun handleSendComment() {
+        when (val state = _uiState.value) {
+            is TaskDetailUiState.StudentView -> {
+                if (state.commentInput.isBlank()) return
+                _uiState.value = state.copy(commentInput = "")
             }
 
-            is TaskDetailScreenState.TeacherView -> {
-                _state.value = currentState.copy(commentInput = text)
+            is TaskDetailUiState.TeacherView -> {
+                if (state.commentInput.isBlank()) return
+                _uiState.value = state.copy(commentInput = "")
             }
 
             else -> Unit
         }
     }
 
-    fun onSendComment() {
-        val currentState = _state.value
-        when (currentState) {
-            is TaskDetailScreenState.StudentView -> {
-                if (currentState.commentInput.isBlank()) return
-                _state.value = currentState.copy(commentInput = "")
-            }
-
-            is TaskDetailScreenState.TeacherView -> {
-                if (currentState.commentInput.isBlank()) return
-                _state.value = currentState.copy(commentInput = "")
-            }
-
-            else -> Unit
+    private fun handleSubmitWork() {
+        val state = _uiState.value
+        if (state is TaskDetailUiState.StudentView && state.attachedFiles.isNotEmpty()) {
+            val uris = state.attachedFiles.map { it.uri }
+            sendEffect(TaskDetailUiEffect.StartFileUpload(uris))
         }
     }
 
-    fun onOpenStudentChat(studentId: String) {
-        // Navigation to student chat
+    private fun sendEffect(effect: TaskDetailUiEffect) {
+        viewModelScope.launch {
+            _uiEffect.send(effect)
+        }
     }
 
     fun loadStudentMockData() {
-        _state.value = TaskDetailScreenState.StudentView(
+        _uiState.value = TaskDetailUiState.StudentView(
             task = TaskDetail(
                 id = "1",
                 title = "Задание 1: Основы синтаксиса",
@@ -103,13 +148,34 @@ class TaskDetailViewModel : ViewModel() {
                     createdAt = "19 февраля, 11:00",
                 ),
             ),
+            attachedFiles = emptyList(),
+            commentInput = "",
+            selectedTab = StudentTab.PUBLIC_COMMENTS,
+        )
+    }
+
+    fun loadStudentNotSubmittedMockData() {
+        _uiState.value = TaskDetailUiState.StudentView(
+            task = TaskDetail(
+                id = "2",
+                title = "Задание 2: Работа со списками",
+                authorName = "Петрова Мария Сергеевна",
+                createdAt = "1 февраля, 10:00",
+                description = "Реализуйте функции для работы со списками: сортировка, поиск элемента, удаление дубликатов.",
+                deadline = "25 февраля, 23:59",
+                maxScore = 100,
+            ),
+            submission = null,
+            publicComments = emptyList(),
+            privateComments = emptyList(),
+            attachedFiles = emptyList(),
             commentInput = "",
             selectedTab = StudentTab.PUBLIC_COMMENTS,
         )
     }
 
     fun loadTeacherMockData() {
-        _state.value = TaskDetailScreenState.TeacherView(
+        _uiState.value = TaskDetailUiState.TeacherView(
             task = TaskDetail(
                 id = "2",
                 title = "Задание 2: Работа со списками",

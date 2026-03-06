@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.googleclass.feature.authorization.presentation.AuthorizationScreen
+import com.example.googleclass.feature.taskdetail.presentation.TaskDetailScreen
 
 @Composable
 fun AppNavGraph(

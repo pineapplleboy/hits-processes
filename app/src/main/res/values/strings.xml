@@ -67,4 +67,19 @@
     <string name="status_submitted">СДАНО</string>
     <string name="status_overdue">ПРОСРОЧЕНО</string>
     <string name="status_pending">ОЖИДАНИЕ</string>
+    <string name="your_answer">Ответ</string>
+    <string name="files_pick_hint">Выберите файл</string>
+    <string name="file_name_placeholder">Файл</string>
+    <string name="attach_file">Прикрепить файл</string>
+    <string name="remove_file">Удалить файл</string>
+    <string name="submit_work">Отправить работу</string>
+    <string name="upload_started">Загрузка файлов начата</string>
+
+    <!-- Notifications -->
+    <string name="upload_channel_name">Загрузка файлов</string>
+    <string name="upload_channel_description">Уведомления о загрузке файлов на сервер</string>
+    <string name="upload_notification_title">Загрузка файлов</string>
+    <string name="upload_notification_progress">Файл %1$d из %2$d</string>
+    <string name="upload_notification_complete_title">Загрузка завершена</string>
+    <string name="upload_notification_complete_text">Все файлы успешно загружены</string>
 </resources>
