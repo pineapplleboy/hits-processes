@@ -32,6 +32,7 @@
     <string name="role_head_teacher">Главный преподаватель</string>
     <string name="role_teacher">Преподаватель</string>
     <string name="role_student">Студент</string>
+    <string name="comments_count">Комментарии: %d</string>
     <string name="add_comment_placeholder">Добавить комментарий…</string>
     <string name="send">Отправить</string>
     <string name="back">Назад</string>
