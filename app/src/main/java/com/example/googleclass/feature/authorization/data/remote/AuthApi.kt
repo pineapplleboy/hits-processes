@@ -10,15 +10,15 @@ import retrofit2.http.POST
 
 interface AuthApi {
 
-    @POST("api/v1/user/login")
+    @POST("api/v1/auth/login")
     suspend fun login(@Body body: UserLoginDto): Response<TokenResponseDto>
 
-    @POST("api/v1/user/register")
+    @POST("api/v1/auth/register")
     suspend fun register(@Body body: UserRegisterDto): Response<TokenResponseDto>
 
-    @POST("api/v1/user/refresh-tokens")
+    @POST("api/v1/auth/refresh-tokens")
     suspend fun refreshTokens(@Body body: RefreshTokenRequestDto): Response<TokenResponseDto>
 
-    @POST("api/v1/user/logout")
+    @POST("api/v1/auth/logout")
     suspend fun logout(): Response<Unit>
 }

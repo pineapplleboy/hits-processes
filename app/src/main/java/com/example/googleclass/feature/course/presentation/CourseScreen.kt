@@ -34,8 +34,6 @@ import com.example.googleclass.R
 import com.example.googleclass.common.presentation.components.AssignmentStatusBadge
 import com.example.googleclass.common.presentation.components.CardHeaderWithIcon
 import com.example.googleclass.common.presentation.components.ClassroomTopAppBar
-import com.example.googleclass.common.presentation.components.CommentInputField
-import com.example.googleclass.common.presentation.components.CommentItem
 import com.example.googleclass.common.presentation.components.ContentDivider
 import com.example.googleclass.common.presentation.components.CreateFAB
 import com.example.googleclass.common.presentation.components.EmptyState
@@ -195,8 +193,6 @@ private fun PublicationCard(
     onAddComment: (String, String) -> Unit,
     dateFormat: SimpleDateFormat
 ) {
-    var commentText by remember { mutableStateOf("") }
-
     InfoCard(
         onClick = if (publication.type == PublicationType.ASSIGNMENT) {
             { onAssignmentClick(publication.id) }
@@ -302,29 +298,18 @@ private fun PublicationCard(
             Spacer(modifier = Modifier.height(8.dp))
             ContentDivider()
 
-            publication.comments?.let { comments ->
-                if (comments.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        comments.forEach { comment ->
-                            CommentItem(
-                                authorName = users[comment.userId]?.name ?: "",
-                                text = comment.text,
-                                timestamp = dateFormat.format(comment.createdAt)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
+            val commentCount = publication.comments?.size ?: 0
+            androidx.compose.material3.Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Text(
+                    text = stringResource(R.string.comments_count, commentCount),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                )
             }
-
-            CommentInputField(
-                value = commentText,
-                onValueChange = { commentText = it },
-                onSend = {
-                    onAddComment(publication.id, commentText)
-                    commentText = ""
-                }
-            )
         }
     }
 }
@@ -508,6 +493,31 @@ private fun CourseScreenPreview() {
             onAssignmentClick = { },
             onCreatePublication = { _, _, _, _ -> },
             onAddComment = { _, _ -> }
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Участники курса")
+@Composable
+private fun ParticipantsTabPreview() {
+    GoogleClassTheme {
+        ParticipantsTab(
+            course = Course(
+                id = "1",
+                name = "Математический анализ",
+                participants = listOf(
+                    CourseParticipant("u1", UserRole.MAIN_TEACHER),
+                    CourseParticipant("u2", UserRole.TEACHER),
+                    CourseParticipant("u3", UserRole.STUDENT),
+                    CourseParticipant("u4", UserRole.STUDENT),
+                )
+            ),
+            users = mapOf(
+                "u1" to User("u1", "Иван Петров", "teacher@example.com"),
+                "u2" to User("u2", "Анна Смирнова", "anna@example.com"),
+                "u3" to User("u3", "Мария Сидорова", "student@example.com"),
+                "u4" to User("u4", "Алексей Козлов", "student2@example.com"),
+            )
         )
     }
 }
