@@ -13,4 +13,35 @@
     <string name="birth_date">Дата рождения</string>
     <string name="city">Город проживания</string>
     <string name="full_name_error">ФИО должно быть в формате &quot;ИМЯ ФАМИЛИЯ&quot;, только кириллица, минимум две буквы в имени и фамилии</string>
+    <string name="password_error">Пароль: от 8 до 32 символов</string>
+
+    <!-- Курс -->
+    <string name="tab_stream">Лента</string>
+    <string name="tab_participants">Участники</string>
+    <string name="empty_publications">Пока нет публикаций</string>
+    <string name="publication_type_announcement">Объявление</string>
+    <string name="publication_type_assignment">Задание</string>
+    <string name="publication_type_material">Материал</string>
+    <string name="create_publication">Создать публикацию</string>
+    <string name="publication_type_label">Тип публикации</string>
+    <string name="post_title">Заголовок</string>
+    <string name="post_description">Описание</string>
+    <string name="deadline_hint">Срок сдачи (дд.мм.гггг чч:мм)</string>
+    <string name="create">Создать</string>
+    <string name="cancel">Отмена</string>
+    <string name="role_head_teacher">Главный преподаватель</string>
+    <string name="role_teacher">Преподаватель</string>
+    <string name="role_student">Студент</string>
+    <string name="add_comment_placeholder">Добавить комментарий…</string>
+    <string name="send">Отправить</string>
+    <string name="back">Назад</string>
+    <string name="profile">Профиль</string>
+    <string name="create_fab">Создать</string>
+    <string name="deadline_label">Срок: %s</string>
+    <string name="assignment_status_not_submitted">Не сдано</string>
+    <string name="score_format">%1$d из %2$d баллов</string>
+    <string name="score_format_no_grade">— из %d баллов</string>
+
+    <!-- Список курсов -->
+    <string name="courses_screen_title">Мои курсы</string>
 </resources>

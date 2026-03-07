@@ -24,6 +24,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,13 +43,24 @@ import com.example.googleclass.common.presentation.component.LoadingState
 import com.example.googleclass.common.presentation.theme.GoogleClassTheme
 import com.example.googleclass.common.presentation.theme.MediumGray
 import com.example.googleclass.common.presentation.theme.Outline
+import com.example.googleclass.feature.authorization.domain.model.RegisterData
 import com.example.googleclass.feature.authorization.domain.model.UserCredentials
+import com.example.googleclass.feature.authorization.presentation.validators.isFullNameValid
+import com.example.googleclass.feature.authorization.presentation.validators.isPasswordValid
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun AuthorizationScreen() {
+fun AuthorizationScreen(
+    onAuthSuccess: () -> Unit = {},
+) {
     val viewModel: AuthorizationScreenViewModel = koinViewModel()
     val screenState by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(screenState) {
+        if (screenState is AuthorizationScreenState.AuthSuccess) {
+            onAuthSuccess()
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -56,13 +68,38 @@ fun AuthorizationScreen() {
         when (val state = screenState) {
             is AuthorizationScreenState.Default -> DefaultState(
                 credentials = state.credentials,
+                errorMessage = state.errorMessage,
                 onLoginClick = viewModel::onLoginClick,
                 onLoginChange = viewModel::onLoginChange,
                 onPasswordChange = viewModel::onPasswordChange,
+                onRegisterClick = viewModel::onRegisterClick,
+                onClearError = viewModel::clearError,
                 modifier = Modifier.padding(padding)
             )
 
             AuthorizationScreenState.Loading -> LoadingState()
+
+            is AuthorizationScreenState.Error -> DefaultState(
+                credentials = UserCredentials("", ""),
+                errorMessage = state.message,
+                onLoginClick = viewModel::onLoginClick,
+                onLoginChange = viewModel::onLoginChange,
+                onPasswordChange = viewModel::onPasswordChange,
+                onRegisterClick = viewModel::onRegisterClick,
+                onClearError = viewModel::clearError,
+                modifier = Modifier.padding(padding)
+            )
+
+            AuthorizationScreenState.AuthSuccess -> DefaultState(
+                credentials = UserCredentials("", ""),
+                errorMessage = null,
+                onLoginClick = viewModel::onLoginClick,
+                onLoginChange = viewModel::onLoginChange,
+                onPasswordChange = viewModel::onPasswordChange,
+                onRegisterClick = viewModel::onRegisterClick,
+                onClearError = viewModel::clearError,
+                modifier = Modifier.padding(padding)
+            )
         }
     }
 }
@@ -70,9 +107,12 @@ fun AuthorizationScreen() {
 @Composable
 private fun DefaultState(
     credentials: UserCredentials,
+    errorMessage: String?,
     onLoginChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
+    onRegisterClick: (RegisterData) -> Unit,
+    onClearError: () -> Unit,
     modifier: Modifier,
 ) = Column(
     modifier = modifier
@@ -93,6 +133,17 @@ private fun DefaultState(
     var registrationPassword by remember { mutableStateOf("") }
 
     var selectedTab by remember { mutableStateOf(AuthTab.Login) }
+
+    if (errorMessage != null) {
+        Text(
+            text = errorMessage,
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        )
+    }
 
     Card(
         shape = RoundedCornerShape(24.dp),
@@ -155,6 +206,21 @@ private fun DefaultState(
                     onRegistrationPasswordChange = { registrationPassword = it },
                     passwordVisible = registerPasswordVisible,
                     onPasswordVisibilityChange = { registerPasswordVisible = !registerPasswordVisible },
+                    onRegisterClick = {
+                        val parts = fullName.trim().split("\\s+".toRegex())
+                        if (parts.size == 2) {
+                            onRegisterClick(
+                                RegisterData(
+                                    email = registrationEmail,
+                                    password = registrationPassword,
+                                    firstName = parts[0],
+                                    lastName = parts[1],
+                                    birthday = birthDate,
+                                    city = city,
+                                )
+                            )
+                        }
+                    },
                 )
             }
         }
@@ -185,12 +251,19 @@ private fun LoginFields(
 
     Spacer(modifier = Modifier.height(16.dp))
 
+    val isLoginPasswordValid = remember(credentials.password) { isPasswordValid(credentials.password) }
     OutlinedTextField(
         value = credentials.password,
         onValueChange = onPasswordChange,
         label = { Text(stringResource(R.string.password)) },
         singleLine = true,
         shape = RoundedCornerShape(16.dp),
+        isError = credentials.password.isNotBlank() && !isLoginPasswordValid,
+        supportingText = {
+            if (credentials.password.isNotBlank() && !isLoginPasswordValid) {
+                Text(text = stringResource(R.string.password_error))
+            }
+        },
         visualTransformation = if (passwordVisible)
             VisualTransformation.None
         else
@@ -215,7 +288,7 @@ private fun LoginFields(
 
     Button(
         onClick = onLoginClick,
-        enabled = credentials.login.isNotBlank() && credentials.password.isNotBlank(),
+        enabled = credentials.login.isNotBlank() && isLoginPasswordValid,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -248,14 +321,16 @@ private fun RegisterFields(
     onRegistrationPasswordChange: (String) -> Unit,
     passwordVisible: Boolean,
     onPasswordVisibilityChange: () -> Unit,
+    onRegisterClick: () -> Unit,
 ) {
     val isFullNameValid = remember(fullName) { isFullNameValid(fullName) }
+    val isRegistrationPasswordValid = remember(registrationPassword) { isPasswordValid(registrationPassword) }
     val isFormValid =
         isFullNameValid &&
                 birthDate.isNotBlank() &&
                 city.isNotBlank() &&
                 registrationEmail.isNotBlank() &&
-                registrationPassword.isNotBlank()
+                isRegistrationPasswordValid
 
     OutlinedTextField(
         value = fullName,
@@ -319,6 +394,12 @@ private fun RegisterFields(
         label = { Text(stringResource(R.string.password)) },
         singleLine = true,
         shape = RoundedCornerShape(16.dp),
+        isError = registrationPassword.isNotBlank() && !isRegistrationPasswordValid,
+        supportingText = {
+            if (registrationPassword.isNotBlank() && !isRegistrationPasswordValid) {
+                Text(text = stringResource(R.string.password_error))
+            }
+        },
         visualTransformation = if (passwordVisible)
             VisualTransformation.None
         else
@@ -342,9 +423,7 @@ private fun RegisterFields(
     Spacer(modifier = Modifier.height(24.dp))
 
     Button(
-        onClick = {
-
-        },
+        onClick = onRegisterClick,
         enabled = isFormValid,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
@@ -369,18 +448,7 @@ private enum class AuthTab {
     Register,
 }
 
-private fun isFullNameValid(fullName: String): Boolean {
-    val parts = fullName.trim().split("\\s+".toRegex())
-    if (parts.size != 2) return false
-
-    val name = parts[0]
-    val surname = parts[1]
-    val regex = Regex("^[А-Яа-яЁё]{2,}$")
-
-    return regex.matches(name) && regex.matches(surname)
-}
-
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Экран авторизации")
 @Composable
 private fun AuthorizationScreenPreview() {
     GoogleClassTheme {
