@@ -8,6 +8,7 @@ import com.example.googleclass.feature.authorization.data.remote.AuthInterceptor
 import com.example.googleclass.feature.authorization.data.remote.TokenAuthenticator
 import com.example.googleclass.feature.authorization.domain.SessionExpiredNotifier
 import com.example.googleclass.feature.courses.data.remote.CoursesApi
+import com.example.googleclass.feature.post.data.api.PostApi
 import com.example.googleclass.feature.taskdetail.data.api.FileApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -100,5 +101,9 @@ val networkModule = module {
 
     single<FileApi> {
         get<Retrofit>(named("authenticatedRetrofit")).create(FileApi::class.java)
+    }
+
+    single<PostApi> {
+        get<Retrofit>(named("authenticatedRetrofit")).create(PostApi::class.java)
     }
 }
