@@ -2,6 +2,7 @@ package com.example.googleclass.feature.taskdetail.domain.repository
 
 import android.content.ContentResolver
 import android.net.Uri
+import com.example.googleclass.feature.taskdetail.data.model.FileModel
 import java.io.File
 
 interface FileRepository {
@@ -10,7 +11,7 @@ interface FileRepository {
         uri: Uri,
         contentResolver: ContentResolver,
         onProgress: (percent: Int) -> Unit,
-    ): Result<Unit>
+    ): Result<FileModel>
 
     suspend fun downloadFile(
         fileId: String,

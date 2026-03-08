@@ -1,5 +1,6 @@
 package com.example.googleclass.feature.taskdetail.data.api
 
+import com.example.googleclass.feature.taskdetail.data.model.FileModel
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -16,7 +17,7 @@ interface FileApi {
     @POST(UPLOAD_FILE)
     suspend fun uploadFile(
         @Part file: MultipartBody.Part,
-    ): Response<Unit>
+    ): Response<FileModel>
 
     @Streaming
     @GET(DOWNLOAD_FILE)

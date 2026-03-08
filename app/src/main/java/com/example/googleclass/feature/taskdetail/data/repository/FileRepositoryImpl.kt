@@ -3,7 +3,9 @@ package com.example.googleclass.feature.taskdetail.data.repository
 import android.content.ContentResolver
 import android.net.Uri
 import android.provider.OpenableColumns
+import com.example.googleclass.common.network.safeApiCall
 import com.example.googleclass.feature.taskdetail.data.api.FileApi
+import com.example.googleclass.feature.taskdetail.data.model.FileModel
 import com.example.googleclass.feature.taskdetail.data.progress.ProgressRequestBody
 import com.example.googleclass.feature.taskdetail.domain.repository.FileRepository
 import kotlinx.coroutines.Dispatchers
@@ -21,10 +23,10 @@ class FileRepositoryImpl(
         uri: Uri,
         contentResolver: ContentResolver,
         onProgress: (percent: Int) -> Unit,
-    ): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<FileModel> = withContext(Dispatchers.IO) {
+        try {
             val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                ?: throw IllegalStateException("Cannot open input stream for $uri")
+                ?: return@withContext Result.failure(IllegalStateException("Cannot open input stream for $uri"))
 
             val fileName = resolveFileName(uri, contentResolver)
             val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
@@ -38,10 +40,12 @@ class FileRepositoryImpl(
 
             val part = MultipartBody.Part.createFormData("file", fileName, progressBody)
 
-            val response = fileApi.uploadFile(part)
-            if (!response.isSuccessful) {
-                throw Exception("Upload failed: ${response.code()}")
-            }
+            safeApiCall(
+                apiCall = { fileApi.uploadFile(part) },
+                converter = { it },
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

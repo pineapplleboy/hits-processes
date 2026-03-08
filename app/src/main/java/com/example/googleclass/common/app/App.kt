@@ -6,8 +6,10 @@ import android.app.NotificationManager
 import android.os.Build
 import com.example.googleclass.R
 import com.example.googleclass.feature.authorization.authorizationModule
-import com.example.googleclass.feature.authorization.data.network.networkModule
+import com.example.googleclass.common.network.networkModule
 import com.example.googleclass.feature.courses.coursesModule
+import com.example.googleclass.feature.taskdetail.studentchat.studentChatModule
+import com.example.googleclass.feature.taskdetail.service.FileTransferService
 import com.example.googleclass.feature.taskdetail.taskDetailModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -24,6 +26,7 @@ class App : Application() {
                 networkModule,
                 authorizationModule,
                 taskDetailModule,
+                studentChatModule,
                 coursesModule,
             )
         }
@@ -32,7 +35,7 @@ class App : Application() {
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                FileUploadService.CHANNEL_ID,
+                FileTransferService.CHANNEL_ID,
                 getString(R.string.upload_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
