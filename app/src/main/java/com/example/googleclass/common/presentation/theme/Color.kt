@@ -20,6 +20,5 @@ val DisabledText = LightGray
 
 val Success = Color(0xFF28A745)
 val ErrorRed = Color(0xFFD32F2F)
-val Warning = Color(0xFFF4B400)
-
+val PrimaryBlue = Color(0xFF155DFC)
 val Outline = Color(0xFFD9D9D9)

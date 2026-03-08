@@ -4,7 +4,17 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.googleclass.feature.authorization.presentation.AuthorizationScreen
+import com.example.googleclass.feature.course.domain.model.AssignmentStatus
+import com.example.googleclass.feature.course.domain.model.AssignmentStatusInfo
+import com.example.googleclass.feature.course.domain.model.Course
+import com.example.googleclass.feature.course.domain.model.CourseParticipant
+import com.example.googleclass.feature.course.domain.model.User
+import com.example.googleclass.feature.course.domain.model.UserRole
+import com.example.googleclass.feature.course.presentation.CourseScreen
+import com.example.googleclass.feature.courses.presentation.CoursesScreen
+import com.example.googleclass.feature.taskdetail.studentchat.presentation.StudentChatScreen
 import com.example.googleclass.feature.taskdetail.presentation.TaskDetailScreen
 
 @Composable
@@ -45,7 +55,14 @@ fun AppNavGraph(
                 publications = emptyList(),
                 submissions = emptyList(),
                 users = emptyMap(),
-                getAssignmentStatus = { AssignmentStatusInfo(AssignmentStatus.PENDING, "Не сдано", null, 100) },
+                getAssignmentStatus = {
+                    AssignmentStatusInfo(
+                        AssignmentStatus.PENDING,
+                        "Не сдано",
+                        null,
+                        100
+                    )
+                },
                 onNavigateBack = { navController.popBackStack() },
                 onAssignmentClick = { },
                 onCreatePublication = { _, _, _, _ -> },
@@ -54,6 +71,29 @@ fun AppNavGraph(
         }
         composable(ScreenRoute.TaskDetail.route) {
             TaskDetailScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToStudentChat = { studentId, studentName ->
+                    navController.navigate(
+                        ScreenRoute.StudentChat.createRoute(studentId, studentName)
+                    )
+                },
+            )
+        }
+        composable(
+            route = ScreenRoute.StudentChat.route,
+            arguments = listOf(
+                navArgument("studentId") { defaultValue = "" },
+                navArgument("studentName") { defaultValue = "" },
+            ),
+        ) { backStackEntry ->
+            val studentId = backStackEntry.arguments?.getString("studentId") ?: ""
+            val studentName = java.net.URLDecoder.decode(
+                backStackEntry.arguments?.getString("studentName") ?: "",
+                "UTF-8",
+            )
+            StudentChatScreen(
+                studentId = studentId,
+                studentName = studentName,
                 onNavigateBack = { navController.popBackStack() },
             )
         }

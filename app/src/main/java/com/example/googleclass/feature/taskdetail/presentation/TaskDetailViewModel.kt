@@ -8,11 +8,10 @@ import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmission
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
 import com.example.googleclass.feature.taskdetail.domain.model.SubmissionStatus
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class TaskDetailViewModel : ViewModel() {
@@ -21,11 +20,11 @@ class TaskDetailViewModel : ViewModel() {
         MutableStateFlow(TaskDetailUiState.Loading)
     val uiState: StateFlow<TaskDetailUiState> = _uiState.asStateFlow()
 
-    private val _uiEffect = Channel<TaskDetailUiEffect>()
-    val uiEffect = _uiEffect.receiveAsFlow()
+    private val _uiEffect = MutableSharedFlow<TaskDetailUiEffect>(extraBufferCapacity = 1)
+    val uiEffect = _uiEffect
 
     init {
-        loadStudentNotSubmittedMockData()
+        loadTeacherMockData()
     }
 
     fun onEvent(event: TaskDetailUiEvent) {
@@ -39,7 +38,10 @@ class TaskDetailViewModel : ViewModel() {
             is TaskDetailUiEvent.StudentTabSelected -> handleStudentTab(event.tab)
             is TaskDetailUiEvent.TeacherTabSelected -> handleTeacherTab(event.tab)
             is TaskDetailUiEvent.OpenStudentChat -> sendEffect(
-                TaskDetailUiEffect.NavigateToStudentChat(event.studentId)
+                TaskDetailUiEffect.NavigateToStudentChat(event.studentId, event.studentName)
+            )
+            is TaskDetailUiEvent.DownloadFile -> sendEffect(
+                TaskDetailUiEffect.StartFileDownload(event.fileId)
             )
         }
     }
@@ -111,7 +113,7 @@ class TaskDetailViewModel : ViewModel() {
 
     private fun sendEffect(effect: TaskDetailUiEffect) {
         viewModelScope.launch {
-            _uiEffect.send(effect)
+            _uiEffect.tryEmit(effect)
         }
     }
 
