@@ -100,4 +100,18 @@
     <string name="download_notification_error_title">Ошибка скачивания</string>
     <string name="download_notification_error_text">Не удалось скачать файл</string>
     <string name="download_started">Скачивание файла начато</string>
+
+    <!-- Post Editor -->
+    <string name="create_post_title">Создать публикацию</string>
+    <string name="edit_post_title">Редактировать публикацию</string>
+    <string name="post_text_hint">Текст публикации</string>
+    <string name="post_type_announcement">Объявление</string>
+    <string name="post_type_useful_material">Полезный материал</string>
+    <string name="post_type_task">Задание</string>
+    <string name="max_score_hint">Максимальный балл</string>
+    <string name="post_saved">Публикация сохранена</string>
+    <string name="existing_attachments">Прикреплённые файлы</string>
+    <string name="attachment_label">Файл %s</string>
+    <string name="save">Сохранить</string>
+    <string name="post_type_label_title">Тип публикации</string>
 </resources>
