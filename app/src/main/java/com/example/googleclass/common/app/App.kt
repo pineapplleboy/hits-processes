@@ -8,6 +8,7 @@ import com.example.googleclass.R
 import com.example.googleclass.feature.authorization.authorizationModule
 import com.example.googleclass.common.network.networkModule
 import com.example.googleclass.feature.courses.coursesModule
+import com.example.googleclass.feature.post.postModule
 import com.example.googleclass.feature.taskdetail.studentchat.studentChatModule
 import com.example.googleclass.feature.taskdetail.service.FileTransferService
 import com.example.googleclass.feature.taskdetail.taskDetailModule
@@ -28,6 +29,7 @@ class App : Application() {
                 taskDetailModule,
                 studentChatModule,
                 coursesModule,
+                postModule,
             )
         }
     }

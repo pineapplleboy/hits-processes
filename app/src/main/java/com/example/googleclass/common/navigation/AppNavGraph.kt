@@ -14,8 +14,11 @@ import com.example.googleclass.feature.course.domain.model.User
 import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.course.presentation.CourseScreen
 import com.example.googleclass.feature.courses.presentation.CoursesScreen
+import com.example.googleclass.feature.post.presentation.PostEditorMode
+import com.example.googleclass.feature.post.presentation.PostEditorScreen
 import com.example.googleclass.feature.taskdetail.studentchat.presentation.StudentChatScreen
 import com.example.googleclass.feature.taskdetail.presentation.TaskDetailScreen
+import androidx.navigation.NavType
 
 @Composable
 fun AppNavGraph(
@@ -94,6 +97,32 @@ fun AppNavGraph(
             StudentChatScreen(
                 studentId = studentId,
                 studentName = studentName,
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable(
+            route = ScreenRoute.PostEditor.route,
+            arguments = listOf(
+                navArgument("courseId") { defaultValue = "" },
+                navArgument("postId") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                    nullable = true
+                },
+            ),
+        ) { backStackEntry ->
+            val courseId = backStackEntry.arguments?.getString("courseId") ?: ""
+            val postId = backStackEntry.arguments?.getString("postId")
+                ?.takeIf { it.isNotEmpty() }
+
+            val mode = if (postId != null) {
+                PostEditorMode.Edit(courseId = courseId, postId = postId)
+            } else {
+                PostEditorMode.Create(courseId = courseId)
+            }
+
+            PostEditorScreen(
+                mode = mode,
                 onNavigateBack = { navController.popBackStack() },
             )
         }

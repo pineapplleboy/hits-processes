@@ -13,6 +13,11 @@ sealed class ScreenRoute(val route: String) {
         fun createRoute(studentId: String, studentName: String) =
             "student_chat/$studentId/${studentName.encodeForRoute()}"
     }
+    data object PostEditor : ScreenRoute("post_editor/{courseId}?postId={postId}") {
+        fun createRoute(courseId: String, postId: String? = null): String =
+            if (postId != null) "post_editor/$courseId?postId=$postId"
+            else "post_editor/$courseId"
+    }
 }
 
 private fun String.encodeForRoute(): String =
