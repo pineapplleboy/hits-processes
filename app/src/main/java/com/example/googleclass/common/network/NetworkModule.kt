@@ -106,4 +106,8 @@ val networkModule = module {
     single<PostApi> {
         get<Retrofit>(named("authenticatedRetrofit")).create(PostApi::class.java)
     }
+
+    single<UserApi> {
+        get<Retrofit>(named("authenticatedRetrofit")).create(UserApi::class.java)
+    }
 }

@@ -45,6 +45,20 @@
 
     <!-- Список курсов -->
     <string name="courses_screen_title">Мои курсы</string>
+    <string name="create_course_fab">Создать курс</string>
+    <string name="create_course_dialog_title">Новый курс</string>
+    <string name="course_name_hint">Название курса</string>
+    <string name="course_description_hint">Описание курса</string>
+    <string name="course_name_error">Минимум 3 символа</string>
+    <string name="course_description_error">Минимум 3 символа</string>
+    <string name="courses_title">Курсы</string>
+    <string name="courses_tab_courses">Курсы</string>
+    <string name="courses_tab_tasks">Задания</string>
+    <string name="logout">Выход</string>
+    <string name="task_status_submitted">Сдано</string>
+    <string name="task_status_overdue">Просрочено</string>
+    <string name="deadline_format">Дедлайн: %s</string>
+    <string name="no_score">–</string>
 
     <!-- Task Detail -->
     <string name="navigate_back">Назад</string>

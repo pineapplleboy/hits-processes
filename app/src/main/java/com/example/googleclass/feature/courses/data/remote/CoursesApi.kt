@@ -1,7 +1,9 @@
 package com.example.googleclass.feature.courses.data.remote
 
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface CoursesApi {
@@ -10,4 +12,9 @@ interface CoursesApi {
     suspend fun getMyCourses(
         @Query("isArchived") isArchived: Boolean,
     ): Response<List<CourseShortDto>>
+
+    @POST("api/v1/courses")
+    suspend fun createCourse(
+        @Body body: CourseCreateDto,
+    ): Response<Unit>
 }
