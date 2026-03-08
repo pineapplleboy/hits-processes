@@ -45,4 +45,59 @@
 
     <!-- Список курсов -->
     <string name="courses_screen_title">Мои курсы</string>
+
+    <!-- Task Detail -->
+    <string name="navigate_back">Назад</string>
+    <string name="task_label">Задание</string>
+    <string name="max_score_label">Максимум баллов:</string>
+    <string name="your_work">Ваша работа</string>
+    <string name="submitted_label">Сдано</string>
+    <string name="files_label">Файлы:</string>
+    <string name="grade_label">Оценка:</string>
+    <string name="out_of">из</string>
+    <string name="new_grade">новая</string>
+    <string name="points_suffix">баллов</string>
+    <string name="public_comments">Публичные комментарии</string>
+    <string name="private_comments">Личные комментарии</string>
+    <string name="students_tab">Студенты</string>
+    <string name="no_comments">Нет комментариев</string>
+    <string name="add_private_comment_placeholder">Добавить личный комментарий…</string>
+    <string name="send_comment">Отправить</string>
+    <string name="open_student_chat">Открыть личный чат со студентом</string>
+    <string name="status_submitted">СДАНО</string>
+    <string name="status_overdue">ПРОСРОЧЕНО</string>
+    <string name="status_pending">ОЖИДАНИЕ</string>
+    <string name="your_answer">Ответ</string>
+    <string name="files_pick_hint">Выберите файл</string>
+    <string name="file_name_placeholder">Файл</string>
+    <string name="attach_file">Прикрепить файл</string>
+    <string name="remove_file">Удалить файл</string>
+    <string name="submit_work">Отправить работу</string>
+    <string name="upload_started">Загрузка файлов начата</string>
+
+    <!-- File source picker -->
+    <string name="pick_source_title">Выберите источник</string>
+    <string name="pick_source_documents">Документы</string>
+    <string name="pick_source_documents_hint">docx, pdf, txt, png</string>
+    <string name="pick_source_gallery">Галерея</string>
+    <string name="pick_source_gallery_hint">Изображения из галереи</string>
+
+    <!-- Notifications -->
+    <string name="upload_channel_name">Загрузка файлов</string>
+    <string name="upload_channel_description">Уведомления о загрузке файлов на сервер</string>
+    <string name="upload_notification_title">Загрузка файлов</string>
+    <string name="upload_notification_progress">Файл %1$d из %2$d</string>
+    <string name="upload_notification_complete_title">Загрузка завершена</string>
+    <string name="upload_notification_complete_text">Все файлы успешно загружены</string>
+    <string name="upload_notification_error_title">Ошибка загрузки</string>
+    <string name="upload_notification_error_text">Не удалось загрузить файл</string>
+
+    <!-- Download Notifications -->
+    <string name="download_notification_title">Скачивание файла</string>
+    <string name="download_notification_progress">Скачивание…</string>
+    <string name="download_notification_complete_title">Скачивание завершено</string>
+    <string name="download_notification_complete_text">Файл успешно скачан</string>
+    <string name="download_notification_error_title">Ошибка скачивания</string>
+    <string name="download_notification_error_text">Не удалось скачать файл</string>
+    <string name="download_started">Скачивание файла начато</string>
 </resources>

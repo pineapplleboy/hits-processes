@@ -23,9 +23,9 @@ class MainActivity : ComponentActivity(), KoinComponent {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val startDestination = if (tokenStorage.getTokens() != null) {
-            ScreenRoute.Courses.route
+            ScreenRoute.TaskDetail.route
         } else {
-            ScreenRoute.Authorization.route
+            ScreenRoute.TaskDetail.route
         }
         setContent {
             GoogleClassTheme {
