@@ -1,10 +1,14 @@
-package com.example.googleclass.feature.authorization.data.network
+package com.example.googleclass.common.network
 
+import com.example.googleclass.feature.authorization.data.SessionExpiredNotifierImpl
 import com.example.googleclass.feature.authorization.data.TokenStorage
 import com.example.googleclass.feature.authorization.data.TokenStorageImpl
 import com.example.googleclass.feature.authorization.data.remote.AuthApi
 import com.example.googleclass.feature.authorization.data.remote.AuthInterceptor
 import com.example.googleclass.feature.authorization.data.remote.TokenAuthenticator
+import com.example.googleclass.feature.authorization.domain.SessionExpiredNotifier
+import com.example.googleclass.feature.courses.data.remote.CoursesApi
+import com.example.googleclass.feature.taskdetail.data.api.FileApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -54,8 +58,8 @@ val networkModule = module {
 
     single<AuthApi> { get<Retrofit>().create(AuthApi::class.java) }
 
-    single<com.example.googleclass.feature.authorization.domain.SessionExpiredNotifier> {
-        com.example.googleclass.feature.authorization.data.SessionExpiredNotifierImpl()
+    single<SessionExpiredNotifier> {
+        SessionExpiredNotifierImpl()
     }
 
     single {
@@ -90,7 +94,11 @@ val networkModule = module {
             .build()
     }
 
-    single<com.example.googleclass.feature.courses.data.remote.CoursesApi> {
-        get<Retrofit>(named("authenticatedRetrofit")).create(com.example.googleclass.feature.courses.data.remote.CoursesApi::class.java)
+    single<CoursesApi> {
+        get<Retrofit>(named("authenticatedRetrofit")).create(CoursesApi::class.java)
+    }
+
+    single<FileApi> {
+        get<Retrofit>(named("authenticatedRetrofit")).create(FileApi::class.java)
     }
 }
