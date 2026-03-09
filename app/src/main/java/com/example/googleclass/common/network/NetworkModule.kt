@@ -7,6 +7,7 @@ import com.example.googleclass.feature.authorization.data.remote.AuthApi
 import com.example.googleclass.feature.authorization.data.remote.AuthInterceptor
 import com.example.googleclass.feature.authorization.data.remote.TokenAuthenticator
 import com.example.googleclass.feature.authorization.domain.SessionExpiredNotifier
+import com.example.googleclass.feature.course.data.remote.CourseDetailApi
 import com.example.googleclass.feature.courses.data.remote.CoursesApi
 import com.example.googleclass.feature.post.data.api.PostApi
 import com.example.googleclass.feature.taskdetail.data.api.FileApi
@@ -97,6 +98,10 @@ val networkModule = module {
 
     single<CoursesApi> {
         get<Retrofit>(named("authenticatedRetrofit")).create(CoursesApi::class.java)
+    }
+
+    single<CourseDetailApi> {
+        get<Retrofit>(named("authenticatedRetrofit")).create(CourseDetailApi::class.java)
     }
 
     single<FileApi> {

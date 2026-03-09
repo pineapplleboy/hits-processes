@@ -16,6 +16,10 @@
     <string name="password_error">Пароль: от 8 до 32 символов</string>
 
     <!-- Курс -->
+    <string name="course_description_label">Описание</string>
+    <string name="course_archived">Архивный</string>
+    <string name="course_active">Активный</string>
+    <string name="course_code_label">Код курса: %s</string>
     <string name="tab_stream">Лента</string>
     <string name="tab_participants">Участники</string>
     <string name="empty_publications">Пока нет публикаций</string>

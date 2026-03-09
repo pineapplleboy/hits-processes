@@ -43,10 +43,10 @@ interface PostApi {
     ): Response<PostModel>
 
     private companion object {
-        const val CREATE_POST = "/api/v1/courses/{courseId}/posts"
-        const val EDIT_POST = "/api/v1/courses/{courseId}/posts/{postId}"
-        const val DELETE_POST = "/api/v1/courses/{courseId}/posts/{postId}"
-        const val GET_COURSE_POSTS = "/api/v1/courses/{courseId}/posts"
-        const val GET_POST = "/api/v1/courses/{courseId}/posts/{postId}"
+        const val CREATE_POST = "api/v1/courses/{courseId}/posts"
+        const val EDIT_POST = "api/v1/courses/{courseId}/posts/{postId}"
+        const val DELETE_POST = "api/v1/courses/{courseId}/posts/{postId}"
+        const val GET_COURSE_POSTS = "api/v1/courses/{courseId}/posts"
+        const val GET_POST = "api/v1/courses/{courseId}/posts/{postId}"
     }
 }

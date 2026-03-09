@@ -7,6 +7,7 @@ import android.os.Build
 import com.example.googleclass.R
 import com.example.googleclass.feature.authorization.authorizationModule
 import com.example.googleclass.common.network.networkModule
+import com.example.googleclass.feature.course.courseDetailModule
 import com.example.googleclass.feature.courses.coursesModule
 import com.example.googleclass.feature.post.postModule
 import com.example.googleclass.feature.taskdetail.studentchat.studentChatModule
@@ -29,6 +30,7 @@ class App : Application() {
                 taskDetailModule,
                 studentChatModule,
                 coursesModule,
+                courseDetailModule,
                 postModule,
             )
         }

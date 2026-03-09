@@ -12,7 +12,7 @@ import com.example.googleclass.feature.course.domain.model.Course
 import com.example.googleclass.feature.course.domain.model.CourseParticipant
 import com.example.googleclass.feature.course.domain.model.User
 import com.example.googleclass.feature.course.domain.model.UserRole
-import com.example.googleclass.feature.course.presentation.CourseScreen
+import com.example.googleclass.feature.course.presentation.CourseScreenRoute
 import com.example.googleclass.feature.courses.presentation.CoursesScreen
 import com.example.googleclass.feature.post.presentation.PostEditorMode
 import com.example.googleclass.feature.post.presentation.PostEditorScreen
@@ -52,25 +52,15 @@ fun AppNavGraph(
             arguments = listOf(navArgument("courseId") { defaultValue = "" })
         ) { backStackEntry ->
             val courseId = backStackEntry.arguments?.getString("courseId") ?: ""
-            CourseScreen(
-                course = sampleCourse(courseId),
-                currentUser = sampleCurrentUser(),
-                isTeacher = true,
-                publications = emptyList(),
-                submissions = emptyList(),
-                users = emptyMap(),
-                getAssignmentStatus = {
-                    AssignmentStatusInfo(
-                        AssignmentStatus.PENDING,
-                        "Не сдано",
-                        null,
-                        100
-                    )
-                },
+            CourseScreenRoute(
+                courseId = courseId,
                 onNavigateBack = { navController.popBackStack() },
-                onAssignmentClick = { },
-                onCreatePublication = { _, _, _, _ -> },
-                onAddComment = { _, _ -> }
+                onPostClick = { postId ->
+                    navController.navigate(ScreenRoute.PostEditor.createRoute(courseId, postId))
+                },
+                onCreatePublicationClick = {
+                    navController.navigate(ScreenRoute.PostEditor.createRoute(courseId))
+                },
             )
         }
         composable(ScreenRoute.TaskDetail.route) {
@@ -130,9 +120,23 @@ fun AppNavGraph(
     }
 }
 
+private fun sampleCoursesList() = listOf(
+    Course(
+        id = "1",
+        name = "Название курса",
+        participants = listOf(
+            CourseParticipant("u1", UserRole.MAIN_TEACHER),
+            CourseParticipant("u2", UserRole.STUDENT),
+        )
+    ),
+)
+
 private fun sampleCourse(id: String) = Course(
     id = id.ifEmpty { "1" },
     name = "Название курса",
+    description = null,
+    joinCode = "XYZ-001",
+    isArchived = false,
     participants = listOf(
         CourseParticipant("u1", UserRole.MAIN_TEACHER),
         CourseParticipant("u2", UserRole.STUDENT),
