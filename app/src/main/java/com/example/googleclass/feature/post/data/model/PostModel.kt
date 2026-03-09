@@ -11,7 +11,7 @@ data class PostModel(
     val attachments:List<AttachmentModel>,
     val postType: PostType,
     val createdAt: String,
-    val deadline: String,
+    val deadline: String? = null,
     val maxScore:Int,
     val comments: List<PostCommentModel>
 )
