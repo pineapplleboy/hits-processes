@@ -40,10 +40,11 @@ fun AppNavGraph(
         }
         composable(ScreenRoute.Courses.route) {
             CoursesScreen(
-                courses = sampleCoursesList(),
                 onCourseClick = { courseId ->
                     navController.navigate(ScreenRoute.Course.createRoute(courseId))
-                }
+                },
+                onTaskClick = { },
+                onLogoutClick = { },
             )
         }
         composable(
@@ -128,10 +129,6 @@ fun AppNavGraph(
         }
     }
 }
-
-private fun sampleCoursesList() = listOf(
-    Course("1", "Название курса", listOf(CourseParticipant("u1", UserRole.MAIN_TEACHER), CourseParticipant("u2", UserRole.STUDENT))),
-)
 
 private fun sampleCourse(id: String) = Course(
     id = id.ifEmpty { "1" },
