@@ -10,6 +10,7 @@ import com.example.googleclass.common.network.networkModule
 import com.example.googleclass.feature.course.courseDetailModule
 import com.example.googleclass.feature.courses.coursesModule
 import com.example.googleclass.feature.post.postModule
+import com.example.googleclass.feature.profile.profileModule
 import com.example.googleclass.feature.taskdetail.studentchat.studentChatModule
 import com.example.googleclass.feature.taskdetail.service.FileTransferService
 import com.example.googleclass.feature.taskdetail.taskDetailModule
@@ -32,6 +33,7 @@ class App : Application() {
                 coursesModule,
                 courseDetailModule,
                 postModule,
+                profileModule,
             )
         }
     }

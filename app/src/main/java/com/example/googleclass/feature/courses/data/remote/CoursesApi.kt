@@ -17,4 +17,9 @@ interface CoursesApi {
     suspend fun createCourse(
         @Body body: CourseCreateDto,
     ): Response<Unit>
+
+    @GET("api/v1/courses/join")
+    suspend fun joinCourseByCode(
+        @Query("code") code: String,
+    ): Response<Unit>
 }

@@ -7,14 +7,18 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.googleclass.common.network.UserApi
+import com.example.googleclass.feature.authorization.domain.repository.AuthRepository
 import com.example.googleclass.feature.courses.data.remote.CourseCreateDto
 import com.example.googleclass.feature.courses.data.remote.CoursesApi
+import com.example.googleclass.feature.courses.data.remote.TaskAnswerApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 class CoursesScreenViewModel(
     private val coursesApi: CoursesApi,
     private val userApi: UserApi,
+    private val authRepository: AuthRepository,
+    private val taskAnswerApi: TaskAnswerApi,
 ) : ViewModel() {
 
     var state by mutableStateOf<CoursesScreenState>(CoursesScreenState.Loading)
@@ -23,11 +27,34 @@ class CoursesScreenViewModel(
     var dialogState by mutableStateOf<CreateCourseDialogState?>(null)
         private set
 
+    var joinDialogState by mutableStateOf<JoinCourseDialogState?>(null)
+        private set
+
+    /** true после успешного logout — сигнал для навигации */
+    var logoutCompleted by mutableStateOf(false)
+        private set
+
     init {
         loadData()
     }
 
-    // region Dialog
+    // region Logout
+
+    fun logout() {
+        viewModelScope.launch {
+            try {
+                authRepository.logout()
+            } catch (e: Exception) {
+                Log.e(TAG, "logout: exception", e)
+            } finally {
+                logoutCompleted = true
+            }
+        }
+    }
+
+    // endregion
+
+    // region Create Course Dialog
 
     fun openCreateCourseDialog() {
         dialogState = CreateCourseDialogState()
@@ -92,15 +119,71 @@ class CoursesScreenViewModel(
 
     // endregion
 
+    // region Join Course Dialog
+
+    fun openJoinCourseDialog() {
+        joinDialogState = JoinCourseDialogState()
+    }
+
+    fun dismissJoinCourseDialog() {
+        if (joinDialogState?.isJoining == true) return
+        joinDialogState = null
+    }
+
+    fun onJoinCodeChanged(value: String) {
+        joinDialogState = joinDialogState?.copy(code = value, error = null)
+    }
+
+    fun submitJoinCourse() {
+        val dialog = joinDialogState ?: return
+        if (dialog.isJoining) return
+
+        val code = dialog.code.trim()
+        if (code.isEmpty()) {
+            joinDialogState = dialog.copy(error = "Введите код курса")
+            return
+        }
+
+        joinDialogState = dialog.copy(isJoining = true, error = null)
+
+        viewModelScope.launch {
+            try {
+                val response = coursesApi.joinCourseByCode(code)
+                if (response.isSuccessful) {
+                    Log.d(TAG, "joinCourse: success")
+                    joinDialogState = null
+                    loadData()
+                } else {
+                    Log.d(TAG, "joinCourse: error ${response.code()}")
+                    joinDialogState = joinDialogState?.copy(
+                        isJoining = false,
+                        error = if (response.code() == 404) "Курс с таким кодом не найден"
+                                else "Ошибка: ${response.code()}",
+                    )
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "joinCourse: exception", e)
+                joinDialogState = joinDialogState?.copy(
+                    isJoining = false,
+                    error = e.message ?: "Неизвестная ошибка",
+                )
+            }
+        }
+    }
+
+    // endregion
+
     private fun loadData() {
         state = CoursesScreenState.Loading
         viewModelScope.launch {
             try {
                 val profileDeferred = async { userApi.getMyProfile() }
                 val coursesDeferred = async { coursesApi.getMyCourses(isArchived = false) }
+                val tasksDeferred = async { taskAnswerApi.getAllUserTaskAnswers() }
 
                 val profileResponse = profileDeferred.await()
                 val coursesResponse = coursesDeferred.await()
+                val tasksResponse = tasksDeferred.await()
 
                 if (!coursesResponse.isSuccessful) {
                     state = CoursesScreenState.Error("Ошибка загрузки курсов: ${coursesResponse.code()}")
@@ -115,7 +198,7 @@ class CoursesScreenViewModel(
                         name = dto.name,
                         subject = dto.description ?: "",
                         role = "Студент",
-                        code = dto.id.take(6).uppercase(),
+                        // joinCode недоступен в CourseShortModel — только в CourseModel (детали курса)
                     )
                 }
                 Log.d(TAG, "getMyCourses: success, size = ${courseDtos.size}")
@@ -128,9 +211,33 @@ class CoursesScreenViewModel(
                     "—"
                 }
 
+                val tasks = if (tasksResponse.isSuccessful) {
+                    val dtos = tasksResponse.body().orEmpty()
+                    Log.d(TAG, "getAllUserTaskAnswers: success, size = ${dtos.size}")
+                    dtos.mapIndexed { index, dto ->
+                        TaskUiItem(
+                            id = dto.id,
+                            // Название появится когда API добавит поле
+                            title = "Задание ${index + 1}",
+                            status = when (dto.status) {
+                                "COMPLETED", "COMPETED_AFTER_DEADLINE" -> TaskStatus.SUBMITTED
+                                else -> TaskStatus.OVERDUE
+                            },
+                            score = dto.score?.toString(),
+                            // Максимальный балл появится когда API добавит поле
+                            maxScore = null,
+                            // Дедлайн появится когда API добавит поле
+                            deadline = "—",
+                        )
+                    }
+                } else {
+                    Log.d(TAG, "getAllUserTaskAnswers: error ${tasksResponse.code()}")
+                    emptyList()
+                }
+
                 state = CoursesScreenState.Content(
                     courses = courses,
-                    tasks = emptyList(),
+                    tasks = tasks,
                     userName = userName,
                 )
             } catch (e: Exception) {

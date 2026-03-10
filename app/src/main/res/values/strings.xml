@@ -55,6 +55,13 @@
     <string name="course_description_hint">Описание курса</string>
     <string name="course_name_error">Минимум 3 символа</string>
     <string name="course_description_error">Минимум 3 символа</string>
+    <string name="add_course_action_title">Добавить курс</string>
+    <string name="menu_create_course">Создать курс</string>
+    <string name="menu_join_course">Присоединиться к курсу</string>
+    <string name="join_course_dialog_title">Присоединиться к курсу</string>
+    <string name="join_course_code_hint">Код курса</string>
+    <string name="join">Присоединиться</string>
+    <string name="logout_action">Выйти из аккаунта</string>
     <string name="courses_title">Курсы</string>
     <string name="courses_tab_courses">Курсы</string>
     <string name="courses_tab_tasks">Задания</string>
@@ -132,4 +139,8 @@
     <string name="attachment_label">Файл %s</string>
     <string name="save">Сохранить</string>
     <string name="post_type_label_title">Тип публикации</string>
+
+    <!-- Profile -->
+    <string name="profile_archived_courses">Архив курсов</string>
+    <string name="profile_switch_user">Сменить пользователя</string>
 </resources>

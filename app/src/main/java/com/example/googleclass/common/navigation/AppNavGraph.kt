@@ -16,6 +16,7 @@ import com.example.googleclass.feature.course.presentation.CourseScreenRoute
 import com.example.googleclass.feature.courses.presentation.CoursesScreen
 import com.example.googleclass.feature.post.presentation.PostEditorMode
 import com.example.googleclass.feature.post.presentation.PostEditorScreen
+import com.example.googleclass.feature.profile.presentation.ProfileScreen
 import com.example.googleclass.feature.taskdetail.studentchat.presentation.StudentChatScreen
 import com.example.googleclass.feature.taskdetail.presentation.TaskDetailScreen
 import androidx.navigation.NavType
@@ -44,7 +45,14 @@ fun AppNavGraph(
                     navController.navigate(ScreenRoute.Course.createRoute(courseId))
                 },
                 onTaskClick = { },
-                onLogoutClick = { },
+                onLogoutClick = {
+                    navController.navigate(ScreenRoute.Authorization.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onProfileClick = {
+                    navController.navigate(ScreenRoute.Profile.route)
+                },
             )
         }
         composable(
@@ -115,6 +123,18 @@ fun AppNavGraph(
             PostEditorScreen(
                 mode = mode,
                 onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable(ScreenRoute.Profile.route) {
+            ProfileScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onArchivedCoursesClick = { },
+                onSwitchUserClick = { },
+                onLogoutClick = {
+                    navController.navigate(ScreenRoute.Authorization.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
             )
         }
     }
