@@ -5,7 +5,7 @@ data class CourseUiItem(
     val name: String,
     val subject: String,
     val role: String,
-    val code: String,
+    val code: String? = null,
 )
 
 enum class TaskStatus {
@@ -39,5 +39,11 @@ data class CreateCourseDialogState(
     val name: String = "",
     val description: String = "",
     val isCreating: Boolean = false,
+    val error: String? = null,
+)
+
+data class JoinCourseDialogState(
+    val code: String = "",
+    val isJoining: Boolean = false,
     val error: String? = null,
 )
