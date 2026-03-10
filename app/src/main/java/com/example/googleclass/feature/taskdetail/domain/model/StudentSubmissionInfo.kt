@@ -9,6 +9,7 @@ enum class SubmissionStatus {
 data class StudentSubmissionInfo(
     val studentId: String,
     val studentName: String,
+    val taskAnswerId: String,
     val score: Int?,
     val maxScore: Int,
     val status: SubmissionStatus,

@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.googleclass.R
+import com.example.googleclass.common.presentation.component.CommentsSection
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
 
@@ -62,12 +63,11 @@ internal fun TeacherCommentsSection(
 
             when (selectedTab) {
                 TeacherTab.PUBLIC_COMMENTS -> {
-                    CommentsList(comments = publicComments)
-
-                    CommentInput(
-                        value = commentInput,
+                    CommentsSection(
+                        comments = publicComments.map { it.toUiModel() },
+                        inputValue = commentInput,
                         placeholder = stringResource(R.string.add_comment_placeholder),
-                        onValueChange = { onEvent(TaskDetailUiEvent.CommentInputChanged(it)) },
+                        onInputChange = { onEvent(TaskDetailUiEvent.CommentInputChanged(it)) },
                         onSend = { onEvent(TaskDetailUiEvent.SendComment) },
                     )
                 }

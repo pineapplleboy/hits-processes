@@ -11,6 +11,7 @@ import com.example.googleclass.feature.course.data.remote.CourseDetailApi
 import com.example.googleclass.feature.courses.data.remote.CoursesApi
 import com.example.googleclass.feature.courses.data.remote.TaskAnswerApi
 import com.example.googleclass.feature.post.data.api.PostApi
+import com.example.googleclass.feature.taskdetail.data.api.CommentApi
 import com.example.googleclass.feature.taskdetail.data.api.FileApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -115,6 +116,10 @@ val networkModule = module {
 
     single<UserApi> {
         get<Retrofit>(named("authenticatedRetrofit")).create(UserApi::class.java)
+    }
+
+    single<CommentApi> {
+        get<Retrofit>(named("authenticatedRetrofit")).create(CommentApi::class.java)
     }
 
     single<TaskAnswerApi> {

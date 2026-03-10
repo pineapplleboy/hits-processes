@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.googleclass.R
+import com.example.googleclass.common.presentation.component.CommentUiModel
+import com.example.googleclass.common.presentation.component.CommentsSection
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
 
 @Composable
@@ -64,19 +66,25 @@ internal fun StudentCommentsSection(
                 StudentTab.PRIVATE_COMMENTS -> privateComments
             }
 
-            CommentsList(comments = comments)
-
             val placeholder = when (selectedTab) {
                 StudentTab.PUBLIC_COMMENTS -> stringResource(R.string.add_comment_placeholder)
                 StudentTab.PRIVATE_COMMENTS -> stringResource(R.string.add_private_comment_placeholder)
             }
 
-            CommentInput(
-                value = commentInput,
+            CommentsSection(
+                comments = comments.map { it.toUiModel() },
+                inputValue = commentInput,
                 placeholder = placeholder,
-                onValueChange = { onEvent(TaskDetailUiEvent.CommentInputChanged(it)) },
+                onInputChange = { onEvent(TaskDetailUiEvent.CommentInputChanged(it)) },
                 onSend = { onEvent(TaskDetailUiEvent.SendComment) },
             )
         }
     }
 }
+
+internal fun Comment.toUiModel() = CommentUiModel(
+    id = id,
+    authorName = authorName,
+    text = text,
+    createdAt = createdAt,
+)

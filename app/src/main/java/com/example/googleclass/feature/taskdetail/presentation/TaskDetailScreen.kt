@@ -51,7 +51,7 @@ fun TaskDetailScreen(
     userRole: UserRole,
     taskId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToStudentChat: (studentId: String, studentName: String) -> Unit = { _, _ -> },
+    onNavigateToStudentChat: (taskAnswerId: String, studentName: String, studentUserId: String) -> Unit = { _, _, _ -> },
 ) {
     val viewModel: TaskDetailViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -87,7 +87,11 @@ fun TaskDetailScreen(
                 is TaskDetailUiEffect.NavigateBack -> onNavigateBack()
 
                 is TaskDetailUiEffect.NavigateToStudentChat -> {
-                    onNavigateToStudentChat(effect.studentId, effect.studentName)
+                    onNavigateToStudentChat(
+                        effect.taskAnswerId,
+                        effect.studentName,
+                        effect.studentUserId,
+                    )
                 }
 
                 is TaskDetailUiEffect.ShowError -> {

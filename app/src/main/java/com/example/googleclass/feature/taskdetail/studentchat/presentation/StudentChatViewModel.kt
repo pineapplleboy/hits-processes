@@ -2,6 +2,7 @@ package com.example.googleclass.feature.taskdetail.studentchat.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.googleclass.feature.taskdetail.domain.repository.CommentRepository
 import com.example.googleclass.feature.taskdetail.studentchat.domain.model.ChatMessage
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,8 +11,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class StudentChatViewModel(
-    private val studentId: String,
+    private val taskAnswerId: String,
     private val studentName: String,
+    private val studentUserId: String,
+    private val commentRepository: CommentRepository,
 ) : ViewModel() {
 
     private val _uiState: MutableStateFlow<StudentChatUiState> =
@@ -22,7 +25,7 @@ class StudentChatViewModel(
     val uiEffect = _uiEffect
 
     init {
-        loadMockData()
+        loadComments()
     }
 
     fun onEvent(event: StudentChatUiEvent) {
@@ -43,17 +46,16 @@ class StudentChatViewModel(
     private fun handleSendMessage() {
         val state = _uiState.value
         if (state is StudentChatUiState.ChatContent && state.messageInput.isNotBlank()) {
-            val newMessage = ChatMessage(
-                id = (state.messages.size + 1).toString(),
-                text = state.messageInput,
-                authorName = "Преподаватель",
-                createdAt = "Сейчас",
-                isFromTeacher = true,
-            )
-            _uiState.value = state.copy(
-                messages = state.messages + newMessage,
-                messageInput = "",
-            )
+            val text = state.messageInput
+            _uiState.value = state.copy(messageInput = "")
+
+            viewModelScope.launch {
+                commentRepository.createTaskAnswerComment(taskAnswerId, text)
+                    .onSuccess { loadComments() }
+                    .onFailure {
+                        sendEffect(StudentChatUiEffect.NavigateBack)
+                    }
+            }
         }
     }
 
@@ -63,41 +65,25 @@ class StudentChatViewModel(
         }
     }
 
-    private fun loadMockData() {
-        _uiState.value = StudentChatUiState.ChatContent(
-            studentId = studentId,
-            studentName = studentName,
-            messages = listOf(
-                ChatMessage(
-                    id = "1",
-                    text = "Здравствуйте! Хотел уточнить по заданию — нужно ли реализовывать сортировку пузырьком или можно использовать встроенные функции?",
-                    authorName = studentName,
-                    createdAt = "10:15",
-                    isFromTeacher = false,
-                ),
-                ChatMessage(
-                    id = "2",
-                    text = "Здравствуйте! Можно использовать любой метод сортировки, главное — чтобы алгоритм был корректным.",
-                    authorName = "Преподаватель",
-                    createdAt = "10:22",
-                    isFromTeacher = true,
-                ),
-                ChatMessage(
-                    id = "3",
-                    text = "Понял, спасибо! Тогда я использую встроенную сортировку.",
-                    authorName = studentName,
-                    createdAt = "10:25",
-                    isFromTeacher = false,
-                ),
-                ChatMessage(
-                    id = "4",
-                    text = "Отлично. Не забудьте также реализовать функцию поиска элемента и удаления дубликатов.",
-                    authorName = "Преподаватель",
-                    createdAt = "10:28",
-                    isFromTeacher = true,
-                ),
-            ),
-            messageInput = "",
-        )
+    private fun loadComments() {
+        viewModelScope.launch {
+            commentRepository.getTaskAnswerCommentsAsChat(taskAnswerId, studentUserId)
+                .onSuccess { messages ->
+                    _uiState.value = StudentChatUiState.ChatContent(
+                        studentId = taskAnswerId,
+                        studentName = studentName,
+                        messages = messages,
+                        messageInput = (_uiState.value as? StudentChatUiState.ChatContent)?.messageInput.orEmpty(),
+                    )
+                }
+                .onFailure {
+                    _uiState.value = StudentChatUiState.ChatContent(
+                        studentId = taskAnswerId,
+                        studentName = studentName,
+                        messages = emptyList(),
+                        messageInput = "",
+                    )
+                }
+        }
     }
 }

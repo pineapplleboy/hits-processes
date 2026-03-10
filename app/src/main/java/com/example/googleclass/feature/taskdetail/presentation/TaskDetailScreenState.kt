@@ -54,13 +54,21 @@ sealed interface TaskDetailUiEvent {
     data class CommentInputChanged(val text: String) : TaskDetailUiEvent
     data class StudentTabSelected(val tab: StudentTab) : TaskDetailUiEvent
     data class TeacherTabSelected(val tab: TeacherTab) : TaskDetailUiEvent
-    data class OpenStudentChat(val studentId: String, val studentName: String) : TaskDetailUiEvent
+    data class OpenStudentChat(
+        val taskAnswerId: String,
+        val studentName: String,
+        val studentUserId: String,
+    ) : TaskDetailUiEvent
     data class DownloadFile(val fileId: String) : TaskDetailUiEvent
 }
 
 sealed interface TaskDetailUiEffect {
     data object NavigateBack : TaskDetailUiEffect
-    data class NavigateToStudentChat(val studentId: String, val studentName: String) : TaskDetailUiEffect
+    data class NavigateToStudentChat(
+        val taskAnswerId: String,
+        val studentName: String,
+        val studentUserId: String,
+    ) : TaskDetailUiEffect
     data class ShowError(val message: String) : TaskDetailUiEffect
     data class StartFileUpload(val uris: List<Uri>) : TaskDetailUiEffect
     data class StartFileDownload(val fileId: String) : TaskDetailUiEffect
