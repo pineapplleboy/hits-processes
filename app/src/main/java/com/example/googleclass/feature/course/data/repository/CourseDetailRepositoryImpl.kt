@@ -1,11 +1,13 @@
 package com.example.googleclass.feature.course.data.repository
 
 import com.example.googleclass.common.network.safeApiCall
+import com.example.googleclass.common.network.safeApiCallUnit
 import com.example.googleclass.feature.course.data.mapper.toDomain
 import com.example.googleclass.feature.course.data.mapper.toParticipant
 import com.example.googleclass.feature.course.data.mapper.toPublication
 import com.example.googleclass.feature.course.data.mapper.toUser
 import com.example.googleclass.feature.course.data.remote.CourseDetailApi
+import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.course.domain.repository.CourseDetailRepository
 import com.example.googleclass.feature.course.domain.repository.CourseDetailResult
 import com.example.googleclass.feature.post.data.api.PostApi
@@ -65,4 +67,34 @@ class CourseDetailRepositoryImpl(
             )
         )
     }
+
+    override suspend fun changeUserRole(
+        courseId: String,
+        userId: String,
+        newRole: UserRole,
+    ): Result<Unit> = safeApiCallUnit(
+        apiCall = {
+            courseDetailApi.changeUserRole(
+                courseId = courseId,
+                userId = userId,
+                newUserRole = when (newRole) {
+                    UserRole.MAIN_TEACHER -> "HEAD_TEACHER"
+                    UserRole.TEACHER -> "TEACHER"
+                    UserRole.STUDENT -> "STUDENT"
+                },
+            )
+        },
+    )
+
+    override suspend fun removeUserFromCourse(
+        courseId: String,
+        userId: String,
+    ): Result<Unit> = safeApiCallUnit(
+        apiCall = {
+            courseDetailApi.removeUserFromCourse(
+                courseId = courseId,
+                userId = userId,
+            )
+        },
+    )
 }

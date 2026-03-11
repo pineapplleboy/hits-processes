@@ -23,10 +23,6 @@ class TaskDetailViewModel : ViewModel() {
     private val _uiEffect = MutableSharedFlow<TaskDetailUiEffect>(extraBufferCapacity = 1)
     val uiEffect = _uiEffect
 
-    init {
-        loadTeacherMockData()
-    }
-
     fun onEvent(event: TaskDetailUiEvent) {
         when (event) {
             is TaskDetailUiEvent.NavigateBack -> sendEffect(TaskDetailUiEffect.NavigateBack)
