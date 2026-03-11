@@ -66,13 +66,22 @@ fun AppNavGraph(
                 onPostClick = { postId ->
                     navController.navigate(ScreenRoute.PostEditor.createRoute(courseId, postId))
                 },
+                onAssignmentClick = { taskId, userRole ->
+                    navController.navigate(ScreenRoute.TaskDetail.createRoute(taskId, userRole))
+                },
                 onCreatePublicationClick = {
                     navController.navigate(ScreenRoute.PostEditor.createRoute(courseId))
                 },
             )
         }
-        composable(ScreenRoute.TaskDetail.route) {
+        composable(ScreenRoute.TaskDetail.route) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
+            val userRoleName = backStackEntry.arguments?.getString("userRole") ?: UserRole.STUDENT.name
+            val userRole = runCatching { UserRole.valueOf(userRoleName) }.getOrElse { UserRole.STUDENT }
+
             TaskDetailScreen(
+                userRole = userRole,
+                taskId = taskId,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToStudentChat = { studentId, studentName ->
                     navController.navigate(

@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.googleclass.R
 import com.example.googleclass.common.presentation.component.LoadingState
 import com.example.googleclass.common.presentation.theme.GoogleClassTheme
+import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
@@ -47,6 +48,8 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun TaskDetailScreen(
+    userRole: UserRole,
+    taskId: String,
     onNavigateBack: () -> Unit,
     onNavigateToStudentChat: (studentId: String, studentName: String) -> Unit = { _, _ -> },
 ) {
@@ -73,7 +76,12 @@ fun TaskDetailScreen(
         viewModel.onEvent(TaskDetailUiEvent.FileAttached(uri, displayName))
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(userRole, taskId) {
+        when (userRole) {
+            UserRole.STUDENT -> viewModel.loadStudentMockData()
+            UserRole.TEACHER, UserRole.MAIN_TEACHER -> viewModel.loadTeacherMockData()
+        }
+
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is TaskDetailUiEffect.NavigateBack -> onNavigateBack()

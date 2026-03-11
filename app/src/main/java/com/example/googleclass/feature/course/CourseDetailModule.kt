@@ -20,6 +20,7 @@ val courseDetailModule = module {
         CourseDetailViewModel(
             courseId = courseId,
             getCourseDetailUseCase = get(),
+            repository = get<CourseDetailRepository>(),
             userApi = get<UserApi>(),
         )
     }

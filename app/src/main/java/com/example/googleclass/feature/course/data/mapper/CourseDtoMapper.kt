@@ -8,14 +8,16 @@ import com.example.googleclass.feature.course.domain.model.CourseParticipant
 import com.example.googleclass.feature.course.domain.model.User
 import com.example.googleclass.feature.course.domain.model.UserRole
 
-fun CourseDto.toDomain(participants: List<CourseParticipant> = emptyList()): Course = Course(
-    id = id,
-    name = name,
-    description = description,
-    joinCode = joinCode,
-    isArchived = isArchived,
-    participants = participants,
-)
+fun CourseDto.toDomain(participants: List<CourseParticipant> = emptyList()): Course =
+    Course(
+        id = id,
+        name = name,
+        description = description,
+        joinCode = joinCode,
+        isArchived = isArchived,
+        currentUserRole = currentUserCourseRole?.toUserRole(),
+        participants = participants,
+    )
 
 fun UserModel.toDomain(): User = User(
     id = id,
@@ -32,7 +34,7 @@ fun UserCourseDto.toParticipant(): CourseParticipant = CourseParticipant(
 
 fun UserCourseDto.toUser(): User = userModel.toDomain()
 
-private fun String.toUserRole(): UserRole = when (uppercase()) {
+fun String.toUserRole(): UserRole = when (uppercase()) {
     "HEAD_TEACHER" -> UserRole.MAIN_TEACHER
     "TEACHER" -> UserRole.TEACHER
     "STUDENT" -> UserRole.STUDENT

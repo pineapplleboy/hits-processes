@@ -1,10 +1,7 @@
 package com.example.googleclass.feature.course.presentation
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,8 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -21,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,10 +66,16 @@ fun CourseScreenRoute(
     courseId: String,
     onNavigateBack: () -> Unit,
     onPostClick: (String) -> Unit,
+    onAssignmentClick: (taskId: String, userRole: UserRole) -> Unit,
     onCreatePublicationClick: () -> Unit,
 ) {
     val viewModel: CourseDetailViewModel = koinViewModel(parameters = { parametersOf(courseId) })
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Обновляем данные при каждом заходе на экран
+    androidx.compose.runtime.LaunchedEffect(courseId) {
+        viewModel.refresh()
+    }
 
     when (val state = uiState) {
         is CourseDetailUiState.Loading -> LoadingState()
@@ -102,18 +106,34 @@ fun CourseScreenRoute(
                 submissions = emptyList(),
                 users = state.users,
                 getAssignmentStatus = { assignmentId ->
-                    // TODO: replace with real status from task answers
-                    AssignmentStatusInfo(
-                        status = AssignmentStatus.PENDING,
-                        text = "",
-                        grade = null,
-                        maxScore = state.publications
-                            .firstOrNull { it.id == assignmentId }?.maxScore ?: 100,
-                    )
+                        val publication = state.publications.firstOrNull { it.id == assignmentId }
+                        val now = Date()
+                        val statusEnum = when {
+                            publication?.deadline != null && now.after(publication.deadline) ->
+                                AssignmentStatus.OVERDUE
+
+                            else -> AssignmentStatus.PENDING
+                        }
+                        val text = when (statusEnum) {
+                            AssignmentStatus.SUBMITTED -> "Сдано"
+                            AssignmentStatus.OVERDUE -> "Просрочено"
+                            AssignmentStatus.PENDING -> "Не сдано"
+                        }
+                        AssignmentStatusInfo(
+                            status = statusEnum,
+                            text = text,
+                            grade = null,
+                            maxScore = publication?.maxScore ?: 100,
+                        )
                 },
                 onNavigateBack = onNavigateBack,
                 onPostClick = onPostClick,
+                onAssignmentClick = { taskId ->
+                    onAssignmentClick(taskId, state.userRole)
+                },
                 onCreatePublication = onCreatePublicationClick,
+                onPromoteClick = { userId, role -> viewModel.onPromoteClick(userId, role) },
+                onDemoteClick = { userId, role -> viewModel.onDemoteClick(userId, role) },
             )
         }
     }
@@ -132,7 +152,10 @@ fun CourseScreen(
     getAssignmentStatus: (String) -> AssignmentStatusInfo,
     onNavigateBack: () -> Unit,
     onPostClick: (String) -> Unit,
+    onAssignmentClick: (String) -> Unit,
     onCreatePublication: () -> Unit,
+    onPromoteClick: (String, UserRole) -> Unit,
+    onDemoteClick: (String, UserRole) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -150,43 +173,68 @@ fun CourseScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        androidx.compose.foundation.layout.Box(
             modifier = modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            CourseInfoBlock(
-                course = course,
-                isTeacher = isTeacher
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            TabRow(selectedTabIndex = selectedTab) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(title) }
-                    )
-                }
-            }
-
-            when (selectedTab) {
-                0 -> StreamTab(
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                CourseInfoBlock(
                     course = course,
-                    publications = publications,
-                    submissions = submissions,
-                    users = users,
-                    currentUser = currentUser,
+                    isTeacher = isTeacher
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                TabRow(selectedTabIndex = selectedTab) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { Text(title) }
+                        )
+                    }
+                }
+
+                when (selectedTab) {
+                    0 -> StreamTab(
+                        course = course,
+                        publications = publications,
+                        submissions = submissions,
+                        users = users,
+                        currentUser = currentUser,
                     isTeacher = isTeacher,
                     getAssignmentStatus = getAssignmentStatus,
                     onCreatePublication = onCreatePublication,
                     onPostClick = onPostClick,
-                )
-                1 -> ParticipantsTab(
-                    course = course,
-                    users = users,
-                    isMainTeacher = isMainTeacher,
-                )
+                    onAssignmentClick = onAssignmentClick,
+                    )
+
+                    1 -> ParticipantsTab(
+                        course = course,
+                        users = users,
+                        isMainTeacher = isMainTeacher,
+                        onPromoteClick = onPromoteClick,
+                        onDemoteClick = onDemoteClick,
+                    )
+                }
+                Spacer(modifier = Modifier.height(80.dp))
+            }
+
+            if (isTeacher && selectedTab == 0) {
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.BottomEnd
+                ) {
+                    CreateFAB(
+                        onClick = onCreatePublication,
+                        modifier = Modifier
+                            .padding(16.dp)
+                    )
+                }
             }
         }
     }
@@ -203,55 +251,35 @@ private fun StreamTab(
     getAssignmentStatus: (String) -> AssignmentStatusInfo,
     onCreatePublication: () -> Unit,
     onPostClick: (String) -> Unit,
+    onAssignmentClick: (String) -> Unit,
 ) {
-    var showCreateDialog by remember { mutableStateOf(false) }
     val dateFormat = remember { SimpleDateFormat("d MMMM, HH:mm", Locale("ru")) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+    if (publications.isEmpty()) {
+        Spacer(modifier = Modifier.height(12.dp))
+        EmptyState(message = stringResource(R.string.empty_publications))
+    } else {
+        Spacer(modifier = Modifier.height(12.dp))
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(horizontal = 16.dp)
         ) {
-            if (publications.isEmpty()) {
-                item {
-                    EmptyState(message = stringResource(R.string.empty_publications))
-                }
-            } else {
-                items(publications) { publication ->
-                    PublicationCard(
-                        publication = publication,
-                        users = users,
-                        isTeacher = isTeacher,
-                        getAssignmentStatus = getAssignmentStatus,
-                        onPostClick = onPostClick,
-                        dateFormat = dateFormat
-                    )
-                }
+            publications.forEach { publication ->
+                PublicationCard(
+                    publication = publication,
+                    users = users,
+                    isTeacher = isTeacher,
+                    getAssignmentStatus = getAssignmentStatus,
+                    onPostClick = onPostClick,
+                    onAssignmentClick = onAssignmentClick,
+                    dateFormat = dateFormat
+                )
             }
-        }
-
-        if (isTeacher) {
-            CreateFAB(
-                onClick = {
-                    showCreateDialog = false
-                    onCreatePublication()
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            )
         }
     }
 
-    if (showCreateDialog) {
-        CreatePublicationDialog(
-            onDismiss = { showCreateDialog = false },
-            onCreate = { type, title, text, deadline ->
-                onCreatePublication()
-                showCreateDialog = false
-            }
-        )
+    if (isTeacher) {
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -303,6 +331,15 @@ private fun CourseInfoBlock(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
+            } else if (!isTeacher) {
+                Spacer(modifier = Modifier.height(4.dp))
+                TextButton(onClick = { /* TODO: leave course when endpoint appears */ }) {
+                    Text(
+                        text = "Выйти из курса",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
         }
     }
@@ -315,13 +352,20 @@ private fun PublicationCard(
     isTeacher: Boolean,
     getAssignmentStatus: (String) -> AssignmentStatusInfo,
     onPostClick: (String) -> Unit,
+    onAssignmentClick: (String) -> Unit,
     dateFormat: SimpleDateFormat
 ) {
     val authorName = users[publication.authorId]?.name ?: ""
     val commentCount = publication.comments?.size ?: 0
 
     InfoCard(
-        onClick = { onPostClick(publication.id) },
+        onClick = {
+            if (publication.type == PublicationType.ASSIGNMENT) {
+                onAssignmentClick(publication.id)
+            } else {
+                onPostClick(publication.id)
+            }
+        },
     ) {
         CardHeaderWithIcon(
             icon = {
@@ -446,103 +490,26 @@ private fun PublicationCard(
 }
 
 @Composable
-private fun CreatePublicationDialog(
-    onDismiss: () -> Unit,
-    onCreate: (PublicationType, String, String, Date?) -> Unit
-) {
-    var selectedType by remember { mutableStateOf(PublicationType.ANNOUNCEMENT) }
-    var title by remember { mutableStateOf("") }
-    var text by remember { mutableStateOf("") }
-    var deadlineText by remember { mutableStateOf("") }
-
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.create_publication)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column {
-                    Text(stringResource(R.string.publication_type_label), style = MaterialTheme.typography.labelMedium)
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        androidx.compose.material3.FilterChip(
-                            selected = selectedType == PublicationType.ANNOUNCEMENT,
-                            onClick = { selectedType = PublicationType.ANNOUNCEMENT },
-                            label = { Text(stringResource(R.string.publication_type_announcement)) }
-                        )
-                        androidx.compose.material3.FilterChip(
-                            selected = selectedType == PublicationType.ASSIGNMENT,
-                            onClick = { selectedType = PublicationType.ASSIGNMENT },
-                            label = { Text(stringResource(R.string.publication_type_assignment)) }
-                        )
-                    }
-                }
-
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text(stringResource(R.string.post_title)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    label = { Text(stringResource(R.string.post_description)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3
-                )
-
-                if (selectedType == PublicationType.ASSIGNMENT) {
-                    OutlinedTextField(
-                        value = deadlineText,
-                        onValueChange = { deadlineText = it },
-                        label = { Text(stringResource(R.string.deadline_hint)) },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            androidx.compose.material3.Button(
-                onClick = {
-                    if (title.isNotBlank()) {
-                        val deadline = if (selectedType == PublicationType.ASSIGNMENT && deadlineText.isNotBlank()) {
-                            Date()
-                        } else null
-                        onCreate(selectedType, title, text, deadline)
-                    }
-                }
-            ) {
-                Text(stringResource(R.string.create))
-            }
-        },
-        dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
-        }
-    )
-}
-
-@Composable
 private fun ParticipantsTab(
     course: Course,
     users: Map<String, User>,
     isMainTeacher: Boolean,
+    onPromoteClick: (String, UserRole) -> Unit,
+    onDemoteClick: (String, UserRole) -> Unit,
 ) {
     val teachers = course.participants.filter {
         it.role == UserRole.MAIN_TEACHER || it.role == UserRole.TEACHER
     }
     val students = course.participants.filter { it.role == UserRole.STUDENT }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
-            InfoCard(onClick = { }) {
+        Spacer(modifier = Modifier.height(8.dp))
+        InfoCard(onClick = { }) {
                 Text(
                     text = "Преподаватели (${teachers.size})",
                     style = MaterialTheme.typography.titleMedium,
@@ -573,10 +540,10 @@ private fun ParticipantsTab(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                            if (isMainTeacher && participant.role != UserRole.MAIN_TEACHER) {
+                            if (isMainTeacher && participant.role == UserRole.TEACHER) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     androidx.compose.material3.IconButton(
-                                        onClick = { /* TODO: promote */ },
+                                        onClick = { onPromoteClick(participant.userId, participant.role) },
                                     ) {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_arrow_upward),
@@ -585,7 +552,7 @@ private fun ParticipantsTab(
                                         )
                                     }
                                     androidx.compose.material3.IconButton(
-                                        onClick = { /* TODO: demote */ },
+                                        onClick = { onDemoteClick(participant.userId, participant.role) },
                                     ) {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_arrow_downward),
@@ -599,10 +566,7 @@ private fun ParticipantsTab(
                     }
                 }
             }
-        }
-
-        item {
-            InfoCard(onClick = { }) {
+        InfoCard(onClick = { }) {
                 Text(
                     text = "Студенты (${students.size})",
                     style = MaterialTheme.typography.titleMedium,
@@ -639,10 +603,12 @@ private fun ParticipantsTab(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
-                                if (isMainTeacher) {
+                                val canManage =
+                                    isMainTeacher || course.currentUserRole == UserRole.TEACHER
+                                if (canManage && participant.role == UserRole.STUDENT) {
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         androidx.compose.material3.IconButton(
-                                            onClick = { /* TODO: promote */ },
+                                            onClick = { onPromoteClick(participant.userId, participant.role) },
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.ic_arrow_upward),
@@ -651,7 +617,7 @@ private fun ParticipantsTab(
                                             )
                                         }
                                         androidx.compose.material3.IconButton(
-                                            onClick = { /* TODO: demote */ },
+                                            onClick = { onDemoteClick(participant.userId, participant.role) },
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.ic_arrow_downward),
@@ -668,7 +634,7 @@ private fun ParticipantsTab(
             }
         }
     }
-}
+
 
 @Preview(showBackground = true, name = "Экран курса (преподаватель)")
 @Composable
@@ -723,7 +689,10 @@ private fun CourseScreenPreview() {
             getAssignmentStatus = { AssignmentStatusInfo(AssignmentStatus.PENDING, statusText, null, 100) },
             onNavigateBack = { },
             onPostClick = { },
+            onAssignmentClick = { },
             onCreatePublication = { },
+            onPromoteClick = { _, _ -> },
+            onDemoteClick = { _, _ -> },
         )
     }
 }
@@ -750,6 +719,8 @@ private fun ParticipantsTabPreview() {
                 "u4" to User("u4", "Алексей Козлов", "student2@example.com"),
             ),
             isMainTeacher = true,
+            onPromoteClick = { _, _ -> },
+            onDemoteClick = { _, _ -> },
         )
     }
 }
