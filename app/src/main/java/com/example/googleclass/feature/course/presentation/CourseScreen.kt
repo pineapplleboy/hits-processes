@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -72,6 +73,7 @@ fun CourseScreenRoute(
 ) {
     val viewModel: CourseDetailViewModel = koinViewModel(parameters = { parametersOf(courseId) })
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showEditDialog by remember { mutableStateOf(false) }
 
     // Обновляем данные при каждом заходе на экран
     LaunchedEffect(courseId) {
@@ -97,6 +99,18 @@ fun CourseScreenRoute(
         }
 
         is CourseDetailUiState.Content -> {
+            if (showEditDialog) {
+                EditCourseDialog(
+                    initialName = state.course.name,
+                    initialDescription = state.course.description.orEmpty(),
+                    onDismiss = { showEditDialog = false },
+                    onConfirm = { name, description ->
+                        showEditDialog = false
+                        viewModel.updateCourse(name, description)
+                    },
+                )
+            }
+
             CourseScreen(
                 courseId = courseId,
                 course = state.course,
@@ -133,6 +147,8 @@ fun CourseScreenRoute(
                     onAssignmentClick(taskId, state.userRole)
                 },
                 onCreatePublication = onCreatePublicationClick,
+                onEditCourseClick = { showEditDialog = true },
+                onLeaveCourseClick = { viewModel.leaveCourse() },
                 onPromoteClick = { userId, role -> viewModel.onPromoteClick(userId, role) },
                 onDemoteClick = { userId, role -> viewModel.onDemoteClick(userId, role) },
             )
@@ -155,6 +171,8 @@ fun CourseScreen(
     onPostClick: (String) -> Unit,
     onAssignmentClick: (String) -> Unit,
     onCreatePublication: () -> Unit,
+    onEditCourseClick: () -> Unit,
+    onLeaveCourseClick: () -> Unit,
     onPromoteClick: (String, UserRole) -> Unit,
     onDemoteClick: (String, UserRole) -> Unit,
     modifier: Modifier = Modifier
@@ -170,7 +188,25 @@ fun CourseScreen(
         topBar = {
             ClassroomTopAppBar(
                 title = course.name,
-                onNavigateBack = onNavigateBack
+                onNavigateBack = onNavigateBack,
+                actions = {
+                    if (isTeacher) {
+                        IconButton(onClick = onEditCourseClick) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_edit),
+                                contentDescription = stringResource(R.string.edit_course_dialog_title),
+                            )
+                        }
+                    }
+                    if (!isTeacher || !isMainTeacher) {
+                        IconButton(onClick = onLeaveCourseClick) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_logout),
+                                contentDescription = stringResource(R.string.leave_course_action),
+                            )
+                        }
+                    }
+                }
             )
         }
     ) { paddingValues ->
@@ -332,15 +368,6 @@ private fun CourseInfoBlock(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
-            } else if (!isTeacher) {
-                Spacer(modifier = Modifier.height(4.dp))
-                TextButton(onClick = { /* TODO: leave course when endpoint appears */ }) {
-                    Text(
-                        text = "Выйти из курса",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
             }
         }
     }
@@ -423,7 +450,7 @@ private fun PublicationCard(
             )
         }
 
-        if (publication.type == PublicationType.ASSIGNMENT) {
+        if (publication.type == PublicationType.ASSIGNMENT && !isTeacher) {
             publication.maxScore?.let { max ->
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -714,6 +741,8 @@ private fun CourseScreenPreview() {
             onPostClick = { },
             onAssignmentClick = { },
             onCreatePublication = { },
+            onEditCourseClick = { },
+            onLeaveCourseClick = { },
             onPromoteClick = { _, _ -> },
             onDemoteClick = { _, _ -> },
         )
@@ -746,4 +775,55 @@ private fun ParticipantsTabPreview() {
             onDemoteClick = { _, _ -> },
         )
     }
+}
+
+@Composable
+private fun EditCourseDialog(
+    initialName: String,
+    initialDescription: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit,
+) {
+    var name by remember { mutableStateOf(initialName) }
+    var description by remember { mutableStateOf(initialDescription) }
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.edit_course_dialog_title),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.course_name_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text(stringResource(R.string.course_description_hint)) },
+                    singleLine = false,
+                    minLines = 2,
+                    maxLines = 4,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(name.trim(), description.trim()) }) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
 }
