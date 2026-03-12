@@ -54,9 +54,7 @@ class PostEditorViewModel(
     private fun loadInitialData() {
         when (mode) {
             is PostEditorMode.Create -> {
-                val defaultDeadline = formatDeadlineForDisplay(
-                    System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L
-                )
+                val defaultDeadline = formatDeadlineForDisplay(System.currentTimeMillis())
                 _uiState.value = PostEditorUiState.Content(
                     mode = mode,
                     text = "",
@@ -76,7 +74,7 @@ class PostEditorViewModel(
                         .onSuccess { post ->
                             val deadlineDisplay = post.deadline?.takeIf { it.isNotBlank() }
                                 ?.let { parseIsoToDisplay(it) }
-                                ?: formatDeadlineForDisplay(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L)
+                                ?: formatDeadlineForDisplay(System.currentTimeMillis())
                             _uiState.value = PostEditorUiState.Content(
                                 mode = mode,
                                 text = post.text,
@@ -108,9 +106,7 @@ class PostEditorViewModel(
             if (postType == PostType.TASK && deadline.isBlank()) {
                 copy(
                     selectedPostType = postType,
-                    deadline = formatDeadlineForDisplay(
-                        System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L
-                    ),
+                    deadline = formatDeadlineForDisplay(System.currentTimeMillis()),
                 )
             } else {
                 copy(selectedPostType = postType)
@@ -158,6 +154,16 @@ class PostEditorViewModel(
             }
             if (state.deadline.isBlank()) {
                 sendEffect(PostEditorUiEffect.ShowError("Укажите срок сдачи"))
+                return
+            }
+            val deadlineMs = try {
+                java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                    .parse(state.deadline.trim())?.time
+            } catch (_: Exception) {
+                null
+            }
+            if (deadlineMs != null && deadlineMs <= System.currentTimeMillis()) {
+                sendEffect(PostEditorUiEffect.ShowError("Укажите дату и время в будущем"))
                 return
             }
         }

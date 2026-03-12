@@ -26,6 +26,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.util.Calendar
 import com.example.googleclass.R
 import com.example.googleclass.common.presentation.component.LoadingState
 import com.example.googleclass.common.presentation.components.ClassroomTopAppBar
@@ -247,40 +249,30 @@ private fun PostEditorForm(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+private val futureDatesOnly = object : SelectableDates {
+    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+        val selected = Calendar.getInstance().apply { timeInMillis = utcTimeMillis }
+        val today = Calendar.getInstance()
+        return selected.get(Calendar.YEAR) > today.get(Calendar.YEAR) ||
+            (selected.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
+                selected.get(Calendar.DAY_OF_YEAR) >= today.get(Calendar.DAY_OF_YEAR))
+    }
+
+    override fun isSelectableYear(year: Int): Boolean {
+        return year >= Calendar.getInstance().get(Calendar.YEAR)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DeadlinePicker(
     value: String,
     onValueChange: (String) -> Unit,
 ) {
+    val context = LocalContext.current
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
     var pendingDateMillis by rememberSaveable { mutableStateOf<Long?>(null) }
-
-    val initialMillis = try {
-        java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
-            .parse(value.trim())?.time
-    } catch (_: Exception) {
-        null
-    } ?: (System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L)
-
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialMillis,
-    )
-
-    val (initialHour, initialMinute) = try {
-        val cal = java.util.Calendar.getInstance()
-        java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
-            .parse(value.trim())?.let { cal.time = it }
-        cal.get(java.util.Calendar.HOUR_OF_DAY) to cal.get(java.util.Calendar.MINUTE)
-    } catch (_: Exception) {
-        23 to 59
-    }
-
-    val timePickerState = rememberTimePickerState(
-        initialHour = initialHour,
-        initialMinute = initialMinute,
-        is24Hour = true,
-    )
 
     OutlinedTextField(
         value = value,
@@ -311,6 +303,18 @@ private fun DeadlinePicker(
     )
 
     if (showDatePicker) {
+        val startOfToday = remember(showDatePicker) {
+            Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+        }
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = startOfToday,
+            selectableDates = futureDatesOnly,
+        )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
@@ -332,6 +336,13 @@ private fun DeadlinePicker(
     }
 
     if (showTimePicker) {
+        val now = Calendar.getInstance()
+        val (initialHour, initialMinute) = now.get(Calendar.HOUR_OF_DAY) to now.get(Calendar.MINUTE)
+        val timePickerState = rememberTimePickerState(
+            initialHour = initialHour,
+            initialMinute = initialMinute,
+            is24Hour = true,
+        )
         AlertDialog(
             onDismissRequest = { showTimePicker = false; pendingDateMillis = null },
             confirmButton = {
@@ -342,6 +353,14 @@ private fun DeadlinePicker(
                             timeInMillis = dateMs
                             set(java.util.Calendar.HOUR_OF_DAY, timePickerState.hour)
                             set(java.util.Calendar.MINUTE, timePickerState.minute)
+                        }
+                        if (cal.timeInMillis <= System.currentTimeMillis()) {
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.deadline_past_error),
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                            return@TextButton
                         }
                         onValueChange(PostEditorViewModel.formatDeadlineForDisplay(cal.timeInMillis))
                         showTimePicker = false
