@@ -54,7 +54,7 @@ fun TaskDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (courseId: String, postId: String) -> Unit = { _, _ -> },
     onNavigateToCourseFeed: (courseId: String) -> Unit = {},
-    onNavigateToStudentChat: (taskAnswerId: String, studentName: String, studentUserId: String) -> Unit = { _, _, _ -> },
+    onNavigateToStudentChat: (taskAnswerId: String, studentName: String, studentUserId: String, currentUserId: String) -> Unit = { _, _, _, _ -> },
 ) {
     val viewModel: TaskDetailViewModel = koinViewModel(
         parameters = { parametersOf(courseId, postId, userRole) }
@@ -87,6 +87,7 @@ fun TaskDetailScreen(
                         effect.taskAnswerId,
                         effect.studentName,
                         effect.studentUserId,
+                        effect.currentUserId,
                     )
                 }
 

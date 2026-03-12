@@ -8,6 +8,7 @@ sealed interface StudentChatUiState {
     data class ChatContent(
         val studentId: String,
         val studentName: String,
+        val currentUserId: String,
         val messages: List<ChatMessage>,
         val messageInput: String,
     ) : StudentChatUiState

@@ -14,6 +14,7 @@ class StudentChatViewModel(
     private val taskAnswerId: String,
     private val studentName: String,
     private val studentUserId: String,
+    private val currentUserId: String,
     private val commentRepository: CommentRepository,
 ) : ViewModel() {
 
@@ -67,11 +68,12 @@ class StudentChatViewModel(
 
     private fun loadComments() {
         viewModelScope.launch {
-            commentRepository.getTaskAnswerCommentsAsChat(taskAnswerId, studentUserId)
+            commentRepository.getTaskAnswerCommentsAsChat(taskAnswerId, currentUserId)
                 .onSuccess { messages ->
                     _uiState.value = StudentChatUiState.ChatContent(
                         studentId = taskAnswerId,
                         studentName = studentName,
+                        currentUserId = currentUserId,
                         messages = messages,
                         messageInput = (_uiState.value as? StudentChatUiState.ChatContent)?.messageInput.orEmpty(),
                     )
@@ -80,6 +82,7 @@ class StudentChatViewModel(
                     _uiState.value = StudentChatUiState.ChatContent(
                         studentId = taskAnswerId,
                         studentName = studentName,
+                        currentUserId = currentUserId,
                         messages = emptyList(),
                         messageInput = "",
                     )

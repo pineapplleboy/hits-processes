@@ -36,6 +36,7 @@ sealed interface TaskDetailUiState {
         val courseId: String = "",
         val canEdit: Boolean = false,
         val evaluateDialog: EvaluateDialogState? = null,
+        val currentUserId: String = "",
     ) : TaskDetailUiState
 }
 
@@ -102,6 +103,7 @@ sealed interface TaskDetailUiEffect {
         val taskAnswerId: String,
         val studentName: String,
         val studentUserId: String,
+        val currentUserId: String,
     ) : TaskDetailUiEffect
     data class ShowError(val message: String) : TaskDetailUiEffect
     data class StartFileUpload(val uris: List<Uri>) : TaskDetailUiEffect

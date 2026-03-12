@@ -90,7 +90,7 @@
     <string name="no_comments">Нет комментариев</string>
     <string name="add_private_comment_placeholder">Добавить личный комментарий…</string>
     <string name="send_comment">Отправить</string>
-    <string name="open_student_chat">Открыть личный чат со студентом</string>
+    <string name="open_student_chat">Открыть чат</string>
     <string name="chat_you">Вы</string>
     <string name="status_submitted">СДАНО</string>
     <string name="status_overdue">ПРОСРОЧЕНО</string>

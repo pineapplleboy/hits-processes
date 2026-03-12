@@ -94,9 +94,9 @@ fun AppNavGraph(
                         launchSingleTop = true
                     }
                 },
-                onNavigateToStudentChat = { taskAnswerId, studentName, studentUserId ->
+                onNavigateToStudentChat = { taskAnswerId, studentName, studentUserId, currentUserId ->
                     navController.navigate(
-                        ScreenRoute.StudentChat.createRoute(taskAnswerId, studentName, studentUserId)
+                        ScreenRoute.StudentChat.createRoute(taskAnswerId, studentName, studentUserId, currentUserId)
                     )
                 },
             )
@@ -107,6 +107,7 @@ fun AppNavGraph(
                 navArgument("taskAnswerId") { defaultValue = "" },
                 navArgument("studentName") { defaultValue = "" },
                 navArgument("studentUserId") { defaultValue = "" },
+                navArgument("currentUserId") { defaultValue = "" },
             ),
         ) { backStackEntry ->
             val taskAnswerId = backStackEntry.arguments?.getString("taskAnswerId") ?: ""
@@ -115,10 +116,15 @@ fun AppNavGraph(
                 "UTF-8",
             )
             val studentUserId = backStackEntry.arguments?.getString("studentUserId") ?: ""
+            val currentUserId = java.net.URLDecoder.decode(
+                backStackEntry.arguments?.getString("currentUserId") ?: "",
+                "UTF-8",
+            )
             StudentChatScreen(
                 taskAnswerId = taskAnswerId,
                 studentName = studentName,
                 studentUserId = studentUserId,
+                currentUserId = currentUserId,
                 onNavigateBack = { navController.popBackStack() },
             )
         }

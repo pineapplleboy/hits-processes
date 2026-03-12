@@ -73,13 +73,18 @@ class TaskDetailViewModel(
             is TaskDetailUiEvent.CommentInputChanged -> handleCommentInput(event.text)
             is TaskDetailUiEvent.StudentTabSelected -> handleStudentTab(event.tab)
             is TaskDetailUiEvent.TeacherTabSelected -> handleTeacherTab(event.tab)
-            is TaskDetailUiEvent.OpenStudentChat -> sendEffect(
-                TaskDetailUiEffect.NavigateToStudentChat(
-                    taskAnswerId = event.taskAnswerId,
-                    studentName = event.studentName,
-                    studentUserId = event.studentUserId,
+            is TaskDetailUiEvent.OpenStudentChat -> {
+                val state = _uiState.value
+                val currentUserId = (state as? TaskDetailUiState.TeacherView)?.currentUserId ?: ""
+                sendEffect(
+                    TaskDetailUiEffect.NavigateToStudentChat(
+                        taskAnswerId = event.taskAnswerId,
+                        studentName = event.studentName,
+                        studentUserId = event.studentUserId,
+                        currentUserId = currentUserId,
+                    )
                 )
-            )
+            }
             is TaskDetailUiEvent.DownloadFile -> sendEffect(
                 TaskDetailUiEffect.StartFileDownload(event.fileId)
             )
@@ -201,6 +206,7 @@ class TaskDetailViewModel(
                                 isAuthor = isAuthor,
                                 courseId = courseId,
                                 canEdit = isAuthor || userRole == UserRole.TEACHER || userRole == UserRole.MAIN_TEACHER,
+                                currentUserId = currentUserId ?: "",
                             )
                             if (isTaskPost) loadTaskStudents(post.maxScore)
                         }

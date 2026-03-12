@@ -15,7 +15,7 @@ interface CommentRepository {
 
     suspend fun getTaskAnswerCommentsAsChat(
         taskAnswerId: String,
-        studentUserId: String,
+        currentUserId: String,
     ): Result<List<ChatMessage>>
 
     suspend fun createTaskAnswerComment(taskAnswerId: String, text: String): Result<Unit>
