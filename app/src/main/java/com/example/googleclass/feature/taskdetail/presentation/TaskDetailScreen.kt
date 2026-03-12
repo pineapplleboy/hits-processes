@@ -237,7 +237,7 @@ private fun StudentViewContent(
                 SubmissionCard(
                         submission = state.submission!!,
                         statusText = state.taskAnswerStatus,
-                        showUnsubmit = true,
+                        showUnsubmit = state.submission!!.score == null || state.submission!!.score == 0,
                         onUnsubmit = { onEvent(TaskDetailUiEvent.UnsubmitWork) },
                 )
             } else {
@@ -257,6 +257,7 @@ private fun StudentViewContent(
             privateComments = state.privateComments,
             commentInput = state.commentInput,
             hasPrivateCommentsAccess = state.taskAnswerId != null,
+            showTabs = state.task.postType == "TASK",
             onEvent = onEvent,
         )
 
@@ -289,6 +290,7 @@ private fun TeacherViewContent(
             maxScore = state.task.maxScore,
             commentInput = state.commentInput,
             evaluateDialog = state.evaluateDialog,
+            showTabs = state.task.postType == "TASK",
             onEvent = onEvent,
         )
 

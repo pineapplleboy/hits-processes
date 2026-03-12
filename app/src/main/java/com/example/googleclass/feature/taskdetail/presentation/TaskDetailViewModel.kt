@@ -446,7 +446,7 @@ class TaskDetailViewModel(
                     } else null
                     _uiState.value = state.copy(
                         submission = submission,
-                        taskAnswerStatus = ta.status,
+                        taskAnswerStatus = mapBackendStatusToDisplayText(ta.status),
                         taskAnswerFiles = ta.files.map { TaskAnswerFileInfo(it.id, it.fileName ?: "Файл") },
                     )
                 }

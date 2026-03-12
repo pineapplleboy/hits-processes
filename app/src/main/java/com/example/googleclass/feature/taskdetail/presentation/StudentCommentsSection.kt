@@ -26,6 +26,7 @@ internal fun StudentCommentsSection(
     privateComments: List<Comment>,
     commentInput: String,
     hasPrivateCommentsAccess: Boolean = true,
+    showTabs: Boolean = true,
     onEvent: (TaskDetailUiEvent) -> Unit,
 ) {
     Card(
@@ -38,11 +39,11 @@ internal fun StudentCommentsSection(
     ) {
         Column {
             TabRow(
-                selectedTabIndex = selectedTab.ordinal,
+                selectedTabIndex = if (showTabs) selectedTab.ordinal else 0,
                 containerColor = MaterialTheme.colorScheme.surface,
             ) {
                 Tab(
-                    selected = selectedTab == StudentTab.PUBLIC_COMMENTS,
+                    selected = selectedTab == StudentTab.PUBLIC_COMMENTS || !showTabs,
                     onClick = { onEvent(TaskDetailUiEvent.StudentTabSelected(StudentTab.PUBLIC_COMMENTS)) },
                     text = {
                         Text(
@@ -51,31 +52,35 @@ internal fun StudentCommentsSection(
                         )
                     },
                 )
-                Tab(
-                    selected = selectedTab == StudentTab.PRIVATE_COMMENTS,
-                    onClick = {
-                        if (hasPrivateCommentsAccess) {
-                            onEvent(TaskDetailUiEvent.StudentTabSelected(StudentTab.PRIVATE_COMMENTS))
-                        }
-                    },
-                    modifier = Modifier.alpha(if (hasPrivateCommentsAccess) 1f else 0.5f),
-                    text = {
-                        Text(
-                            text = stringResource(R.string.private_comments),
-                            style = MaterialTheme.typography.labelLarge,
-                        )
-                    },
-                )
+                if (showTabs) {
+                    Tab(
+                        selected = selectedTab == StudentTab.PRIVATE_COMMENTS,
+                        onClick = {
+                            if (hasPrivateCommentsAccess) {
+                                onEvent(TaskDetailUiEvent.StudentTabSelected(StudentTab.PRIVATE_COMMENTS))
+                            }
+                        },
+                        modifier = Modifier.alpha(if (hasPrivateCommentsAccess) 1f else 0.5f),
+                        text = {
+                            Text(
+                                text = stringResource(R.string.private_comments),
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                        },
+                    )
+                }
             }
 
-            val comments = when (selectedTab) {
-                StudentTab.PUBLIC_COMMENTS -> publicComments
-                StudentTab.PRIVATE_COMMENTS -> privateComments
+            val comments = when {
+                !showTabs -> publicComments
+                selectedTab == StudentTab.PUBLIC_COMMENTS -> publicComments
+                else -> privateComments
             }
 
-            val placeholder = when (selectedTab) {
-                StudentTab.PUBLIC_COMMENTS -> stringResource(R.string.add_comment_placeholder)
-                StudentTab.PRIVATE_COMMENTS -> stringResource(R.string.add_private_comment_placeholder)
+            val placeholder = when {
+                !showTabs -> stringResource(R.string.add_comment_placeholder)
+                selectedTab == StudentTab.PUBLIC_COMMENTS -> stringResource(R.string.add_comment_placeholder)
+                else -> stringResource(R.string.add_private_comment_placeholder)
             }
 
             CommentsSection(

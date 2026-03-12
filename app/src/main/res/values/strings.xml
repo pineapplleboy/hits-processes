@@ -86,6 +86,7 @@
     <string name="submitted_label">Сдано</string>
     <string name="files_label">Файлы:</string>
     <string name="grade_label">Оценка:</string>
+    <string name="not_graded">Ожидает оценки</string>
     <string name="out_of">из</string>
     <string name="new_grade">новая</string>
     <string name="points_suffix">баллов</string>
