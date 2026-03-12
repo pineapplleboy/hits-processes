@@ -16,10 +16,9 @@ fun PostModel.toPublication(): Publication {
     val title = text.lines().firstOrNull()?.take(80) ?: text.take(80).ifEmpty { "Публикация" }
     val createdAtDate = createdAt.parseOrNull() ?: Date(0)
     val deadlineDate = deadline
-        ?.takeIf { it.isNotBlank() }
-        ?.let { it.parseOrNull() }
+        ?.takeIf { it.isNotBlank() }?.parseOrNull()
     val maxScoreValue = if (maxScore <= 0) null else maxScore
-    val files = attachments.map { it.id }
+    val files = this.files.map { it.fileName?.takeIf { n -> n.isNotBlank() } ?: "Файл" }
     val commentsList = comments.map { it.toComment() }
     return Publication(
         id = id,

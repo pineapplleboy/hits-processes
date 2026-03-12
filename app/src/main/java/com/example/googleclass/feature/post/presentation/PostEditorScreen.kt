@@ -1,7 +1,6 @@
 package com.example.googleclass.feature.post.presentation
 
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -23,7 +22,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -40,7 +38,7 @@ import com.example.googleclass.common.presentation.component.LoadingState
 import com.example.googleclass.common.presentation.components.ClassroomTopAppBar
 import com.example.googleclass.common.presentation.theme.PrimaryBlue
 import com.example.googleclass.feature.post.data.model.PostType
-import com.example.googleclass.feature.taskdetail.presentation.FilePickerDelegate
+import com.example.googleclass.feature.taskdetail.presentation.rememberFilePicker
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -48,6 +46,7 @@ import org.koin.core.parameter.parametersOf
 fun PostEditorScreen(
     mode: PostEditorMode,
     onNavigateBack: () -> Unit,
+    onNavigateToCourseFeed: (courseId: String) -> Unit = {},
 ) {
     val viewModel: PostEditorViewModel = koinViewModel(
         parameters = { parametersOf(mode) },
@@ -55,50 +54,41 @@ fun PostEditorScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    val activity = context as ComponentActivity
-    val filePickerDelegate = remember {
-        FilePickerDelegate(
-            registry = activity.activityResultRegistry,
-            contentResolver = activity.contentResolver,
-            context = activity,
-        )
-    }
+    val filePicker = rememberFilePicker(
+        onFilePicked = { uri, displayName ->
+            viewModel.onEvent(PostEditorUiEvent.FileAttached(uri, displayName))
+        },
+    )
 
-    DisposableEffect(filePickerDelegate) {
-        onDispose {
-            filePickerDelegate.unregister()
-        }
-    }
-
-    filePickerDelegate.onFilePicked = { uri, displayName ->
-        viewModel.onEvent(PostEditorUiEvent.FileAttached(uri, displayName))
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.uiEffect.collect { effect ->
-            when (effect) {
-                is PostEditorUiEffect.NavigateBack -> onNavigateBack()
-
-                is PostEditorUiEffect.ShowError -> {
-                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
-                }
-
-                is PostEditorUiEffect.PostSaved -> {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.post_saved),
-                        Toast.LENGTH_SHORT,
-                    ).show()
-                }
+    val uiEffect by viewModel.uiEffect.collectAsStateWithLifecycle(PostEditorUiEffect.None)
+    LaunchedEffect(uiEffect) {
+        when (val e = uiEffect) {
+            is PostEditorUiEffect.NavigateBack -> {
+                viewModel.consumeEffect()
+                onNavigateBack()
             }
+            is PostEditorUiEffect.ShowError -> {
+                Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
+                viewModel.consumeEffect()
+            }
+            is PostEditorUiEffect.NavigateToCourseFeed -> {
+                viewModel.consumeEffect()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.post_saved),
+                    Toast.LENGTH_SHORT,
+                ).show()
+                onNavigateToCourseFeed(e.courseId)
+            }
+            PostEditorUiEffect.None -> {}
         }
     }
 
     PostEditorContent(
         state = uiState,
         onEvent = viewModel::onEvent,
-        onPickFromDocuments = { filePickerDelegate.launchDocuments() },
-        onPickFromGallery = { filePickerDelegate.launchGallery() },
+        onPickFromDocuments = { filePicker.launchDocuments() },
+        onPickFromGallery = { filePicker.launchGallery() },
     )
 }
 
@@ -193,7 +183,7 @@ private fun PostEditorForm(
 
         PostAttachmentSection(
             attachedFiles = state.attachedFiles,
-            existingAttachmentIds = state.existingAttachmentIds,
+            existingAttachments = state.existingAttachments,
             onEvent = onEvent,
             onPickFromDocuments = onPickFromDocuments,
             onPickFromGallery = onPickFromGallery,

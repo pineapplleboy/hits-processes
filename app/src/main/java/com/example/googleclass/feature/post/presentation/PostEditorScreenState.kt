@@ -22,11 +22,13 @@ sealed interface PostEditorUiState {
         val selectedPostType: PostType,
         val maxScore: String,
         val attachedFiles: List<PostAttachedFile>,
-        val existingAttachmentIds: List<String>,
+        val existingAttachments: List<ExistingAttachment>,
         val isSaving: Boolean,
         val isPostTypeEditable: Boolean,
     ) : PostEditorUiState
 }
+
+data class ExistingAttachment(val id: String, val displayName: String)
 
 data class PostAttachedFile(
     val uri: Uri,
@@ -49,7 +51,8 @@ sealed interface PostEditorUiEvent {
 // -- Effects --
 
 sealed interface PostEditorUiEffect {
+    data object None : PostEditorUiEffect
     data object NavigateBack : PostEditorUiEffect
     data class ShowError(val message: String) : PostEditorUiEffect
-    data object PostSaved : PostEditorUiEffect
+    data class NavigateToCourseFeed(val courseId: String) : PostEditorUiEffect
 }

@@ -89,7 +89,7 @@ internal fun PostTypeSelector(
 @Composable
 internal fun PostAttachmentSection(
     attachedFiles: List<PostAttachedFile>,
-    existingAttachmentIds: List<String>,
+    existingAttachments: List<ExistingAttachment>,
     onEvent: (PostEditorUiEvent) -> Unit,
     onPickFromDocuments: () -> Unit,
     onPickFromGallery: () -> Unit,
@@ -182,7 +182,7 @@ internal fun PostAttachmentSection(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        if (existingAttachmentIds.isNotEmpty()) {
+        if (existingAttachments.isNotEmpty()) {
             Text(
                 text = stringResource(R.string.existing_attachments),
                 style = MaterialTheme.typography.titleSmall,
@@ -190,11 +190,11 @@ internal fun PostAttachmentSection(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            existingAttachmentIds.forEach { attachmentId ->
+            existingAttachments.forEach { attachment ->
                 ExistingAttachmentRow(
-                    attachmentId = attachmentId,
+                    displayName = attachment.displayName,
                     onRemove = {
-                        onEvent(PostEditorUiEvent.ExistingAttachmentRemoved(attachmentId))
+                        onEvent(PostEditorUiEvent.ExistingAttachmentRemoved(attachment.id))
                     },
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -264,7 +264,7 @@ internal fun PostAttachmentSection(
 
 @Composable
 internal fun ExistingAttachmentRow(
-    attachmentId: String,
+    displayName: String,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -287,7 +287,7 @@ internal fun ExistingAttachmentRow(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = stringResource(R.string.attachment_label, attachmentId.take(8)),
+            text = displayName,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f),
         )
