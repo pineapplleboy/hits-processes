@@ -3,6 +3,7 @@ package com.example.googleclass.feature.course.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.googleclass.common.network.UserApi
+import android.util.Log
 import com.example.googleclass.feature.course.data.mapper.toDomain
 import com.example.googleclass.feature.course.data.mapper.toUserRole
 import com.example.googleclass.feature.course.domain.model.Course
@@ -11,6 +12,8 @@ import com.example.googleclass.feature.course.domain.model.User
 import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.course.domain.repository.CourseDetailResult
 import com.example.googleclass.feature.course.domain.usecase.GetCourseDetailUseCase
+import com.example.googleclass.feature.courses.data.remote.CourseCreateDto
+import com.example.googleclass.feature.courses.data.remote.CoursesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,6 +40,7 @@ class CourseDetailViewModel(
     private val courseId: String,
     private val getCourseDetailUseCase: GetCourseDetailUseCase,
     private val repository: com.example.googleclass.feature.course.domain.repository.CourseDetailRepository,
+    private val coursesApi: CoursesApi,
     private val userApi: UserApi,
 ) : ViewModel() {
 
@@ -140,6 +144,48 @@ class CourseDetailViewModel(
                 UserRole.MAIN_TEACHER -> {
                     // Ничего не делаем
                 }
+            }
+        }
+    }
+
+    fun updateCourse(name: String, description: String) {
+        if (name.length < 3 || description.length < 3) {
+            Log.d("CourseDetailViewModel", "updateCourse: validation failed")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val response = coursesApi.updateCourse(
+                    courseId = courseId,
+                    body = CourseCreateDto(
+                        name = name,
+                        description = description,
+                    ),
+                )
+                if (response.isSuccessful) {
+                    Log.d("CourseDetailViewModel", "updateCourse: success")
+                    refresh()
+                } else {
+                    Log.d("CourseDetailViewModel", "updateCourse: error ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.d("CourseDetailViewModel", "updateCourse: exception", e)
+            }
+        }
+    }
+
+    fun leaveCourse() {
+        viewModelScope.launch {
+            try {
+                val response = coursesApi.leaveCourse(courseId)
+                if (response.isSuccessful) {
+                    Log.d("CourseDetailViewModel", "leaveCourse: success")
+                    _uiState.value = CourseDetailUiState.Error("Вы вышли из курса")
+                } else {
+                    Log.d("CourseDetailViewModel", "leaveCourse: error ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.d("CourseDetailViewModel", "leaveCourse: exception", e)
             }
         }
     }

@@ -611,7 +611,10 @@ private fun CreateCourseDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = stringResource(R.string.create_course_dialog_title),
+                text = if (dialogState.courseId == null)
+                    stringResource(R.string.create_course_dialog_title)
+                else
+                    stringResource(R.string.edit_course_dialog_title),
                 style = MaterialTheme.typography.headlineSmall,
             )
         },

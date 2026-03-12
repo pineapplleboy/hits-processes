@@ -51,6 +51,7 @@
     <string name="courses_screen_title">Мои курсы</string>
     <string name="create_course_fab">Создать курс</string>
     <string name="create_course_dialog_title">Новый курс</string>
+    <string name="edit_course_dialog_title">Редактировать курс</string>
     <string name="course_name_hint">Название курса</string>
     <string name="course_description_hint">Описание курса</string>
     <string name="course_name_error">Минимум 3 символа</string>
@@ -62,6 +63,7 @@
     <string name="join_course_code_hint">Код курса</string>
     <string name="join">Присоединиться</string>
     <string name="logout_action">Выйти из аккаунта</string>
+    <string name="leave_course_action">Выйти из курса</string>
     <string name="courses_title">Курсы</string>
     <string name="courses_tab_courses">Курсы</string>
     <string name="courses_tab_tasks">Задания</string>

@@ -38,6 +38,7 @@ sealed interface CoursesScreenState {
 data class CreateCourseDialogState(
     val name: String = "",
     val description: String = "",
+    val courseId: String? = null,
     val isCreating: Boolean = false,
     val error: String? = null,
 )
