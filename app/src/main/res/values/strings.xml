@@ -64,6 +64,8 @@
     <string name="join">Присоединиться</string>
     <string name="logout_action">Выйти из аккаунта</string>
     <string name="leave_course_action">Выйти из курса</string>
+    <string name="archive_course">Архивировать курс</string>
+    <string name="unarchive_course">Разархивировать курс</string>
     <string name="courses_title">Курсы</string>
     <string name="courses_tab_courses">Курсы</string>
     <string name="courses_tab_tasks">Задания</string>

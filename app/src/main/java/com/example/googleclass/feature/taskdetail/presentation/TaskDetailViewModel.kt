@@ -13,7 +13,6 @@ import com.example.googleclass.feature.taskdetail.domain.model.Comment
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionFileInfo
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
-import com.example.googleclass.feature.taskdetail.domain.model.SubmissionStatus
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
 import com.example.googleclass.feature.taskdetail.domain.model.TaskFile
 import com.example.googleclass.feature.taskdetail.domain.repository.CommentRepository
@@ -29,7 +28,7 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 
-private val SUBMITTED_STATUSES = setOf("SUBMITTED", "COMPLETED", "COMPETED_AFTER_DEADLINE")
+private val SUBMITTED_STATUSES = setOf("SUBMITTED", "COMPLETED", "COMPLETED_AFTER_DEADLINE", "COMPETED_AFTER_DEADLINE")
 
 private data class TaskAnswerState(
     val id: String,
@@ -186,7 +185,7 @@ class TaskDetailViewModel(
                                 task = task,
                                 submission = submission,
                                 taskAnswerId = tid,
-                                taskAnswerStatus = status,
+                                taskAnswerStatus = mapBackendStatusToDisplayText(status),
                                 taskAnswerFiles = files,
                                 publicComments = comments,
                                 privateComments = emptyList(),
@@ -468,7 +467,7 @@ class TaskDetailViewModel(
                                 taskAnswerId = ta.id,
                                 score = ta.score,
                                 maxScore = ta.maxScore ?: maxScore,
-                                status = SubmissionStatus.SUBMITTED,
+                                status = ta.status,
                                 files = ta.files.map { StudentSubmissionFileInfo(it.id, it.fileName ?: "Файл") },
                             )
                         }
@@ -519,6 +518,17 @@ class TaskDetailViewModel(
             }
         }
     }
+
+    private fun mapBackendStatusToDisplayText(rawStatus: String): String {
+        return when (rawStatus.uppercase()) {
+            "SUBMITTED", "COMPLETED" -> "Сдано"
+            "COMPLETED_AFTER_DEADLINE", "COMPETED_AFTER_DEADLINE" -> "Сдано с опозданием"
+            "NOT_COMPLETED" -> "Не сдано"
+            "NEW" -> "Не начато"
+            else -> rawStatus
+        }
+    }
+
 
     private fun handleDismissEvaluateDialog() {
         val state = _uiState.value

@@ -26,6 +26,12 @@ interface CoursesApi {
         @Body body: CourseCreateDto,
     ): Response<Unit>
 
+    @PATCH("api/v1/courses/{courseId}/archive")
+    suspend fun setCourseArchived(
+        @Path("courseId") courseId: String,
+        @Query("isArchived") isArchived: Boolean,
+    ): Response<Unit>
+
     @POST("api/v1/courses/{courseId}/leave")
     suspend fun leaveCourse(
         @Path("courseId") courseId: String,

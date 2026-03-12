@@ -189,5 +189,28 @@ class CourseDetailViewModel(
             }
         }
     }
+
+    fun toggleArchive() {
+        val state = _uiState.value
+        if (state !is CourseDetailUiState.Content) return
+
+        val targetArchived = !state.course.isArchived
+        viewModelScope.launch {
+            try {
+                val response = coursesApi.setCourseArchived(
+                    courseId = courseId,
+                    isArchived = targetArchived,
+                )
+                if (response.isSuccessful) {
+                    Log.d("CourseDetailViewModel", "toggleArchive: success -> $targetArchived")
+                    refresh()
+                } else {
+                    Log.d("CourseDetailViewModel", "toggleArchive: error ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.d("CourseDetailViewModel", "toggleArchive: exception", e)
+            }
+        }
+    }
 }
 

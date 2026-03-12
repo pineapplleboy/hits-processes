@@ -79,12 +79,12 @@ fun PublicationTypeLabel(
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraSmall,
-        color = MaterialTheme.colorScheme.primaryContainer
+        color = MaterialTheme.colorScheme.primary
     ) {
         Text(
             text = type,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
         )
     }

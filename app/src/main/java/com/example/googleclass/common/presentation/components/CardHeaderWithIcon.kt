@@ -31,7 +31,7 @@ fun CardHeaderWithIcon(
             modifier = Modifier
                 .size(40.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = MaterialTheme.colorScheme.primary,
                     shape = MaterialTheme.shapes.medium
                 ),
             contentAlignment = Alignment.Center
