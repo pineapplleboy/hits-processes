@@ -186,7 +186,7 @@ fun CourseScreen(
                 title = course.name,
                 onNavigateBack = onNavigateBack,
                 actions = {
-                    if (isTeacher) {
+                    if (isMainTeacher) {
                         IconButton(onClick = onEditCourseClick) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_edit),
@@ -219,6 +219,7 @@ fun CourseScreen(
                 CourseInfoBlock(
                     course = course,
                     isTeacher = isTeacher,
+                    isMainTeacher = isMainTeacher,
                     onToggleArchiveClick = onToggleArchiveClick,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -321,6 +322,7 @@ private fun StreamTab(
 private fun CourseInfoBlock(
     course: Course,
     isTeacher: Boolean,
+    isMainTeacher: Boolean,
     onToggleArchiveClick: () -> Unit,
 ) {
     InfoCard(
@@ -358,7 +360,7 @@ private fun CourseInfoBlock(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )
                 }
-                if (isTeacher) {
+                if (isMainTeacher) {
                     TextButton(onClick = onToggleArchiveClick) {
                         Text(
                             text = if (course.isArchived)

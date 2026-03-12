@@ -34,6 +34,7 @@ internal fun TeacherCommentsSection(
     maxScore: Int,
     commentInput: String,
     evaluateDialog: EvaluateDialogState?,
+    showTabs: Boolean = true,
     onEvent: (TaskDetailUiEvent) -> Unit,
 ) {
     Card(
@@ -46,11 +47,11 @@ internal fun TeacherCommentsSection(
     ) {
         Column {
             TabRow(
-                selectedTabIndex = selectedTab.ordinal,
+                selectedTabIndex = if (showTabs) selectedTab.ordinal else 0,
                 containerColor = MaterialTheme.colorScheme.surface,
             ) {
                 Tab(
-                    selected = selectedTab == TeacherTab.PUBLIC_COMMENTS,
+                    selected = selectedTab == TeacherTab.PUBLIC_COMMENTS || !showTabs,
                     onClick = { onEvent(TaskDetailUiEvent.TeacherTabSelected(TeacherTab.PUBLIC_COMMENTS)) },
                     text = {
                         Text(
@@ -59,20 +60,22 @@ internal fun TeacherCommentsSection(
                         )
                     },
                 )
-                Tab(
-                    selected = selectedTab == TeacherTab.STUDENTS,
-                    onClick = { onEvent(TaskDetailUiEvent.TeacherTabSelected(TeacherTab.STUDENTS)) },
-                    text = {
-                        Text(
-                            text = stringResource(R.string.students_tab),
-                            style = MaterialTheme.typography.labelLarge,
-                        )
-                    },
-                )
+                if (showTabs) {
+                    Tab(
+                        selected = selectedTab == TeacherTab.STUDENTS,
+                        onClick = { onEvent(TaskDetailUiEvent.TeacherTabSelected(TeacherTab.STUDENTS)) },
+                        text = {
+                            Text(
+                                text = stringResource(R.string.students_tab),
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                        },
+                    )
+                }
             }
 
-            when (selectedTab) {
-                TeacherTab.PUBLIC_COMMENTS -> {
+            when {
+                !showTabs -> {
                     CommentsSection(
                         comments = publicComments.map { it.toUiModel() },
                         inputValue = commentInput,
@@ -81,8 +84,16 @@ internal fun TeacherCommentsSection(
                         onSend = { onEvent(TaskDetailUiEvent.SendComment) },
                     )
                 }
-
-                TeacherTab.STUDENTS -> {
+                selectedTab == TeacherTab.PUBLIC_COMMENTS -> {
+                    CommentsSection(
+                        comments = publicComments.map { it.toUiModel() },
+                        inputValue = commentInput,
+                        placeholder = stringResource(R.string.add_comment_placeholder),
+                        onInputChange = { onEvent(TaskDetailUiEvent.CommentInputChanged(it)) },
+                        onSend = { onEvent(TaskDetailUiEvent.SendComment) },
+                    )
+                }
+                else -> {
                     StudentsList(
                         students = students,
                         maxScore = maxScore,
