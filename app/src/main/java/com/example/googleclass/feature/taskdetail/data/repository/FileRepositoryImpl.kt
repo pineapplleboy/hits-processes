@@ -14,6 +14,8 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
+import java.net.URLDecoder
+import java.util.regex.Pattern
 
 class FileRepositoryImpl(
     private val fileApi: FileApi,
@@ -64,11 +66,12 @@ class FileRepositoryImpl(
             val totalBytes = body.contentLength()
 
             val contentDisposition = response.headers()["Content-Disposition"]
-            val serverFileName = contentDisposition
-                ?.substringAfter("filename=", "")
-                ?.trim('"')
-                ?.takeIf { it.isNotEmpty() }
-                ?: fileId
+            val contentType = response.headers()["Content-Type"]
+            val serverFileName = parseFileNameFromContentDisposition(
+                contentDisposition = contentDisposition,
+                contentType = contentType,
+                fallback = fileId,
+            ).sanitizeFileName()
 
             val outputFile = File(destinationDir, serverFileName)
             var bytesRead = 0L
@@ -90,6 +93,68 @@ class FileRepositoryImpl(
             }
             outputFile
         }
+    }
+
+    /**
+     * Парсит имя файла из Content-Disposition.
+     * Поддерживает filename* (RFC 5987, UTF-8) и filename (в кавычках).
+     */
+    private fun parseFileNameFromContentDisposition(
+        contentDisposition: String?,
+        contentType: String?,
+        fallback: String,
+    ): String {
+        if (!contentDisposition.isNullOrBlank()) {
+            // Приоритет 1: filename*=UTF-8''urlencoded (RFC 5987)
+            val filenameStarRegex = Pattern.compile(
+                "filename\\*\\s*=\\s*(?:[^'\\s]*'')([^;\\s]+)",
+                Pattern.CASE_INSENSITIVE
+            )
+            val starMatcher = filenameStarRegex.matcher(contentDisposition)
+            if (starMatcher.find()) {
+                return runCatching {
+                    URLDecoder.decode(starMatcher.group(1), Charsets.UTF_8.name())
+                }.getOrElse { fallbackWithExtension(fallback, contentType) }
+            }
+
+            // Приоритет 2: filename="..."
+            val filenameRegex = Pattern.compile(
+                "filename\\s*=\\s*\"([^\"]*)\"",
+                Pattern.CASE_INSENSITIVE
+            )
+            val matcher = filenameRegex.matcher(contentDisposition)
+            if (matcher.find()) {
+                val value = matcher.group(1)?.trim() ?: return fallbackWithExtension(fallback, contentType)
+                if (value.isEmpty()) return fallbackWithExtension(fallback, contentType)
+                // RFC 2047 (=?UTF-8?Q?...?=) — не декодируем
+                if (value.startsWith("=?") && value.contains("?Q?") && value.endsWith("?=")) {
+                    return fallbackWithExtension(fallback, contentType)
+                }
+                return value
+            }
+        }
+
+        return fallbackWithExtension(fallback, contentType)
+    }
+
+    private fun fallbackWithExtension(fileId: String, contentType: String?): String {
+        val ext = when {
+            contentType?.contains("wordprocessingml") == true -> ".docx"
+            contentType?.contains("spreadsheetml") == true -> ".xlsx"
+            contentType?.contains("presentationml") == true -> ".pptx"
+            contentType?.contains("pdf") == true -> ".pdf"
+            contentType?.contains("image/jpeg") == true -> ".jpg"
+            contentType?.contains("image/png") == true -> ".png"
+            else -> ""
+        }
+        return if (fileId.contains(".")) fileId else "$fileId$ext"
+    }
+
+    private fun String.sanitizeFileName(): String {
+        return this
+            .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+            .takeIf { it.isNotBlank() }
+            ?: "download"
     }
 
     private fun resolveFileName(uri: Uri, contentResolver: ContentResolver): String {

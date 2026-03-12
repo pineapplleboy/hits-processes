@@ -22,4 +22,9 @@ interface PostRepository {
         courseId: String,
         postId: String,
     ): Result<PostModel>
+
+    suspend fun deletePost(
+        courseId: String,
+        postId: String,
+    ): Result<Unit>
 }

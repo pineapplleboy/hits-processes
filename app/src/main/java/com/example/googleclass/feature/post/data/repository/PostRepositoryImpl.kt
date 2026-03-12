@@ -36,4 +36,11 @@ class PostRepositoryImpl(
         apiCall = { postApi.getCoursePost(courseId, postId) },
         converter = { it },
     )
+
+    override suspend fun deletePost(
+        courseId: String,
+        postId: String,
+    ): Result<Unit> = safeApiCallUnit(
+        apiCall = { postApi.deletePost(courseId, postId) },
+    )
 }

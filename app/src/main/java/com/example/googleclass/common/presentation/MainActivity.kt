@@ -1,10 +1,15 @@
 package com.example.googleclass.common.presentation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
+import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.example.googleclass.common.navigation.AppNavGraph
 import com.example.googleclass.common.navigation.ScreenRoute
@@ -22,6 +27,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        requestNotificationPermissionIfNeeded()
         val startDestination = if (tokenStorage.getTokens() != null) {
             ScreenRoute.Courses.route
         } else {
@@ -42,6 +48,15 @@ class MainActivity : ComponentActivity(), KoinComponent {
                     startDestination = startDestination,
                 )
             }
+        }
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+                .launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 }

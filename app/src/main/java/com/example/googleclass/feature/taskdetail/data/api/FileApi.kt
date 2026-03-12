@@ -26,7 +26,7 @@ interface FileApi {
     ): Response<ResponseBody>
 
     private companion object {
-        const val UPLOAD_FILE = "/api/v1/file/upload"
-        const val DOWNLOAD_FILE = "/api/v1/file/{fileId}"
+        const val UPLOAD_FILE = "api/v1/file/upload"
+        const val DOWNLOAD_FILE = "api/v1/file/{fileId}"
     }
 }

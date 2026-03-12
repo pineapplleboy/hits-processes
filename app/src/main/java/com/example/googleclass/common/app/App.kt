@@ -43,7 +43,7 @@ class App : Application() {
             val channel = NotificationChannel(
                 FileTransferService.CHANNEL_ID,
                 getString(R.string.upload_channel_name),
-                NotificationManager.IMPORTANCE_LOW,
+                NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
                 description = getString(R.string.upload_channel_description)
             }

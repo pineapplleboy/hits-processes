@@ -49,7 +49,11 @@ internal fun StudentsList(
                 student = student,
                 onOpenChat = {
                     onEvent(
-                        TaskDetailUiEvent.OpenStudentChat(student.studentId, student.studentName)
+                        TaskDetailUiEvent.OpenStudentChat(
+                            taskAnswerId = student.taskAnswerId,
+                            studentName = student.studentName,
+                            studentUserId = student.studentId,
+                        )
                     )
                 },
             )

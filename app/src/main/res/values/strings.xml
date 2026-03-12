@@ -125,6 +125,9 @@
     <string name="download_notification_error_title">Ошибка скачивания</string>
     <string name="download_notification_error_text">Не удалось скачать файл</string>
     <string name="download_started">Скачивание файла начато</string>
+    <string name="attachments_label">Прикреплённые файлы:</string>
+    <string name="download_file">Скачать файл</string>
+    <string name="delete_post">Удалить публикацию</string>
 
     <!-- Post Editor -->
     <string name="create_post_title">Создать публикацию</string>

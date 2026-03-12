@@ -2,6 +2,7 @@ package com.example.googleclass.feature.taskdetail.service
 
 import android.app.Notification
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -11,6 +12,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.FileProvider
 import com.example.googleclass.R
 import com.example.googleclass.feature.taskdetail.domain.repository.FileRepository
 import kotlinx.coroutines.CoroutineScope
@@ -19,6 +21,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
+import java.io.File
 
 class FileTransferService : Service() {
 
@@ -94,7 +97,7 @@ class FileTransferService : Service() {
 
             if (result.isFailure) {
                 notificationManager.notify(
-                    UPLOAD_NOTIFICATION_ID,
+                    UPLOAD_COMPLETE_NOTIFICATION_ID,
                     buildUploadErrorNotification(),
                 )
                 stopSelf()
@@ -102,7 +105,7 @@ class FileTransferService : Service() {
             }
         }
 
-        notificationManager.notify(UPLOAD_NOTIFICATION_ID, buildUploadCompleteNotification())
+        notificationManager.notify(UPLOAD_COMPLETE_NOTIFICATION_ID, buildUploadCompleteNotification())
         stopSelf()
     }
 
@@ -126,12 +129,12 @@ class FileTransferService : Service() {
 
         if (result.isSuccess) {
             notificationManager.notify(
-                DOWNLOAD_NOTIFICATION_ID,
-                buildDownloadCompleteNotification(),
+                DOWNLOAD_COMPLETE_NOTIFICATION_ID,
+                buildDownloadCompleteNotification(result.getOrNull()!!),
             )
         } else {
             notificationManager.notify(
-                DOWNLOAD_NOTIFICATION_ID,
+                DOWNLOAD_COMPLETE_NOTIFICATION_ID,
                 buildDownloadErrorNotification(),
             )
         }
@@ -204,13 +207,34 @@ class FileTransferService : Service() {
             .build()
     }
 
-    private fun buildDownloadCompleteNotification(): Notification {
+    private fun buildDownloadCompleteNotification(downloadedFile: File): Notification {
+        val contentIntent = createOpenFileIntent(downloadedFile)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setContentTitle(getString(R.string.download_notification_complete_title))
-            .setContentText(getString(R.string.download_notification_complete_text))
+            .setContentText(downloadedFile.name)
+            .setContentIntent(contentIntent)
             .setAutoCancel(true)
             .build()
+    }
+
+    private fun createOpenFileIntent(file: File): PendingIntent? {
+        return try {
+            val uri = FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                file,
+            )
+            val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, mimeType)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.getActivity(this, file.name.hashCode(), intent, flags)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun buildDownloadErrorNotification(): Notification {
@@ -230,7 +254,9 @@ class FileTransferService : Service() {
     companion object {
         const val CHANNEL_ID = "file_upload_channel"
         const val UPLOAD_NOTIFICATION_ID = 1001
+        private const val UPLOAD_COMPLETE_NOTIFICATION_ID = 1004
         const val DOWNLOAD_NOTIFICATION_ID = 1002
+        private const val DOWNLOAD_COMPLETE_NOTIFICATION_ID = 1003
         const val EXTRA_FILE_URIS = "extra_file_uris"
         const val EXTRA_FILE_ID = "extra_file_id"
         const val ACTION_UPLOAD = "com.example.googleclass.ACTION_UPLOAD"

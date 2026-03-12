@@ -66,8 +66,8 @@ fun AppNavGraph(
                 onPostClick = { postId ->
                     navController.navigate(ScreenRoute.PostEditor.createRoute(courseId, postId))
                 },
-                onAssignmentClick = { taskId, userRole ->
-                    navController.navigate(ScreenRoute.TaskDetail.createRoute(taskId, userRole))
+                onAssignmentClick = { postId, userRole ->
+                    navController.navigate(ScreenRoute.TaskDetail.createRoute(courseId, postId, userRole))
                 },
                 onCreatePublicationClick = {
                     navController.navigate(ScreenRoute.PostEditor.createRoute(courseId))
@@ -75,17 +75,28 @@ fun AppNavGraph(
             )
         }
         composable(ScreenRoute.TaskDetail.route) { backStackEntry ->
-            val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
+            val courseId = backStackEntry.arguments?.getString("courseId") ?: ""
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
             val userRoleName = backStackEntry.arguments?.getString("userRole") ?: UserRole.STUDENT.name
             val userRole = runCatching { UserRole.valueOf(userRoleName) }.getOrElse { UserRole.STUDENT }
 
             TaskDetailScreen(
+                courseId = courseId,
+                postId = postId,
                 userRole = userRole,
-                taskId = taskId,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToStudentChat = { studentId, studentName ->
+                onNavigateToEdit = { cId, pId ->
+                    navController.navigate(ScreenRoute.PostEditor.createRoute(cId, pId))
+                },
+                onNavigateToCourseFeed = { cId ->
+                    navController.navigate(ScreenRoute.Course.createRoute(cId)) {
+                        popUpTo(ScreenRoute.Courses.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToStudentChat = { taskAnswerId, studentName, studentUserId ->
                     navController.navigate(
-                        ScreenRoute.StudentChat.createRoute(studentId, studentName)
+                        ScreenRoute.StudentChat.createRoute(taskAnswerId, studentName, studentUserId)
                     )
                 },
             )
@@ -93,18 +104,21 @@ fun AppNavGraph(
         composable(
             route = ScreenRoute.StudentChat.route,
             arguments = listOf(
-                navArgument("studentId") { defaultValue = "" },
+                navArgument("taskAnswerId") { defaultValue = "" },
                 navArgument("studentName") { defaultValue = "" },
+                navArgument("studentUserId") { defaultValue = "" },
             ),
         ) { backStackEntry ->
-            val studentId = backStackEntry.arguments?.getString("studentId") ?: ""
+            val taskAnswerId = backStackEntry.arguments?.getString("taskAnswerId") ?: ""
             val studentName = java.net.URLDecoder.decode(
                 backStackEntry.arguments?.getString("studentName") ?: "",
                 "UTF-8",
             )
+            val studentUserId = backStackEntry.arguments?.getString("studentUserId") ?: ""
             StudentChatScreen(
-                studentId = studentId,
+                taskAnswerId = taskAnswerId,
                 studentName = studentName,
+                studentUserId = studentUserId,
                 onNavigateBack = { navController.popBackStack() },
             )
         }
@@ -132,6 +146,15 @@ fun AppNavGraph(
             PostEditorScreen(
                 mode = mode,
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateToCourseFeed = { cId ->
+                    val route = ScreenRoute.Course.createRoute(cId)
+                    if (!navController.popBackStack(route, false)) {
+                        navController.navigate(route) {
+                            popUpTo(ScreenRoute.Courses.route) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    }
+                },
             )
         }
         composable(ScreenRoute.Profile.route) {

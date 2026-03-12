@@ -4,12 +4,12 @@ import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.googleclass.feature.post.data.model.AttachmentModel
 import com.example.googleclass.feature.post.data.model.PostCreateModel
 import com.example.googleclass.feature.post.data.model.PostType
 import com.example.googleclass.feature.post.data.model.PostUpdateModel
 import com.example.googleclass.feature.post.domain.repository.PostRepository
 import com.example.googleclass.feature.taskdetail.domain.repository.FileRepository
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,8 +26,8 @@ class PostEditorViewModel(
         MutableStateFlow(PostEditorUiState.Loading)
     val uiState: StateFlow<PostEditorUiState> = _uiState.asStateFlow()
 
-    private val _uiEffect = MutableSharedFlow<PostEditorUiEffect>(extraBufferCapacity = 1)
-    val uiEffect = _uiEffect
+    private val _uiEffect = MutableStateFlow<PostEditorUiEffect>(PostEditorUiEffect.None)
+    val uiEffect: StateFlow<PostEditorUiEffect> = _uiEffect.asStateFlow()
 
     init {
         loadInitialData()
@@ -55,7 +55,7 @@ class PostEditorViewModel(
                     selectedPostType = PostType.ANNOUNCEMENT,
                     maxScore = "",
                     attachedFiles = emptyList(),
-                    existingAttachmentIds = emptyList(),
+                    existingAttachments = emptyList(),
                     isSaving = false,
                     isPostTypeEditable = true,
                 )
@@ -71,7 +71,9 @@ class PostEditorViewModel(
                                 selectedPostType = post.postType,
                                 maxScore = post.maxScore.toString(),
                                 attachedFiles = emptyList(),
-                                existingAttachmentIds = post.attachments.map { it.id },
+                                existingAttachments = post.files.map {
+                                    ExistingAttachment(it.id, it.fileName?.takeIf { n -> n.isNotBlank() } ?: "Файл")
+                                },
                                 isSaving = false,
                                 isPostTypeEditable = false,
                             )
@@ -112,7 +114,7 @@ class PostEditorViewModel(
 
     private fun handleExistingAttachmentRemoved(attachmentId: String) {
         updateContent {
-            copy(existingAttachmentIds = existingAttachmentIds.filter { it != attachmentId })
+            copy(existingAttachments = existingAttachments.filter { it.id != attachmentId })
         }
     }
 
@@ -155,15 +157,20 @@ class PostEditorViewModel(
                 }
             }
 
-            val allFileIds = state.existingAttachmentIds + uploadedFileIds
+            val allFileIds = state.existingAttachments.map { it.id } + uploadedFileIds
+            val files = allFileIds.map { AttachmentModel(id = it) }
 
+            val courseId = when (mode) {
+                is PostEditorMode.Create -> mode.courseId
+                is PostEditorMode.Edit -> mode.courseId
+            }
             val saveResult = when (mode) {
                 is PostEditorMode.Create -> {
                     postRepository.createPost(
-                        courseId = mode.courseId,
+                        courseId = courseId,
                         post = PostCreateModel(
                             text = state.text,
-                            files = allFileIds,
+                            files = files,
                             postType = state.selectedPostType,
                             maxScore = state.maxScore.toIntOrNull() ?: 0,
                         ),
@@ -172,11 +179,11 @@ class PostEditorViewModel(
 
                 is PostEditorMode.Edit -> {
                     postRepository.editPost(
-                        courseId = mode.courseId,
+                        courseId = courseId,
                         postId = mode.postId,
                         post = PostUpdateModel(
                             text = state.text,
-                            files = allFileIds,
+                            files = files,
                         ),
                     )
                 }
@@ -184,8 +191,7 @@ class PostEditorViewModel(
 
             saveResult
                 .onSuccess {
-                    sendEffect(PostEditorUiEffect.PostSaved)
-                    sendEffect(PostEditorUiEffect.NavigateBack)
+                    sendEffect(PostEditorUiEffect.NavigateToCourseFeed(courseId))
                 }
                 .onFailure {
                     _uiState.value = state.copy(isSaving = false)
@@ -206,8 +212,10 @@ class PostEditorViewModel(
     }
 
     private fun sendEffect(effect: PostEditorUiEffect) {
-        viewModelScope.launch {
-            _uiEffect.tryEmit(effect)
-        }
+        _uiEffect.value = effect
+    }
+
+    fun consumeEffect() {
+        _uiEffect.value = PostEditorUiEffect.None
     }
 }

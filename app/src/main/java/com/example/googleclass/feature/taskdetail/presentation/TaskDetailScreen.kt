@@ -3,7 +3,6 @@ package com.example.googleclass.feature.taskdetail.presentation
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +15,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,10 +25,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -45,49 +44,50 @@ import com.example.googleclass.feature.taskdetail.domain.model.SubmissionStatus
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
 import com.example.googleclass.feature.taskdetail.service.FileTransferService
 import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun TaskDetailScreen(
+    courseId: String,
+    postId: String,
     userRole: UserRole,
-    taskId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToStudentChat: (studentId: String, studentName: String) -> Unit = { _, _ -> },
+    onNavigateToEdit: (courseId: String, postId: String) -> Unit = { _, _ -> },
+    onNavigateToCourseFeed: (courseId: String) -> Unit = {},
+    onNavigateToStudentChat: (taskAnswerId: String, studentName: String, studentUserId: String) -> Unit = { _, _, _ -> },
 ) {
-    val viewModel: TaskDetailViewModel = koinViewModel()
+    val viewModel: TaskDetailViewModel = koinViewModel(
+        parameters = { parametersOf(courseId, postId, userRole) }
+    )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    val activity = context as ComponentActivity
-    val filePickerDelegate = remember {
-        FilePickerDelegate(
-            registry = activity.activityResultRegistry,
-            contentResolver = activity.contentResolver,
-            context = activity,
-        )
-    }
+    val filePicker = rememberFilePicker(
+        onFilePicked = { uri, displayName ->
+            viewModel.onEvent(TaskDetailUiEvent.FileAttached(uri, displayName))
+        },
+    )
 
-    DisposableEffect(filePickerDelegate) {
-        onDispose {
-            filePickerDelegate.unregister()
-        }
-    }
-
-    filePickerDelegate.onFilePicked = { uri, displayName ->
-        viewModel.onEvent(TaskDetailUiEvent.FileAttached(uri, displayName))
-    }
-
-    LaunchedEffect(userRole, taskId) {
-        when (userRole) {
-            UserRole.STUDENT -> viewModel.loadStudentMockData()
-            UserRole.TEACHER, UserRole.MAIN_TEACHER -> viewModel.loadTeacherMockData()
-        }
-
+    LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is TaskDetailUiEffect.NavigateBack -> onNavigateBack()
 
+                is TaskDetailUiEffect.NavigateToEdit -> {
+                    onNavigateToEdit(effect.courseId, effect.postId)
+                }
+
+                is TaskDetailUiEffect.NavigateToCourseFeed -> {
+                    Toast.makeText(context, "Публикация удалена", Toast.LENGTH_SHORT).show()
+                    onNavigateToCourseFeed(effect.courseId)
+                }
+
                 is TaskDetailUiEffect.NavigateToStudentChat -> {
-                    onNavigateToStudentChat(effect.studentId, effect.studentName)
+                    onNavigateToStudentChat(
+                        effect.taskAnswerId,
+                        effect.studentName,
+                        effect.studentUserId,
+                    )
                 }
 
                 is TaskDetailUiEffect.ShowError -> {
@@ -115,8 +115,6 @@ fun TaskDetailScreen(
                     ContextCompat.startForegroundService(context, intent)
                     showToast(context, R.string.download_started)
                 }
-
-                is TaskDetailUiEffect.None -> {}
             }
         }
     }
@@ -124,8 +122,8 @@ fun TaskDetailScreen(
     TaskDetailContent(
         state = uiState,
         onEvent = viewModel::onEvent,
-        onPickFromDocuments = { filePickerDelegate.launchDocuments() },
-        onPickFromGallery = { filePickerDelegate.launchGallery() },
+        onPickFromDocuments = { filePicker.launchDocuments() },
+        onPickFromGallery = { filePicker.launchGallery() },
     )
 }
 
@@ -145,6 +143,17 @@ private fun TaskDetailContent(
     onPickFromDocuments: () -> Unit = {},
     onPickFromGallery: () -> Unit = {},
 ) {
+    val canEdit = when (state) {
+        is TaskDetailUiState.TeacherView -> state.canEdit
+        is TaskDetailUiState.StudentView -> state.isAuthor
+        else -> false
+    }
+    val canDelete = when (state) {
+        is TaskDetailUiState.TeacherView -> state.isAuthor
+        is TaskDetailUiState.StudentView -> state.isAuthor
+        else -> false
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -156,6 +165,25 @@ private fun TaskDetailContent(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.navigate_back),
                         )
+                    }
+                },
+                actions = {
+                    if (canEdit) {
+                        IconButton(onClick = { onEvent(TaskDetailUiEvent.EditPost) }) {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                contentDescription = stringResource(R.string.edit_post_title),
+                            )
+                        }
+                    }
+                    if (canDelete) {
+                        IconButton(onClick = { onEvent(TaskDetailUiEvent.DeletePost) }) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = stringResource(R.string.delete_post),
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -199,7 +227,10 @@ private fun StudentViewContent(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        TaskInfoCard(task = state.task)
+        TaskInfoCard(
+            task = state.task,
+            onDownloadFile = { fileId -> onEvent(TaskDetailUiEvent.DownloadFile(fileId)) },
+        )
 
         if (state.submission != null) {
             SubmissionCard(submission = state.submission)
@@ -217,6 +248,7 @@ private fun StudentViewContent(
             publicComments = state.publicComments,
             privateComments = state.privateComments,
             commentInput = state.commentInput,
+            hasPrivateCommentsAccess = state.taskAnswerId != null,
             onEvent = onEvent,
         )
 
@@ -237,7 +269,10 @@ private fun TeacherViewContent(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        TaskInfoCard(task = state.task)
+        TaskInfoCard(
+            task = state.task,
+            onDownloadFile = { fileId -> onEvent(TaskDetailUiEvent.DownloadFile(fileId)) },
+        )
 
         TeacherCommentsSection(
             selectedTab = state.selectedTab,
@@ -260,6 +295,7 @@ private fun StudentSubmittedPreview() {
                 task = TaskDetail(
                     id = "1",
                     title = "Задание 1: Основы синтаксиса",
+                    authorId = "a1",
                     authorName = "Иванов Иван Иванович",
                     createdAt = "17 января, 14:00",
                     description = "Напишите программу, которая выводит \"Hello, World!\" и вычисляет сумму чисел от 1 до 100.",
@@ -278,33 +314,7 @@ private fun StudentSubmittedPreview() {
                     Comment("1", "Иванов Иван Иванович", "Отличная работа!", "19 февраля, 10:00"),
                     Comment("2", "Сидоров Алексей", "Спасибо!", "19 февраля, 11:00"),
                 ),
-                attachedFiles = emptyList(),
-                commentInput = "",
-                selectedTab = StudentTab.PUBLIC_COMMENTS,
-            ),
-            onEvent = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun StudentNotSubmittedPreview() {
-    GoogleClassTheme {
-        TaskDetailContent(
-            state = TaskDetailUiState.StudentView(
-                task = TaskDetail(
-                    id = "2",
-                    title = "Задание 2: Работа со списками",
-                    authorName = "Петрова Мария Сергеевна",
-                    createdAt = "1 февраля, 10:00",
-                    description = "Реализуйте функции для работы со списками: сортировка, поиск элемента, удаление дубликатов.",
-                    deadline = "25 февраля, 23:59",
-                    maxScore = 100,
-                ),
-                submission = null,
-                publicComments = emptyList(),
-                privateComments = emptyList(),
+                taskAnswerId = "ta-1",
                 attachedFiles = emptyList(),
                 commentInput = "",
                 selectedTab = StudentTab.PUBLIC_COMMENTS,
@@ -323,6 +333,7 @@ private fun TeacherViewPreview() {
                 task = TaskDetail(
                     id = "2",
                     title = "Задание 2: Работа со списками",
+                    authorId = "a2",
                     authorName = "Петрова Мария Сергеевна",
                     createdAt = "1 февраля, 10:00",
                     description = "Реализуйте функции для работы со списками: сортировка, поиск элемента, удаление дубликатов.",
@@ -331,12 +342,13 @@ private fun TeacherViewPreview() {
                 ),
                 publicComments = emptyList(),
                 students = listOf(
-                    StudentSubmissionInfo("1", "Сидоров Алексей", null, 100, SubmissionStatus.OVERDUE),
-                    StudentSubmissionInfo("2", "Козлова Анна", null, 100, SubmissionStatus.OVERDUE),
-                    StudentSubmissionInfo("3", "Смирнов Дмитрий", null, 100, SubmissionStatus.OVERDUE),
+                    StudentSubmissionInfo("1", "Сидоров Алексей", "ta-1", null, 100, SubmissionStatus.OVERDUE),
+                    StudentSubmissionInfo("2", "Козлова Анна", "ta-2", null, 100, SubmissionStatus.OVERDUE),
                 ),
                 commentInput = "",
                 selectedTab = TeacherTab.STUDENTS,
+                isAuthor = true,
+                canEdit = true,
             ),
             onEvent = {},
         )

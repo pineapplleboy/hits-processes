@@ -5,7 +5,12 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val studentChatModule = module {
-    viewModel { (studentId: String, studentName: String) ->
-        StudentChatViewModel(studentId = studentId, studentName = studentName)
+    viewModel { (taskAnswerId: String, studentName: String, studentUserId: String) ->
+        StudentChatViewModel(
+            taskAnswerId = taskAnswerId,
+            studentName = studentName,
+            studentUserId = studentUserId,
+            commentRepository = get(),
+        )
     }
 }
