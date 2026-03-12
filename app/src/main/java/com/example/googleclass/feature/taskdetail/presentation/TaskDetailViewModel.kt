@@ -3,21 +3,32 @@ package com.example.googleclass.feature.taskdetail.presentation
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.googleclass.common.network.UserApi
+import com.example.googleclass.feature.course.domain.model.UserRole
+import com.example.googleclass.feature.post.data.model.PostModel
+import com.example.googleclass.feature.post.domain.repository.PostRepository
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
-import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
-import com.example.googleclass.feature.taskdetail.domain.model.SubmissionStatus
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
+import com.example.googleclass.feature.taskdetail.domain.model.TaskFile
 import com.example.googleclass.feature.taskdetail.domain.repository.CommentRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.TimeZone
+import java.util.Calendar
+import java.util.Locale
 
 class TaskDetailViewModel(
+    private val courseId: String,
     private val postId: String,
+    private val userRole: UserRole,
+    private val postRepository: PostRepository,
     private val commentRepository: CommentRepository,
+    private val userApi: UserApi,
 ) : ViewModel() {
 
     private val _uiState: MutableStateFlow<TaskDetailUiState> =
@@ -28,8 +39,7 @@ class TaskDetailViewModel(
     val uiEffect = _uiEffect
 
     init {
-        loadTeacherMockData()
-        loadPostComments()
+        loadPost()
     }
 
     fun onEvent(event: TaskDetailUiEvent) {
@@ -52,6 +62,90 @@ class TaskDetailViewModel(
             is TaskDetailUiEvent.DownloadFile -> sendEffect(
                 TaskDetailUiEffect.StartFileDownload(event.fileId)
             )
+            is TaskDetailUiEvent.EditPost -> sendEffect(
+                TaskDetailUiEffect.NavigateToEdit(courseId = courseId, postId = postId)
+            )
+            is TaskDetailUiEvent.DeletePost -> handleDeletePost()
+        }
+    }
+
+    private fun loadPost() {
+        viewModelScope.launch {
+            _uiState.value = TaskDetailUiState.Loading
+
+            val profileResult = runCatching { userApi.getMyProfile() }
+            val currentUserId = profileResult.getOrNull()
+                ?.takeIf { it.isSuccessful }?.body()?.id
+
+            postRepository.getPost(courseId, postId)
+                .onSuccess { post ->
+                    val task = post.toTaskDetail()
+                    val isAuthor = currentUserId != null && currentUserId == post.author.id
+                    val comments = post.comments.map { comment ->
+                        Comment(
+                            id = comment.id,
+                            authorName = "${comment.author.firstName.orEmpty()} ${comment.author.lastName.orEmpty()}".trim(),
+                            text = comment.text,
+                            createdAt = formatIsoDate(comment.createdAt),
+                        )
+                    }
+
+                    when (userRole) {
+                        UserRole.STUDENT -> {
+                            val taskAnswer = post.taskAnswer
+                            val submission = taskAnswer?.let { answer ->
+                                Submission(
+                                    submittedAt = answer.submittedAt?.let { formatIsoDate(it) } ?: "",
+                                    files = answer.files.mapNotNull { it.fileName },
+                                    score = answer.score,
+                                    maxScore = answer.maxScore ?: post.maxScore,
+                                    isNewGrade = false,
+                                )
+                            }
+                            _uiState.value = TaskDetailUiState.StudentView(
+                                task = task,
+                                submission = submission,
+                                taskAnswerId = taskAnswer?.id,
+                                attachedFiles = emptyList(),
+                                publicComments = comments,
+                                privateComments = emptyList(),
+                                commentInput = "",
+                                selectedTab = StudentTab.PUBLIC_COMMENTS,
+                                isAuthor = isAuthor,
+                                courseId = courseId,
+                            )
+                            taskAnswer?.id?.let { loadPrivateComments(it) }
+                        }
+                        UserRole.TEACHER, UserRole.MAIN_TEACHER -> {
+                            _uiState.value = TaskDetailUiState.TeacherView(
+                                task = task,
+                                publicComments = comments,
+                                students = emptyList(),
+                                commentInput = "",
+                                selectedTab = TeacherTab.PUBLIC_COMMENTS,
+                                isAuthor = isAuthor,
+                                courseId = courseId,
+                                canEdit = isAuthor || userRole == UserRole.TEACHER || userRole == UserRole.MAIN_TEACHER,
+                            )
+                        }
+                    }
+                }
+                .onFailure {
+                    sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка загрузки поста"))
+                    sendEffect(TaskDetailUiEffect.NavigateBack)
+                }
+        }
+    }
+
+    private fun handleDeletePost() {
+        viewModelScope.launch {
+            postRepository.deletePost(courseId, postId)
+                .onSuccess {
+                    sendEffect(TaskDetailUiEffect.NavigateToCourseFeed(courseId))
+                }
+                .onFailure {
+                    sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка удаления поста"))
+                }
         }
     }
 
@@ -102,7 +196,15 @@ class TaskDetailViewModel(
                 if (state.commentInput.isBlank()) return
                 val text = state.commentInput
                 _uiState.value = state.copy(commentInput = "")
-                sendPostComment(text)
+                when (state.selectedTab) {
+                    StudentTab.PRIVATE_COMMENTS -> state.taskAnswerId?.let {
+                        sendTaskAnswerComment(it, text)
+                    } ?: run {
+                        _uiState.value = state.copy(commentInput = text)
+                        sendEffect(TaskDetailUiEffect.ShowError("Нет отправленной работы для личных комментариев"))
+                    }
+                    StudentTab.PUBLIC_COMMENTS -> sendPostComment(text)
+                }
             }
 
             is TaskDetailUiState.TeacherView -> {
@@ -154,6 +256,43 @@ class TaskDetailViewModel(
         }
     }
 
+    private fun loadPrivateComments(taskAnswerId: String) {
+        viewModelScope.launch {
+            commentRepository.getTaskAnswerComments(taskAnswerId)
+                .onSuccess { comments ->
+                    val state = _uiState.value
+                    if (state is TaskDetailUiState.StudentView && state.taskAnswerId == taskAnswerId) {
+                        _uiState.value = state.copy(privateComments = comments)
+                    }
+                }
+                .onFailure {
+                    sendEffect(
+                        TaskDetailUiEffect.ShowError(
+                            it.message ?: "Ошибка загрузки личных комментариев"
+                        )
+                    )
+                }
+        }
+    }
+
+    private fun sendTaskAnswerComment(taskAnswerId: String, text: String) {
+        viewModelScope.launch {
+            commentRepository.createTaskAnswerComment(taskAnswerId, text)
+                .onSuccess { loadPrivateComments(taskAnswerId) }
+                .onFailure {
+                    sendEffect(
+                        TaskDetailUiEffect.ShowError(
+                            it.message ?: "Ошибка отправки комментария"
+                        )
+                    )
+                    val state = _uiState.value
+                    if (state is TaskDetailUiState.StudentView) {
+                        _uiState.value = state.copy(commentInput = text)
+                    }
+                }
+        }
+    }
+
     private fun handleSubmitWork() {
         val state = _uiState.value
         if (state is TaskDetailUiState.StudentView && state.attachedFiles.isNotEmpty()) {
@@ -168,102 +307,57 @@ class TaskDetailViewModel(
         }
     }
 
-    fun loadStudentMockData() {
-        _uiState.value = TaskDetailUiState.StudentView(
-            task = TaskDetail(
-                id = "1",
-                title = "Задание 1: Основы синтаксиса",
-                authorName = "Иванов Иван Иванович",
-                createdAt = "17 января, 14:00",
-                description = "Напишите программу, которая выводит \"Hello, World!\" и вычисляет сумму чисел от 1 до 100.",
-                deadline = "20 февраля, 23:59",
-                maxScore = 100,
-            ),
-            submission = Submission(
-                submittedAt = "18 февраля, 15:30",
-                files = listOf("solution1.py"),
-                score = 95,
-                maxScore = 100,
-                isNewGrade = true,
-            ),
-            publicComments = emptyList(),
-            privateComments = listOf(
-                Comment(
-                    id = "1",
-                    authorName = "Иванов Иван Иванович",
-                    text = "Отличная работа! Немного улучшил бы структуру кода.",
-                    createdAt = "19 февраля, 10:00",
-                ),
-                Comment(
-                    id = "2",
-                    authorName = "Сидоров Алексей",
-                    text = "Спасибо за обратную связь!",
-                    createdAt = "19 февраля, 11:00",
-                ),
-            ),
-            attachedFiles = emptyList(),
-            commentInput = "",
-            selectedTab = StudentTab.PUBLIC_COMMENTS,
+    companion object {
+        private val isoFormats = listOf(
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") },
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") },
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") },
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") },
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") },
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") },
         )
-    }
 
-    fun loadStudentNotSubmittedMockData() {
-        _uiState.value = TaskDetailUiState.StudentView(
-            task = TaskDetail(
-                id = "2",
-                title = "Задание 2: Работа со списками",
-                authorName = "Петрова Мария Сергеевна",
-                createdAt = "1 февраля, 10:00",
-                description = "Реализуйте функции для работы со списками: сортировка, поиск элемента, удаление дубликатов.",
-                deadline = "25 февраля, 23:59",
-                maxScore = 100,
-            ),
-            submission = null,
-            publicComments = emptyList(),
-            privateComments = emptyList(),
-            attachedFiles = emptyList(),
-            commentInput = "",
-            selectedTab = StudentTab.PUBLIC_COMMENTS,
-        )
-    }
+        fun formatIsoDate(isoString: String): String {
+            val cleaned = isoString.trim()
+            for (fmt in isoFormats) {
+                try {
+                    val date = fmt.parse(cleaned) ?: continue
+                    val now = Calendar.getInstance()
+                    val cal = Calendar.getInstance().apply { time = date }
+                    val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
 
-    fun loadTeacherMockData() {
-        _uiState.value = TaskDetailUiState.TeacherView(
-            task = TaskDetail(
-                id = "2",
-                title = "Задание 2: Работа со списками",
-                authorName = "Петрова Мария Сергеевна",
-                createdAt = "1 февраля, 10:00",
-                description = "Реализуйте функции для работы со списками: сортировка, поиск элемента, удаление дубликатов.",
-                deadline = "25 февраля, 23:59",
-                maxScore = 100,
-            ),
-            publicComments = emptyList(),
-            students = listOf(
-                StudentSubmissionInfo(
-                    studentId = "1",
-                    studentName = "Сидоров Алексей",
-                    score = null,
-                    maxScore = 100,
-                    status = SubmissionStatus.OVERDUE,
-                ),
-                StudentSubmissionInfo(
-                    studentId = "2",
-                    studentName = "Козлова Анна",
-                    score = null,
-                    maxScore = 100,
-                    status = SubmissionStatus.OVERDUE,
-                ),
-                StudentSubmissionInfo(
-                    studentId = "3",
-                    studentName = "Смирнов Дмитрий",
-                    score = null,
-                    maxScore = 100,
-                    status = SubmissionStatus.OVERDUE,
-                ),
-            ),
-            commentInput = "",
-            selectedTab = TeacherTab.PUBLIC_COMMENTS,
-        )
+                    return when {
+                        now.get(Calendar.YEAR) == cal.get(Calendar.YEAR) &&
+                                now.get(Calendar.DAY_OF_YEAR) == cal.get(Calendar.DAY_OF_YEAR) ->
+                            "Сегодня ${timeFmt.format(date)}"
+
+                        now.get(Calendar.YEAR) == cal.get(Calendar.YEAR) &&
+                                now.get(Calendar.DAY_OF_YEAR) - cal.get(Calendar.DAY_OF_YEAR) == 1 ->
+                            "Вчера ${timeFmt.format(date)}"
+
+                        else -> {
+                            val dateFmt = SimpleDateFormat("dd.MM HH:mm", Locale.getDefault())
+                            dateFmt.format(date)
+                        }
+                    }
+                } catch (_: Exception) {
+                    continue
+                }
+            }
+            return isoString
+        }
     }
 }
+
+private fun PostModel.toTaskDetail(): TaskDetail = TaskDetail(
+    id = id,
+    title = text.take(80),
+    authorId = author.id,
+    authorName = "${author.firstName.orEmpty()} ${author.lastName.orEmpty()}".trim(),
+    createdAt = TaskDetailViewModel.formatIsoDate(createdAt),
+    description = text,
+    deadline = deadline?.let { TaskDetailViewModel.formatIsoDate(it) } ?: "Без дедлайна",
+    maxScore = maxScore,
+    files = files.map { TaskFile(id = it.id, fileName = it.fileName) },
+    postType = postType.name,
+)

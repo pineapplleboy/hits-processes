@@ -3,6 +3,7 @@ package com.example.googleclass.feature.taskdetail.presentation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.alpha
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +25,7 @@ internal fun StudentCommentsSection(
     publicComments: List<Comment>,
     privateComments: List<Comment>,
     commentInput: String,
+    hasPrivateCommentsAccess: Boolean = true,
     onEvent: (TaskDetailUiEvent) -> Unit,
 ) {
     Card(
@@ -51,7 +53,12 @@ internal fun StudentCommentsSection(
                 )
                 Tab(
                     selected = selectedTab == StudentTab.PRIVATE_COMMENTS,
-                    onClick = { onEvent(TaskDetailUiEvent.StudentTabSelected(StudentTab.PRIVATE_COMMENTS)) },
+                    onClick = {
+                        if (hasPrivateCommentsAccess) {
+                            onEvent(TaskDetailUiEvent.StudentTabSelected(StudentTab.PRIVATE_COMMENTS))
+                        }
+                    },
+                    modifier = Modifier.alpha(if (hasPrivateCommentsAccess) 1f else 0.5f),
                     text = {
                         Text(
                             text = stringResource(R.string.private_comments),

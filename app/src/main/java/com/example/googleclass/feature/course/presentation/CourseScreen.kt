@@ -20,6 +20,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,7 +74,7 @@ fun CourseScreenRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     // Обновляем данные при каждом заходе на экран
-    androidx.compose.runtime.LaunchedEffect(courseId) {
+    LaunchedEffect(courseId) {
         viewModel.refresh()
     }
 
@@ -106,25 +107,25 @@ fun CourseScreenRoute(
                 submissions = emptyList(),
                 users = state.users,
                 getAssignmentStatus = { assignmentId ->
-                        val publication = state.publications.firstOrNull { it.id == assignmentId }
-                        val now = Date()
-                        val statusEnum = when {
-                            publication?.deadline != null && now.after(publication.deadline) ->
-                                AssignmentStatus.OVERDUE
+                    val publication = state.publications.firstOrNull { it.id == assignmentId }
+                    val now = Date()
+                    val statusEnum = when {
+                        publication?.deadline != null && now.after(publication.deadline) ->
+                            AssignmentStatus.OVERDUE
 
-                            else -> AssignmentStatus.PENDING
-                        }
-                        val text = when (statusEnum) {
-                            AssignmentStatus.SUBMITTED -> "Сдано"
-                            AssignmentStatus.OVERDUE -> "Просрочено"
-                            AssignmentStatus.PENDING -> "Не сдано"
-                        }
-                        AssignmentStatusInfo(
-                            status = statusEnum,
-                            text = text,
-                            grade = null,
-                            maxScore = publication?.maxScore ?: 100,
-                        )
+                        else -> AssignmentStatus.PENDING
+                    }
+                    val text = when (statusEnum) {
+                        AssignmentStatus.SUBMITTED -> "Сдано"
+                        AssignmentStatus.OVERDUE -> "Просрочено"
+                        AssignmentStatus.PENDING -> "Не сдано"
+                    }
+                    AssignmentStatusInfo(
+                        status = statusEnum,
+                        text = text,
+                        grade = null,
+                        maxScore = publication?.maxScore ?: 100,
+                    )
                 },
                 onNavigateBack = onNavigateBack,
                 onPostClick = onPostClick,
@@ -205,11 +206,11 @@ fun CourseScreen(
                         submissions = submissions,
                         users = users,
                         currentUser = currentUser,
-                    isTeacher = isTeacher,
-                    getAssignmentStatus = getAssignmentStatus,
-                    onCreatePublication = onCreatePublication,
-                    onPostClick = onPostClick,
-                    onAssignmentClick = onAssignmentClick,
+                        isTeacher = isTeacher,
+                        getAssignmentStatus = getAssignmentStatus,
+                        onCreatePublication = onCreatePublication,
+                        onPostClick = onPostClick,
+                        onAssignmentClick = onAssignmentClick,
                     )
 
                     1 -> ParticipantsTab(
@@ -359,13 +360,7 @@ private fun PublicationCard(
     val commentCount = publication.comments?.size ?: 0
 
     InfoCard(
-        onClick = {
-            if (publication.type == PublicationType.ASSIGNMENT) {
-                onAssignmentClick(publication.id)
-            } else {
-                onPostClick(publication.id)
-            }
-        },
+        onClick = { onAssignmentClick(publication.id) },
     ) {
         CardHeaderWithIcon(
             icon = {
@@ -410,9 +405,7 @@ private fun PublicationCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    files.forEach { file ->
-                        FileChip(fileName = file)
-                    }
+                    FileChip(fileName = files[0])
                 }
             }
         }
@@ -451,7 +444,10 @@ private fun PublicationCard(
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = stringResource(R.string.deadline_label, dateFormat.format(publication.deadline)),
+                        text = stringResource(
+                            R.string.deadline_label,
+                            dateFormat.format(publication.deadline)
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -510,14 +506,91 @@ private fun ParticipantsTab(
     ) {
         Spacer(modifier = Modifier.height(8.dp))
         InfoCard(onClick = { }) {
+            Text(
+                text = "Преподаватели (${teachers.size})",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                teachers.forEach { participant ->
+                    val user = users[participant.userId] ?: return@forEach
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = user.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Text(
+                                text = when (participant.role) {
+                                    UserRole.MAIN_TEACHER -> stringResource(R.string.role_head_teacher)
+                                    UserRole.TEACHER -> stringResource(R.string.role_teacher)
+                                    UserRole.STUDENT -> stringResource(R.string.role_student)
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (isMainTeacher && participant.role == UserRole.TEACHER) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                androidx.compose.material3.IconButton(
+                                    onClick = {
+                                        onPromoteClick(
+                                            participant.userId,
+                                            participant.role
+                                        )
+                                    },
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_arrow_upward),
+                                        contentDescription = null,
+                                        tint = Success,
+                                    )
+                                }
+                                androidx.compose.material3.IconButton(
+                                    onClick = {
+                                        onDemoteClick(
+                                            participant.userId,
+                                            participant.role
+                                        )
+                                    },
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_arrow_downward),
+                                        contentDescription = null,
+                                        tint = ErrorRed,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        InfoCard(onClick = { }) {
+            Text(
+                text = "Студенты (${students.size})",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            if (students.isEmpty()) {
                 Text(
-                    text = "Преподаватели (${teachers.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    text = "Пока нет студентов",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+            } else {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    teachers.forEach { participant ->
+                    students.forEach { participant ->
                         val user = users[participant.userId] ?: return@forEach
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -531,19 +604,22 @@ private fun ParticipantsTab(
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Text(
-                                    text = when (participant.role) {
-                                        UserRole.MAIN_TEACHER -> stringResource(R.string.role_head_teacher)
-                                        UserRole.TEACHER -> stringResource(R.string.role_teacher)
-                                        UserRole.STUDENT -> stringResource(R.string.role_student)
-                                    },
+                                    text = user.email,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                            if (isMainTeacher && participant.role == UserRole.TEACHER) {
+                            val canManage =
+                                isMainTeacher || course.currentUserRole == UserRole.TEACHER
+                            if (canManage && participant.role == UserRole.STUDENT) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     androidx.compose.material3.IconButton(
-                                        onClick = { onPromoteClick(participant.userId, participant.role) },
+                                        onClick = {
+                                            onPromoteClick(
+                                                participant.userId,
+                                                participant.role
+                                            )
+                                        },
                                     ) {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_arrow_upward),
@@ -552,7 +628,12 @@ private fun ParticipantsTab(
                                         )
                                     }
                                     androidx.compose.material3.IconButton(
-                                        onClick = { onDemoteClick(participant.userId, participant.role) },
+                                        onClick = {
+                                            onDemoteClick(
+                                                participant.userId,
+                                                participant.role
+                                            )
+                                        },
                                     ) {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_arrow_downward),
@@ -566,74 +647,9 @@ private fun ParticipantsTab(
                     }
                 }
             }
-        InfoCard(onClick = { }) {
-                Text(
-                    text = "Студенты (${students.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                if (students.isEmpty()) {
-                    Text(
-                        text = "Пока нет студентов",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                    )
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        students.forEach { participant ->
-                            val user = users[participant.userId] ?: return@forEach
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = user.name,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                    Text(
-                                        text = user.email,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                val canManage =
-                                    isMainTeacher || course.currentUserRole == UserRole.TEACHER
-                                if (canManage && participant.role == UserRole.STUDENT) {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        androidx.compose.material3.IconButton(
-                                            onClick = { onPromoteClick(participant.userId, participant.role) },
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.ic_arrow_upward),
-                                                contentDescription = null,
-                                                tint = Success,
-                                            )
-                                        }
-                                        androidx.compose.material3.IconButton(
-                                            onClick = { onDemoteClick(participant.userId, participant.role) },
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.ic_arrow_downward),
-                                                contentDescription = null,
-                                                tint = ErrorRed,
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
+}
 
 
 @Preview(showBackground = true, name = "Экран курса (преподаватель)")
@@ -686,7 +702,14 @@ private fun CourseScreenPreview() {
                 "u2" to User("u2", "Мария Сидорова", "student@example.com"),
                 "u3" to User("u3", "Алексей Козлов", "student2@example.com"),
             ),
-            getAssignmentStatus = { AssignmentStatusInfo(AssignmentStatus.PENDING, statusText, null, 100) },
+            getAssignmentStatus = {
+                AssignmentStatusInfo(
+                    AssignmentStatus.PENDING,
+                    statusText,
+                    null,
+                    100
+                )
+            },
             onNavigateBack = { },
             onPostClick = { },
             onAssignmentClick = { },

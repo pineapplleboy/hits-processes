@@ -1,6 +1,7 @@
 package com.example.googleclass.feature.taskdetail.presentation
 
 import android.net.Uri
+import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
@@ -13,11 +14,14 @@ sealed interface TaskDetailUiState {
     data class StudentView(
         val task: TaskDetail,
         val submission: Submission?,
+        val taskAnswerId: String? = null,
         val attachedFiles: List<AttachedFile>,
         val publicComments: List<Comment>,
         val privateComments: List<Comment>,
         val commentInput: String,
         val selectedTab: StudentTab,
+        val isAuthor: Boolean = false,
+        val courseId: String = "",
     ) : TaskDetailUiState
 
     data class TeacherView(
@@ -26,6 +30,9 @@ sealed interface TaskDetailUiState {
         val students: List<StudentSubmissionInfo>,
         val commentInput: String,
         val selectedTab: TeacherTab,
+        val isAuthor: Boolean = false,
+        val courseId: String = "",
+        val canEdit: Boolean = false,
     ) : TaskDetailUiState
 }
 
@@ -48,6 +55,8 @@ sealed interface TaskDetailUiEvent {
     data object NavigateBack : TaskDetailUiEvent
     data object SubmitWork : TaskDetailUiEvent
     data object SendComment : TaskDetailUiEvent
+    data object EditPost : TaskDetailUiEvent
+    data object DeletePost : TaskDetailUiEvent
 
     data class FileAttached(val uri: Uri, val displayName: String) : TaskDetailUiEvent
     data class FileRemoved(val uri: Uri) : TaskDetailUiEvent
@@ -64,6 +73,11 @@ sealed interface TaskDetailUiEvent {
 
 sealed interface TaskDetailUiEffect {
     data object NavigateBack : TaskDetailUiEffect
+    data class NavigateToEdit(
+        val courseId: String,
+        val postId: String,
+    ) : TaskDetailUiEffect
+    data class NavigateToCourseFeed(val courseId: String) : TaskDetailUiEffect
     data class NavigateToStudentChat(
         val taskAnswerId: String,
         val studentName: String,
@@ -72,5 +86,4 @@ sealed interface TaskDetailUiEffect {
     data class ShowError(val message: String) : TaskDetailUiEffect
     data class StartFileUpload(val uris: List<Uri>) : TaskDetailUiEffect
     data class StartFileDownload(val fileId: String) : TaskDetailUiEffect
-    data object None: TaskDetailUiEffect
 }

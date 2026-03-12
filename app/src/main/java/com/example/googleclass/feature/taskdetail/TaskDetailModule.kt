@@ -1,5 +1,6 @@
 package com.example.googleclass.feature.taskdetail
 
+import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.taskdetail.data.repository.CommentRepositoryImpl
 import com.example.googleclass.feature.taskdetail.data.repository.FileRepositoryImpl
 import com.example.googleclass.feature.taskdetail.domain.repository.CommentRepository
@@ -11,7 +12,14 @@ import org.koin.dsl.module
 val taskDetailModule = module {
     single<FileRepository> { FileRepositoryImpl(get()) }
     single<CommentRepository> { CommentRepositoryImpl(get()) }
-    viewModel { (postId: String) ->
-        TaskDetailViewModel(postId = postId, commentRepository = get())
+    viewModel { (courseId: String, postId: String, userRole: UserRole) ->
+        TaskDetailViewModel(
+            courseId = courseId,
+            postId = postId,
+            userRole = userRole,
+            postRepository = get(),
+            commentRepository = get(),
+            userApi = get(),
+        )
     }
 }

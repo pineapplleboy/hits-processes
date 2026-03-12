@@ -1,5 +1,7 @@
 package com.example.googleclass.feature.taskdetail.presentation
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -20,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.example.googleclass.R
 import com.example.googleclass.common.presentation.theme.ErrorRed
@@ -28,7 +33,10 @@ import com.example.googleclass.common.presentation.theme.PrimaryBlue
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
 
 @Composable
-internal fun TaskInfoCard(task: TaskDetail) {
+internal fun TaskInfoCard(
+    task: TaskDetail,
+    onDownloadFile: (fileId: String) -> Unit = {},
+) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -78,6 +86,38 @@ internal fun TaskInfoCard(task: TaskDetail) {
                 style = MaterialTheme.typography.bodyMedium,
             )
 
+            if (task.files.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = stringResource(R.string.attachments_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MediumGray,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    task.files.forEach { file ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable { onDownloadFile(file.id) },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowDropDown,
+                                contentDescription = null,
+                                tint = PrimaryBlue,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = file.fileName?.takeIf { it.isNotBlank() } ?: "Файл",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = PrimaryBlue,
+                                textDecoration = TextDecoration.Underline,
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -89,7 +129,7 @@ internal fun TaskInfoCard(task: TaskDetail) {
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "${stringResource(R.string.deadline_label)} ${task.deadline}",
+                    text = stringResource(R.string.deadline_label, task.deadline),
                     style = MaterialTheme.typography.labelMedium,
                     color = ErrorRed,
                 )
