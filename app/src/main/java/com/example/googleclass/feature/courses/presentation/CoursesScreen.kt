@@ -8,14 +8,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -39,12 +39,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -66,11 +71,25 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun CoursesScreen(
     onCourseClick: (String) -> Unit,
-    onTaskClick: (String) -> Unit,
+    onTaskClick: (courseId: String, postId: String) -> Unit,
     onLogoutClick: () -> Unit,
     onProfileClick: () -> Unit,
     viewModel: CoursesScreenViewModel = koinViewModel(),
 ) {
+    // Перезагружаем данные при каждом открытии экрана (включая возврат назад)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refresh()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     // Когда logout завершился — переходим на экран авторизации
     LaunchedEffect(viewModel.logoutCompleted) {
         if (viewModel.logoutCompleted) onLogoutClick()
@@ -82,6 +101,7 @@ fun CoursesScreen(
         joinDialogState = viewModel.joinDialogState,
         onCourseClick = onCourseClick,
         onTaskClick = onTaskClick,
+        onRefresh = viewModel::refresh,
         onLogoutAction = viewModel::logout,
         onProfileClick = onProfileClick,
         onCreateCourseClick = viewModel::openCreateCourseDialog,
@@ -103,7 +123,8 @@ fun CoursesScreenContent(
     createDialogState: CreateCourseDialogState?,
     joinDialogState: JoinCourseDialogState?,
     onCourseClick: (String) -> Unit,
-    onTaskClick: (String) -> Unit,
+    onTaskClick: (courseId: String, postId: String) -> Unit,
+    onRefresh: () -> Unit,
     onLogoutAction: () -> Unit,
     onProfileClick: () -> Unit,
     onCreateCourseClick: () -> Unit,
@@ -116,44 +137,27 @@ fun CoursesScreenContent(
     onJoinCodeChanged: (String) -> Unit,
     onSubmitJoinCourse: () -> Unit,
 ) {
-    when (state) {
-        is CoursesScreenState.Loading -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
-        }
+    // Храним selectedTab здесь, чтобы он не сбрасывался при Loading/Content переходах
+    var selectedTab by rememberSaveable { mutableStateOf(0) }
 
-        is CoursesScreenState.Error -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = state.message,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = ErrorRed,
-                    textAlign = TextAlign.Center,
-                )
+    // Scaffold с TopBar и TabRow всегда отображается —
+    // загрузка/ошибка показываются только в области под табами
+    CoursesContentBody(
+        state = state,
+        selectedTab = selectedTab,
+        onTabSelected = { index ->
+            if (selectedTab != index) {
+                selectedTab = index
+                onRefresh()
             }
-        }
-
-        is CoursesScreenState.Content -> {
-            CoursesContentBody(
-                state = state,
-                onCourseClick = onCourseClick,
-                onTaskClick = onTaskClick,
-                onLogoutAction = onLogoutAction,
-                onProfileClick = onProfileClick,
-                onCreateCourseClick = onCreateCourseClick,
-                onJoinCourseClick = onJoinCourseClick,
-            )
-        }
-    }
+        },
+        onCourseClick = onCourseClick,
+        onTaskClick = onTaskClick,
+        onLogoutAction = onLogoutAction,
+        onProfileClick = onProfileClick,
+        onCreateCourseClick = onCreateCourseClick,
+        onJoinCourseClick = onJoinCourseClick,
+    )
 
     if (createDialogState != null) {
         CreateCourseDialog(
@@ -178,25 +182,28 @@ fun CoursesScreenContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CoursesContentBody(
-    state: CoursesScreenState.Content,
+    state: CoursesScreenState,
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
     onCourseClick: (String) -> Unit,
-    onTaskClick: (String) -> Unit,
+    onTaskClick: (courseId: String, postId: String) -> Unit,
     onLogoutAction: () -> Unit,
     onProfileClick: () -> Unit,
     onCreateCourseClick: () -> Unit,
     onJoinCourseClick: () -> Unit,
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf(
         stringResource(R.string.courses_tab_courses),
         stringResource(R.string.courses_tab_tasks),
     )
+    // Имя пользователя показываем если есть, иначе пустая строка (при загрузке/ошибке)
+    val userName = (state as? CoursesScreenState.Content)?.userName ?: ""
     var showActionSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            CoursesTopBar(userName = state.userName, onProfileClick = onProfileClick)
+            CoursesTopBar(userName = userName, onProfileClick = onProfileClick)
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -211,7 +218,11 @@ private fun CoursesContentBody(
             }
         },
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+        ) {
             ScrollableTabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -230,7 +241,7 @@ private fun CoursesContentBody(
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTab == index,
-                        onClick = { selectedTab = index },
+                        onClick = { onTabSelected(index) },
                         text = {
                             Text(
                                 text = title,
@@ -241,16 +252,51 @@ private fun CoursesContentBody(
                 }
             }
 
-            when (selectedTab) {
-                0 -> CoursesList(
-                    courses = state.courses,
-                    onCourseClick = onCourseClick,
-                )
+            // Область под табами: спиннер / ошибка / список
+            when (state) {
+                is CoursesScreenState.Loading -> {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
 
-                1 -> TasksList(
-                    tasks = state.tasks,
-                    onTaskClick = onTaskClick,
-                )
+                is CoursesScreenState.Error -> {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = state.message,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = ErrorRed,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+
+                is CoursesScreenState.Content -> {
+                    when (selectedTab) {
+                        0 -> CoursesList(
+                            courses = state.courses,
+                            onCourseClick = onCourseClick,
+                            modifier = Modifier.weight(1f),
+                        )
+
+                        1 -> TasksList(
+                            tasks = state.tasks,
+                            onTaskClick = onTaskClick,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
             }
         }
     }
@@ -353,12 +399,13 @@ private fun CoursesTopBar(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().statusBarsPadding(),
         color = MaterialTheme.colorScheme.surface,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -417,6 +464,10 @@ private fun CoursesTopBar(
     }
 }
 
+// endregion
+
+// region Courses Tab
+
 @Composable
 private fun CoursesList(
     courses: List<CourseUiItem>,
@@ -441,7 +492,7 @@ private fun CoursesList(
 }
 
 @Composable
-private fun CourseCard(
+internal fun CourseCard(
     course: CourseUiItem,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -492,9 +543,23 @@ private fun CourseCard(
 @Composable
 private fun TasksList(
     tasks: List<TaskUiItem>,
-    onTaskClick: (String) -> Unit,
+    onTaskClick: (courseId: String, postId: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (tasks.isEmpty()) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = stringResource(R.string.tasks_empty),
+                style = MaterialTheme.typography.bodyLarge,
+                color = SecondaryText,
+                textAlign = TextAlign.Center,
+            )
+        }
+        return
+    }
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(16.dp),
@@ -506,7 +571,11 @@ private fun TasksList(
         ) { task ->
             TaskCard(
                 task = task,
-                onClick = { onTaskClick(task.id) },
+                onClick = {
+                    val cId = task.courseId
+                    val pId = task.postId
+                    if (cId != null && pId != null) onTaskClick(cId, pId)
+                },
             )
         }
     }
@@ -518,6 +587,25 @@ private fun TaskCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val statusColor = when (task.status) {
+        TaskStatus.SUBMITTED -> Success
+        TaskStatus.SUBMITTED_LATE -> Color(0xFFE8A048)
+        TaskStatus.OVERDUE -> ErrorRed
+        TaskStatus.NEW -> SecondaryText
+    }
+    val statusIcon = when (task.status) {
+        TaskStatus.SUBMITTED -> R.drawable.ic_check_circle
+        TaskStatus.SUBMITTED_LATE -> R.drawable.ic_check_circle
+        TaskStatus.OVERDUE -> R.drawable.ic_cancel
+        TaskStatus.NEW -> R.drawable.ic_schedule
+    }
+    val statusText = when (task.status) {
+        TaskStatus.SUBMITTED -> stringResource(R.string.task_status_submitted)
+        TaskStatus.SUBMITTED_LATE -> stringResource(R.string.task_status_submitted_late)
+        TaskStatus.OVERDUE -> stringResource(R.string.task_status_overdue)
+        TaskStatus.NEW -> stringResource(R.string.task_status_new)
+    }
+
     InfoCard(
         modifier = modifier,
         onClick = onClick,
@@ -535,47 +623,42 @@ private fun TaskCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = when (task.status) {
-                    TaskStatus.SUBMITTED -> stringResource(R.string.task_status_submitted)
-                    TaskStatus.OVERDUE -> stringResource(R.string.task_status_overdue)
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = if (task.score != null && task.maxScore != null) {
-                    "${task.score}/${task.maxScore}"
-                } else {
-                    stringResource(R.string.no_score)
-                },
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    painter = painterResource(statusIcon),
+                    contentDescription = null,
+                    tint = statusColor,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = statusText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = statusColor,
+                )
+            }
+            if (task.score != null) {
+                Text(
+                    text = if (task.maxScore != null) "${task.score}/${task.maxScore}"
+                           else task.score,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            val statusColor = when (task.status) {
-                TaskStatus.SUBMITTED -> Success
-                TaskStatus.OVERDUE -> ErrorRed
-            }
-            val statusIcon = when (task.status) {
-                TaskStatus.SUBMITTED -> R.drawable.ic_check_circle
-                TaskStatus.OVERDUE -> R.drawable.ic_cancel
-            }
-            Icon(
-                painter = painterResource(statusIcon),
-                contentDescription = null,
-                tint = statusColor,
-                modifier = Modifier.size(18.dp),
-            )
+        // Показываем дату сдачи или дедлайн если есть
+        val dateLabel = when {
+            task.submittedAt != null -> stringResource(R.string.submitted_at_format, task.submittedAt)
+            task.deadline != null -> stringResource(R.string.deadline_format, task.deadline)
+            else -> null
+        }
+        if (dateLabel != null) {
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.deadline_format, task.deadline),
+                text = dateLabel,
                 style = MaterialTheme.typography.labelMedium,
                 color = SecondaryText,
             )
@@ -734,15 +817,17 @@ private fun CoursesContentPreview() {
                     CourseUiItem("2", "Веб-разработка", "Информатика", "Студент"),
                 ),
                 tasks = listOf(
-                    TaskUiItem("1", "Задание 1: Основы синтаксиса", TaskStatus.SUBMITTED, "95", "100", "20.02.2026"),
-                    TaskUiItem("2", "Задание 2: Работа со списками", TaskStatus.OVERDUE, null, null, "25.02.2026"),
+//                    TaskUiItem("1", "Задание 1: Основы синтаксиса", TaskStatus.SUBMITTED, "95", "100", submittedAt = "20.02.2026"),
+//                    TaskUiItem("2", "Задание 2: Работа со списками", TaskStatus.SUBMITTED_LATE, "60", "100", submittedAt = "26.02.2026"),
+//                    TaskUiItem("3", "Задание 3: Функции", null, null, null),
                 ),
                 userName = "Сидоров Алексей",
             ),
             createDialogState = null,
             joinDialogState = null,
             onCourseClick = {},
-            onTaskClick = {},
+            onTaskClick = { _, _ -> },
+            onRefresh = {},
             onLogoutAction = {},
             onProfileClick = {},
             onCreateCourseClick = {},
@@ -795,7 +880,8 @@ private fun CoursesLoadingPreview() {
             createDialogState = null,
             joinDialogState = null,
             onCourseClick = {},
-            onTaskClick = {},
+            onTaskClick = { _, _ -> },
+            onRefresh = {},
             onLogoutAction = {},
             onProfileClick = {},
             onCreateCourseClick = {},
@@ -821,7 +907,8 @@ private fun CoursesErrorPreview() {
             createDialogState = null,
             joinDialogState = null,
             onCourseClick = {},
-            onTaskClick = {},
+            onTaskClick = { _, _ -> },
+            onRefresh = {},
             onLogoutAction = {},
             onProfileClick = {},
             onCreateCourseClick = {},

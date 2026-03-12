@@ -9,17 +9,28 @@ data class CourseUiItem(
 )
 
 enum class TaskStatus {
+    /** Сдано вовремя (COMPLETED) */
     SUBMITTED,
+    /** Сдано с опозданием (COMPETED_AFTER_DEADLINE) */
+    SUBMITTED_LATE,
+    /** Не сдано / просрочено (NOT_COMPLETED) */
     OVERDUE,
+    /** Ещё не начато (NEW) */
+    NEW,
 }
 
 data class TaskUiItem(
     val id: String,
+    val postId: String? = null,
+    val courseId: String? = null,
     val title: String,
     val status: TaskStatus,
     val score: String?,
     val maxScore: String?,
-    val deadline: String,
+    /** Дедлайн из задания (придёт когда API добавит поле) */
+    val deadline: String? = null,
+    /** Дата сдачи из TaskAnswerModel.submittedAt */
+    val submittedAt: String? = null,
 )
 
 sealed interface CoursesScreenState {

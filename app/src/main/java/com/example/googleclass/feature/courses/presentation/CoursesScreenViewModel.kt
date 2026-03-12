@@ -173,6 +173,10 @@ class CoursesScreenViewModel(
 
     // endregion
 
+    fun refresh() {
+        loadData()
+    }
+
     private fun loadData() {
         state = CoursesScreenState.Loading
         viewModelScope.launch {
@@ -197,8 +201,7 @@ class CoursesScreenViewModel(
                         id = dto.id,
                         name = dto.name,
                         subject = dto.description ?: "",
-                        role = "Студент",
-                        // joinCode недоступен в CourseShortModel — только в CourseModel (детали курса)
+                        role = mapRole(dto.currentUserCourseRole),
                     )
                 }
                 Log.d(TAG, "getMyCourses: success, size = ${courseDtos.size}")
@@ -217,17 +220,19 @@ class CoursesScreenViewModel(
                     dtos.mapIndexed { index, dto ->
                         TaskUiItem(
                             id = dto.id,
-                            // Название появится когда API добавит поле
-                            title = "Задание ${index + 1}",
+                            postId = dto.postId,
+                            courseId = dto.courseId,
+                            title = dto.postName?.takeIf { it.isNotBlank() } ?: "Задание ${index + 1}",
                             status = when (dto.status) {
-                                "COMPLETED", "COMPETED_AFTER_DEADLINE" -> TaskStatus.SUBMITTED
-                                else -> TaskStatus.OVERDUE
+                                "COMPLETED" -> TaskStatus.SUBMITTED
+                                "COMPETED_AFTER_DEADLINE" -> TaskStatus.SUBMITTED_LATE
+                                "NOT_COMPLETED" -> TaskStatus.OVERDUE
+                                else -> TaskStatus.NEW // "NEW"
                             },
                             score = dto.score?.toString(),
-                            // Максимальный балл появится когда API добавит поле
-                            maxScore = null,
-                            // Дедлайн появится когда API добавит поле
-                            deadline = "—",
+                            maxScore = dto.maxScore?.toString(),
+                            deadline = null,
+                            submittedAt = dto.submittedAt?.let { formatIsoDateTime(it) },
                         )
                     }
                 } else {
@@ -249,5 +254,25 @@ class CoursesScreenViewModel(
 
     companion object {
         private const val TAG = "CoursesScreen"
+
+        private fun mapRole(apiRole: String?): String = when (apiRole) {
+            "HEAD_TEACHER" -> "Главный преподаватель"
+            "TEACHER" -> "Преподаватель"
+            "STUDENT" -> "Студент"
+            else -> ""
+        }
+
+        /** "2026-02-20T14:30:00" → "20 февраля 2026" */
+        fun formatIsoDateTime(iso: String): String = try {
+            val date = java.time.OffsetDateTime.parse(iso)
+            date.format(
+                java.time.format.DateTimeFormatter.ofPattern(
+                    "d MMMM yyyy",
+                    java.util.Locale("ru"),
+                )
+            )
+        } catch (_: Exception) {
+            iso
+        }
     }
 }

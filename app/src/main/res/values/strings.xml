@@ -69,8 +69,11 @@
     <string name="courses_tab_tasks">Задания</string>
     <string name="logout">Выход</string>
     <string name="task_status_submitted">Сдано</string>
-    <string name="task_status_overdue">Просрочено</string>
+    <string name="task_status_submitted_late">Сдано с опозданием</string>
+    <string name="task_status_overdue">Не сдано</string>
+    <string name="task_status_new">Не начато</string>
     <string name="deadline_format">Дедлайн: %s</string>
+    <string name="submitted_at_format">Сдано: %s</string>
     <string name="no_score">–</string>
 
     <!-- Task Detail -->
@@ -151,4 +154,7 @@
     <!-- Profile -->
     <string name="profile_archived_courses">Архив курсов</string>
     <string name="profile_switch_user">Сменить пользователя</string>
+    <string name="archived_courses_title">Архив курсов</string>
+    <string name="archived_courses_empty">У вас нет архивных курсов</string>
+    <string name="tasks_empty">У вас пока нет заданий</string>
 </resources>
