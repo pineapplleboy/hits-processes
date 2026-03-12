@@ -37,6 +37,13 @@ internal fun TaskInfoCard(
     task: TaskDetail,
     onDownloadFile: (fileId: String) -> Unit = {},
 ) {
+    val isTask = task.postType == "TASK"
+    val typeLabel = when (task.postType) {
+        "TASK" -> stringResource(R.string.post_type_task)
+        "ANNOUNCEMENT" -> stringResource(R.string.post_type_announcement)
+        "USEFUL_MATERIAL" -> stringResource(R.string.post_type_useful_material)
+        else -> stringResource(R.string.task_label)
+    }
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -57,7 +64,7 @@ internal fun TaskInfoCard(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = stringResource(R.string.task_label),
+                    text = typeLabel,
                     style = MaterialTheme.typography.labelLarge,
                     color = PrimaryBlue,
                 )
@@ -118,30 +125,32 @@ internal fun TaskInfoCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            if (isTask) {
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(R.drawable.clock),
-                    contentDescription = null,
-                    tint = ErrorRed,
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(modifier = Modifier.width(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painter = painterResource(R.drawable.clock),
+                        contentDescription = null,
+                        tint = ErrorRed,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(R.string.deadline_label, task.deadline),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = ErrorRed,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Text(
-                    text = stringResource(R.string.deadline_label, task.deadline),
+                    text = "${stringResource(R.string.max_score_label)} ${task.maxScore}",
                     style = MaterialTheme.typography.labelMedium,
-                    color = ErrorRed,
+                    color = MediumGray,
                 )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "${stringResource(R.string.max_score_label)} ${task.maxScore}",
-                style = MaterialTheme.typography.labelMedium,
-                color = MediumGray,
-            )
         }
     }
 }
