@@ -13,4 +13,10 @@ data class StudentSubmissionInfo(
     val score: Int?,
     val maxScore: Int,
     val status: SubmissionStatus,
+    val files: List<StudentSubmissionFileInfo> = emptyList(),
+)
+
+data class StudentSubmissionFileInfo(
+    val id: String,
+    val fileName: String,
 )

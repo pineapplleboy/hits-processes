@@ -10,6 +10,7 @@ import com.example.googleclass.feature.post.data.model.PostModel
 import com.example.googleclass.feature.post.data.model.PostType
 import com.example.googleclass.feature.post.domain.repository.PostRepository
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
+import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionFileInfo
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
 import com.example.googleclass.feature.taskdetail.domain.model.SubmissionStatus
@@ -468,6 +469,7 @@ class TaskDetailViewModel(
                                 score = ta.score,
                                 maxScore = ta.maxScore ?: maxScore,
                                 status = SubmissionStatus.SUBMITTED,
+                                files = ta.files.map { StudentSubmissionFileInfo(it.id, it.fileName ?: "Файл") },
                             )
                         }
                     _uiState.value = state.copy(students = students)

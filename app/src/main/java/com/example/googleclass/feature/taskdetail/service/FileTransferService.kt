@@ -15,6 +15,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.FileProvider
 import com.example.googleclass.R
+import com.example.googleclass.common.presentation.MainActivity
 import com.example.googleclass.feature.taskdetail.domain.repository.FileRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -227,26 +228,37 @@ class FileTransferService : Service() {
                 file,
             )
             val mimeType = resolveMimeType(file)
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, mimeType)
-                addFlags(
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        Intent.FLAG_ACTIVITY_NEW_TASK
-                )
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    clipData = ClipData.newRawUri("", uri)
-                }
-            }
-            val chooser = Intent.createChooser(intent, file.name).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
             val flags = PendingIntent.FLAG_UPDATE_CURRENT or
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     PendingIntent.FLAG_MUTABLE
                 } else {
                     PendingIntent.FLAG_IMMUTABLE
                 }
-            PendingIntent.getActivity(this, file.absolutePath.hashCode(), chooser, flags)
+            // На Android 14+ (API 34) прямой запуск Chooser из PendingIntent может не срабатывать.
+            // Запускаем MainActivity, она откроет файл из foreground — так надёжнее.
+            val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                Intent(this, MainActivity::class.java).apply {
+                    action = MainActivity.ACTION_OPEN_DOWNLOADED_FILE
+                    putExtra(MainActivity.EXTRA_OPEN_FILE_URI, uri.toString())
+                    putExtra(MainActivity.EXTRA_OPEN_FILE_MIME, mimeType)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+            } else {
+                val viewIntent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, mimeType)
+                    addFlags(
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            Intent.FLAG_ACTIVITY_NEW_TASK
+                    )
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        clipData = ClipData.newRawUri("", uri)
+                    }
+                }
+                Intent.createChooser(viewIntent, file.name).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            }
+            PendingIntent.getActivity(this, file.absolutePath.hashCode(), intent, flags)
         } catch (e: Exception) {
             null
         }
