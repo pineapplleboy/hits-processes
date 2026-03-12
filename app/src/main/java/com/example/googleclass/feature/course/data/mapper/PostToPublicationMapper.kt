@@ -1,6 +1,7 @@
 package com.example.googleclass.feature.course.data.mapper
 
 import com.example.googleclass.feature.course.domain.model.Comment
+import com.example.googleclass.feature.course.domain.model.AssignmentStatus
 import com.example.googleclass.feature.course.domain.model.Publication
 import com.example.googleclass.feature.course.domain.model.PublicationType
 import com.example.googleclass.feature.post.data.model.PostModel
@@ -20,6 +21,26 @@ fun PostModel.toPublication(): Publication {
     val maxScoreValue = if (maxScore <= 0) null else maxScore
     val files = this.files.map { it.fileName?.takeIf { n -> n.isNotBlank() } ?: "Файл" }
     val commentsList = comments.map { it.toComment() }
+    val assignmentStatus = taskAnswer?.let { answer ->
+        when (answer.status) {
+            "SUBMITTED",
+            "COMPLETED",
+            "COMPLETED_AFTER_DEADLINE",
+            "COMPETED_AFTER_DEADLINE" -> AssignmentStatus.SUBMITTED
+
+            "NOT_COMPLETED",
+            "NEW" -> {
+                if (deadlineDate != null && Date().after(deadlineDate)) {
+                    AssignmentStatus.OVERDUE
+                } else {
+                    AssignmentStatus.PENDING
+                }
+            }
+
+            else -> AssignmentStatus.PENDING
+        }
+    }
+
     return Publication(
         id = id,
         type = postType.toPublicationType(),
@@ -31,6 +52,7 @@ fun PostModel.toPublication(): Publication {
         files = files.ifEmpty { null },
         comments = commentsList.ifEmpty { null },
         maxScore = maxScoreValue,
+        assignmentStatus = assignmentStatus,
     )
 }
 

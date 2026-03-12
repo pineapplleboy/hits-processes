@@ -36,7 +36,6 @@ import com.example.googleclass.common.presentation.theme.MediumGray
 import com.example.googleclass.common.presentation.theme.PrimaryBlue
 import com.example.googleclass.common.presentation.theme.Success
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
-import com.example.googleclass.feature.taskdetail.domain.model.SubmissionStatus
 
 @Composable
 internal fun StudentsList(
@@ -208,11 +207,23 @@ internal fun StudentItem(
 }
 
 @Composable
-internal fun StatusBadge(status: SubmissionStatus) {
-    val (text, backgroundColor) = when (status) {
-        SubmissionStatus.SUBMITTED -> stringResource(R.string.status_submitted) to Success
-        SubmissionStatus.OVERDUE -> stringResource(R.string.status_overdue) to ErrorRed
-        SubmissionStatus.PENDING -> stringResource(R.string.status_pending) to PrimaryBlue
+internal fun StatusBadge(status: String) {
+    val upper = status.uppercase()
+    val (text, backgroundColor) = when (upper) {
+        "SUBMITTED", "COMPLETED" ->
+            "Сдано" to Success
+
+        "COMPLETED_AFTER_DEADLINE", "COMPETED_AFTER_DEADLINE" ->
+            "Сдано с опозданием" to ErrorRed
+
+        "NOT_COMPLETED" ->
+            "Не сдано" to ErrorRed
+
+        "NEW" ->
+            "Не начато" to PrimaryBlue
+
+        else ->
+            (status.ifBlank { "Неизвестный статус" }) to MediumGray
     }
 
     Box(

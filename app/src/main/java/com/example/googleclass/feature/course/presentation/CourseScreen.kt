@@ -46,7 +46,7 @@ import com.example.googleclass.common.presentation.components.InfoCard
 import com.example.googleclass.common.presentation.components.PublicationTypeLabel
 import com.example.googleclass.common.presentation.theme.GoogleClassTheme
 import com.example.googleclass.common.presentation.theme.ErrorRed
-import com.example.googleclass.common.presentation.theme.Success
+import com.example.googleclass.common.presentation.theme.PrimaryBlue
 import com.example.googleclass.feature.course.domain.model.AssignmentStatus
 import com.example.googleclass.feature.course.domain.model.AssignmentStatusInfo
 import com.example.googleclass.feature.course.domain.model.Comment
@@ -122,17 +122,11 @@ fun CourseScreenRoute(
                 users = state.users,
                 getAssignmentStatus = { assignmentId ->
                     val publication = state.publications.firstOrNull { it.id == assignmentId }
-                    val now = Date()
-                    val statusEnum = when {
-                        publication?.deadline != null && now.after(publication.deadline) ->
-                            AssignmentStatus.OVERDUE
-
-                        else -> AssignmentStatus.PENDING
-                    }
+                    val statusEnum = publication?.assignmentStatus ?: AssignmentStatus.PENDING
                     val text = when (statusEnum) {
                         AssignmentStatus.SUBMITTED -> "Сдано"
                         AssignmentStatus.OVERDUE -> "Просрочено"
-                        AssignmentStatus.PENDING -> "Не сдано"
+                        AssignmentStatus.PENDING -> "Не просрочено"
                     }
                     AssignmentStatusInfo(
                         status = statusEnum,
@@ -149,6 +143,7 @@ fun CourseScreenRoute(
                 onCreatePublication = onCreatePublicationClick,
                 onEditCourseClick = { showEditDialog = true },
                 onLeaveCourseClick = { viewModel.leaveCourse() },
+                onToggleArchiveClick = { viewModel.toggleArchive() },
                 onPromoteClick = { userId, role -> viewModel.onPromoteClick(userId, role) },
                 onDemoteClick = { userId, role -> viewModel.onDemoteClick(userId, role) },
             )
@@ -173,6 +168,7 @@ fun CourseScreen(
     onCreatePublication: () -> Unit,
     onEditCourseClick: () -> Unit,
     onLeaveCourseClick: () -> Unit,
+    onToggleArchiveClick: () -> Unit,
     onPromoteClick: (String, UserRole) -> Unit,
     onDemoteClick: (String, UserRole) -> Unit,
     modifier: Modifier = Modifier
@@ -222,7 +218,8 @@ fun CourseScreen(
             ) {
                 CourseInfoBlock(
                     course = course,
-                    isTeacher = isTeacher
+                    isTeacher = isTeacher,
+                    onToggleArchiveClick = onToggleArchiveClick,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 TabRow(selectedTabIndex = selectedTab) {
@@ -323,7 +320,8 @@ private fun StreamTab(
 @Composable
 private fun CourseInfoBlock(
     course: Course,
-    isTeacher: Boolean
+    isTeacher: Boolean,
+    onToggleArchiveClick: () -> Unit,
 ) {
     InfoCard(
         onClick = { },
@@ -342,19 +340,35 @@ private fun CourseInfoBlock(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            androidx.compose.material3.Surface(
-                shape = MaterialTheme.shapes.small,
-                color = if (course.isArchived) MaterialTheme.colorScheme.errorContainer
-                else MaterialTheme.colorScheme.primaryContainer
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = if (course.isArchived) stringResource(R.string.course_archived)
-                    else stringResource(R.string.course_active),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (course.isArchived) MaterialTheme.colorScheme.onErrorContainer
-                    else MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                )
+                androidx.compose.material3.Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = if (course.isArchived) MaterialTheme.colorScheme.errorContainer
+                    else MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Text(
+                        text = if (course.isArchived) stringResource(R.string.course_archived)
+                        else stringResource(R.string.course_active),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (course.isArchived) MaterialTheme.colorScheme.onErrorContainer
+                        else MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+                if (isTeacher) {
+                    TextButton(onClick = onToggleArchiveClick) {
+                        Text(
+                            text = if (course.isArchived)
+                                stringResource(R.string.unarchive_course)
+                            else
+                                stringResource(R.string.archive_course),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                }
             }
             if (isTeacher && !course.joinCode.isNullOrBlank()) {
                 androidx.compose.material3.Surface(
@@ -391,17 +405,17 @@ private fun PublicationCard(
     ) {
         CardHeaderWithIcon(
             icon = {
-                Icon(
-                    painter = painterResource(
-                        when (publication.type) {
-                            PublicationType.ANNOUNCEMENT -> R.drawable.ic_notifications
-                            PublicationType.ASSIGNMENT -> R.drawable.ic_assignment
-                            PublicationType.MATERIAL -> R.drawable.ic_description
-                        }
-                    ),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                    Icon(
+                        painter = painterResource(
+                            when (publication.type) {
+                                PublicationType.ANNOUNCEMENT -> R.drawable.ic_notifications
+                                PublicationType.ASSIGNMENT -> R.drawable.ic_assignment
+                                PublicationType.MATERIAL -> R.drawable.ic_description
+                            }
+                        ),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                    )
             },
             title = publication.title,
             subtitle = "$authorName · ${dateFormat.format(publication.createdAt)}",
@@ -451,14 +465,6 @@ private fun PublicationCard(
         }
 
         if (publication.type == PublicationType.ASSIGNMENT && !isTeacher) {
-            publication.maxScore?.let { max ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.score_format_no_grade, max),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
             if (publication.deadline != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -482,33 +488,7 @@ private fun PublicationCard(
             }
         }
 
-        if (publication.type == PublicationType.ASSIGNMENT && !isTeacher) {
-            Spacer(modifier = Modifier.height(8.dp))
-            ContentDivider()
-            val status = getAssignmentStatus(publication.id)
-            AssignmentStatusBadge(
-                status = status.text,
-                icon = {
-                    Icon(
-                        painter = painterResource(
-                            when (status.status) {
-                                AssignmentStatus.SUBMITTED -> R.drawable.ic_check_circle
-                                AssignmentStatus.OVERDUE -> R.drawable.ic_cancel
-                                AssignmentStatus.PENDING -> R.drawable.ic_schedule
-                            }
-                        ),
-                        contentDescription = null,
-                        tint = when (status.status) {
-                            AssignmentStatus.SUBMITTED -> MaterialTheme.colorScheme.tertiary
-                            AssignmentStatus.OVERDUE -> MaterialTheme.colorScheme.error
-                            AssignmentStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                },
-                grade = status.grade,
-                maxScore = status.maxScore
-            )
-        }
+        // Статус задания показываем только на экране деталей задания
     }
 }
 
@@ -576,7 +556,7 @@ private fun ParticipantsTab(
                                     Icon(
                                         painter = painterResource(R.drawable.ic_arrow_upward),
                                         contentDescription = null,
-                                        tint = Success,
+                                        tint = PrimaryBlue,
                                     )
                                 }
                                 androidx.compose.material3.IconButton(
@@ -590,7 +570,7 @@ private fun ParticipantsTab(
                                     Icon(
                                         painter = painterResource(R.drawable.ic_arrow_downward),
                                         contentDescription = null,
-                                        tint = ErrorRed,
+                                        tint = PrimaryBlue,
                                     )
                                 }
                             }
@@ -651,7 +631,7 @@ private fun ParticipantsTab(
                                         Icon(
                                             painter = painterResource(R.drawable.ic_arrow_upward),
                                             contentDescription = null,
-                                            tint = Success,
+                                            tint = PrimaryBlue,
                                         )
                                     }
                                     androidx.compose.material3.IconButton(
@@ -665,7 +645,7 @@ private fun ParticipantsTab(
                                         Icon(
                                             painter = painterResource(R.drawable.ic_arrow_downward),
                                             contentDescription = null,
-                                            tint = ErrorRed,
+                                            tint = PrimaryBlue,
                                         )
                                     }
                                 }
@@ -741,6 +721,7 @@ private fun CourseScreenPreview() {
             onPostClick = { },
             onAssignmentClick = { },
             onCreatePublication = { },
+            onToggleArchiveClick = { },
             onEditCourseClick = { },
             onLeaveCourseClick = { },
             onPromoteClick = { _, _ -> },

@@ -33,6 +33,7 @@ import com.example.googleclass.feature.taskdetail.domain.model.Submission
 @Composable
 internal fun SubmissionCard(
     submission: Submission,
+    statusText: String? = null,
     showUnsubmit: Boolean = false,
     onUnsubmit: () -> Unit = {},
 ) {
@@ -74,6 +75,15 @@ internal fun SubmissionCard(
                 Text(
                     text = "${stringResource(R.string.submitted_label)} ${submission.submittedAt}",
                     style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+
+            if (!statusText.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = statusText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MediumGray,
                 )
             }
 

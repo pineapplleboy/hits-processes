@@ -40,7 +40,6 @@ import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
-import com.example.googleclass.feature.taskdetail.domain.model.SubmissionStatus
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
 import com.example.googleclass.feature.taskdetail.service.FileTransferService
 import org.koin.androidx.compose.koinViewModel
@@ -236,9 +235,10 @@ private fun StudentViewContent(
         if (state.task.postType == "TASK") {
             if (state.submission != null) {
                 SubmissionCard(
-                    submission = state.submission!!,
-                    showUnsubmit = true,
-                    onUnsubmit = { onEvent(TaskDetailUiEvent.UnsubmitWork) },
+                        submission = state.submission!!,
+                        statusText = state.taskAnswerStatus,
+                        showUnsubmit = true,
+                        onUnsubmit = { onEvent(TaskDetailUiEvent.UnsubmitWork) },
                 )
             } else {
                 SubmitWorkCard(
@@ -354,8 +354,8 @@ private fun TeacherViewPreview() {
                 ),
                 publicComments = emptyList(),
                 students = listOf(
-                    StudentSubmissionInfo("1", "Сидоров Алексей", "ta-1", null, 100, SubmissionStatus.OVERDUE),
-                    StudentSubmissionInfo("2", "Козлова Анна", "ta-2", null, 100, SubmissionStatus.OVERDUE),
+                    StudentSubmissionInfo("1", "Сидоров Алексей", "ta-1", null, 100, "OVERDUE"),
+                    StudentSubmissionInfo("2", "Козлова Анна", "ta-2", null, 100, "OVERDUE"),
                 ),
                 commentInput = "",
                 selectedTab = TeacherTab.STUDENTS,

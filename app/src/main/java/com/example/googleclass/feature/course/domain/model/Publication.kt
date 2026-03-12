@@ -13,4 +13,5 @@ data class Publication(
     val files: List<String>? = null,
     val comments: List<Comment>? = null,
     val maxScore: Int? = null,
+    val assignmentStatus: AssignmentStatus? = null,
 )
