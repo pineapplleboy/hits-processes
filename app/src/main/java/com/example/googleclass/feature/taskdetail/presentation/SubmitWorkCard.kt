@@ -44,7 +44,8 @@ import com.example.googleclass.common.presentation.theme.PrimaryBlue
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun SubmitWorkCard(
-    attachedFiles: List<AttachedFile>,
+    taskAnswerFiles: List<TaskAnswerFileInfo>,
+    isUploadingFile: Boolean = false,
     onPickFromDocuments: () -> Unit,
     onPickFromGallery: () -> Unit,
     onEvent: (TaskDetailUiEvent) -> Unit,
@@ -154,7 +155,7 @@ internal fun SubmitWorkCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            attachedFiles.forEach { file ->
+            taskAnswerFiles.forEach { file ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -167,7 +168,7 @@ internal fun SubmitWorkCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = file.displayName,
+                        text = file.fileName,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f),
                     )
@@ -176,11 +177,31 @@ internal fun SubmitWorkCard(
                         contentDescription = stringResource(R.string.remove_file),
                         modifier = Modifier
                             .size(18.dp)
-                            .clickable { onEvent(TaskDetailUiEvent.FileRemoved(file.uri)) },
+                            .clickable { onEvent(TaskDetailUiEvent.FileRemoved(file.id)) },
                         tint = MediumGray,
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            if (isUploadingFile) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Загрузка файла…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MediumGray,
+                    )
+                }
             }
 
             Row(

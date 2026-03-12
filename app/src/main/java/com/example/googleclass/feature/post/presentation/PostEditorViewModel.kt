@@ -14,6 +14,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class PostEditorViewModel(
     private val mode: PostEditorMode,
@@ -43,17 +47,22 @@ class PostEditorViewModel(
             is PostEditorUiEvent.FileAttached -> handleFileAttached(event.uri, event.displayName)
             is PostEditorUiEvent.FileRemoved -> handleFileRemoved(event.uri)
             is PostEditorUiEvent.ExistingAttachmentRemoved -> handleExistingAttachmentRemoved(event.attachmentId)
+            is PostEditorUiEvent.DeadlineChanged -> updateContent { copy(deadline = event.deadline) }
         }
     }
 
     private fun loadInitialData() {
         when (mode) {
             is PostEditorMode.Create -> {
+                val defaultDeadline = formatDeadlineForDisplay(
+                    System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L
+                )
                 _uiState.value = PostEditorUiState.Content(
                     mode = mode,
                     text = "",
                     selectedPostType = PostType.ANNOUNCEMENT,
                     maxScore = "",
+                    deadline = defaultDeadline,
                     attachedFiles = emptyList(),
                     existingAttachments = emptyList(),
                     isSaving = false,
@@ -65,11 +74,15 @@ class PostEditorViewModel(
                 viewModelScope.launch {
                     postRepository.getPost(mode.courseId, mode.postId)
                         .onSuccess { post ->
+                            val deadlineDisplay = post.deadline?.takeIf { it.isNotBlank() }
+                                ?.let { parseIsoToDisplay(it) }
+                                ?: formatDeadlineForDisplay(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L)
                             _uiState.value = PostEditorUiState.Content(
                                 mode = mode,
                                 text = post.text,
                                 selectedPostType = post.postType,
                                 maxScore = post.maxScore.toString(),
+                                deadline = deadlineDisplay,
                                 attachedFiles = emptyList(),
                                 existingAttachments = post.files.map {
                                     ExistingAttachment(it.id, it.fileName?.takeIf { n -> n.isNotBlank() } ?: "Файл")
@@ -91,7 +104,17 @@ class PostEditorViewModel(
 
     private fun handlePostTypeSelected(postType: PostType) {
         updateContent {
-            if (isPostTypeEditable) copy(selectedPostType = postType) else this
+            if (!isPostTypeEditable) return@updateContent this
+            if (postType == PostType.TASK && deadline.isBlank()) {
+                copy(
+                    selectedPostType = postType,
+                    deadline = formatDeadlineForDisplay(
+                        System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L
+                    ),
+                )
+            } else {
+                copy(selectedPostType = postType)
+            }
         }
     }
 
@@ -133,6 +156,10 @@ class PostEditorViewModel(
                 sendEffect(PostEditorUiEffect.ShowError("Укажите максимальный балл"))
                 return
             }
+            if (state.deadline.isBlank()) {
+                sendEffect(PostEditorUiEffect.ShowError("Укажите срок сдачи"))
+                return
+            }
         }
 
         _uiState.value = state.copy(isSaving = true)
@@ -166,6 +193,13 @@ class PostEditorViewModel(
             }
             val saveResult = when (mode) {
                 is PostEditorMode.Create -> {
+                    val deadlineIso = if (state.selectedPostType == PostType.TASK) {
+                        parseDisplayToIso(state.deadline) ?: formatDeadlineToIso(
+                            System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L
+                        )
+                    } else {
+                        formatDeadlineToIso(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000)
+                    }
                     postRepository.createPost(
                         courseId = courseId,
                         post = PostCreateModel(
@@ -173,6 +207,7 @@ class PostEditorViewModel(
                             files = files,
                             postType = state.selectedPostType,
                             maxScore = state.maxScore.toIntOrNull() ?: 0,
+                            deadline = deadlineIso,
                         ),
                     ).map { }
                 }
@@ -217,5 +252,32 @@ class PostEditorViewModel(
 
     fun consumeEffect() {
         _uiEffect.value = PostEditorUiEffect.None
+    }
+
+    companion object {
+        private val displayFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+        private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+
+        fun formatDeadlineForDisplay(timestampMs: Long): String =
+            displayFormat.format(Date(timestampMs))
+
+        fun formatDeadlineToIso(timestampMs: Long): String =
+            isoFormat.format(Date(timestampMs))
+
+        fun parseDisplayToIso(display: String): String? = try {
+            val date = displayFormat.parse(display.trim())
+            if (date != null) isoFormat.format(date) else null
+        } catch (_: Exception) {
+            null
+        }
+
+        fun parseIsoToDisplay(iso: String): String? = try {
+            val date = isoFormat.parse(iso.trim())
+            if (date != null) displayFormat.format(date) else null
+        } catch (_: Exception) {
+            null
+        }
     }
 }

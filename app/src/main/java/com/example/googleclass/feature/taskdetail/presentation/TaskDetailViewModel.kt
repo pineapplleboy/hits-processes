@@ -1,26 +1,43 @@
 package com.example.googleclass.feature.taskdetail.presentation
 
+import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.googleclass.common.network.UserApi
 import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.post.data.model.PostModel
+import com.example.googleclass.feature.post.data.model.PostType
 import com.example.googleclass.feature.post.domain.repository.PostRepository
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
+import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
+import com.example.googleclass.feature.taskdetail.domain.model.SubmissionStatus
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
 import com.example.googleclass.feature.taskdetail.domain.model.TaskFile
 import com.example.googleclass.feature.taskdetail.domain.repository.CommentRepository
+import com.example.googleclass.feature.taskdetail.domain.repository.FileRepository
+import com.example.googleclass.feature.taskdetail.domain.repository.TaskAnswerRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.TimeZone
 import java.util.Calendar
 import java.util.Locale
+import java.util.TimeZone
+
+private val SUBMITTED_STATUSES = setOf("SUBMITTED", "COMPLETED", "COMPETED_AFTER_DEADLINE")
+
+private data class TaskAnswerState(
+    val id: String,
+    val status: String,
+    val files: List<TaskAnswerFileInfo>,
+    val score: Int?,
+    val submittedAt: String?,
+    val maxScore: Int,
+)
 
 class TaskDetailViewModel(
     private val courseId: String,
@@ -28,6 +45,9 @@ class TaskDetailViewModel(
     private val userRole: UserRole,
     private val postRepository: PostRepository,
     private val commentRepository: CommentRepository,
+    private val taskAnswerRepository: TaskAnswerRepository,
+    private val fileRepository: FileRepository,
+    private val contentResolver: ContentResolver,
     private val userApi: UserApi,
 ) : ViewModel() {
 
@@ -46,9 +66,10 @@ class TaskDetailViewModel(
         when (event) {
             is TaskDetailUiEvent.NavigateBack -> sendEffect(TaskDetailUiEffect.NavigateBack)
             is TaskDetailUiEvent.SubmitWork -> handleSubmitWork()
+            is TaskDetailUiEvent.UnsubmitWork -> handleUnsubmitWork()
             is TaskDetailUiEvent.SendComment -> handleSendComment()
             is TaskDetailUiEvent.FileAttached -> handleFileAttached(event.uri, event.displayName)
-            is TaskDetailUiEvent.FileRemoved -> handleFileRemoved(event.uri)
+            is TaskDetailUiEvent.FileRemoved -> handleFileRemoved(event.fileId)
             is TaskDetailUiEvent.CommentInputChanged -> handleCommentInput(event.text)
             is TaskDetailUiEvent.StudentTabSelected -> handleStudentTab(event.tab)
             is TaskDetailUiEvent.TeacherTabSelected -> handleTeacherTab(event.tab)
@@ -66,13 +87,26 @@ class TaskDetailViewModel(
                 TaskDetailUiEffect.NavigateToEdit(courseId = courseId, postId = postId)
             )
             is TaskDetailUiEvent.DeletePost -> handleDeletePost()
+            is TaskDetailUiEvent.EvaluateStudent -> handleEvaluateStudent(event)
+            is TaskDetailUiEvent.SetEvaluateScore -> handleSetEvaluateScore(event.score)
+            is TaskDetailUiEvent.SubmitEvaluate -> handleSubmitEvaluate()
+            is TaskDetailUiEvent.DismissEvaluateDialog -> handleDismissEvaluateDialog()
         }
     }
 
     private fun loadPost() {
         viewModelScope.launch {
             _uiState.value = TaskDetailUiState.Loading
+            try {
+                loadPostInternal()
+            } catch (e: Exception) {
+                sendEffect(TaskDetailUiEffect.ShowError(e.message ?: "Ошибка сети. Проверьте подключение."))
+                sendEffect(TaskDetailUiEffect.NavigateBack)
+            }
+        }
+    }
 
+    private suspend fun loadPostInternal() {
             val profileResult = runCatching { userApi.getMyProfile() }
             val currentUserId = profileResult.getOrNull()
                 ?.takeIf { it.isSuccessful }?.body()?.id
@@ -89,24 +123,65 @@ class TaskDetailViewModel(
                             createdAt = formatIsoDate(comment.createdAt),
                         )
                     }
+                    val isTaskPost = post.postType == PostType.TASK
 
                     when (userRole) {
                         UserRole.STUDENT -> {
-                            val taskAnswer = post.taskAnswer
-                            val submission = taskAnswer?.let { answer ->
+                            val taskAnswerFromPost = post.taskAnswer
+                            val taskAnswerFromApi = if (isTaskPost && taskAnswerFromPost == null) {
+                                taskAnswerRepository.getUserPostTaskAnswer(postId).getOrNull()
+                            } else null
+                            val (tid, status, files, score, submittedAt, maxScore) = when {
+                                taskAnswerFromPost != null -> TaskAnswerState(
+                                    id = taskAnswerFromPost.id,
+                                    status = taskAnswerFromPost.status,
+                                    files = taskAnswerFromPost.files.map { TaskAnswerFileInfo(it.id, it.fileName ?: "Файл") },
+                                    score = taskAnswerFromPost.score,
+                                    submittedAt = taskAnswerFromPost.submittedAt,
+                                    maxScore = taskAnswerFromPost.maxScore ?: post.maxScore,
+                                )
+                                taskAnswerFromApi != null -> TaskAnswerState(
+                                    id = taskAnswerFromApi.id,
+                                    status = taskAnswerFromApi.status,
+                                    files = taskAnswerFromApi.files.map { TaskAnswerFileInfo(it.id, it.fileName ?: "Файл") },
+                                    score = taskAnswerFromApi.score,
+                                    submittedAt = taskAnswerFromApi.submittedAt,
+                                    maxScore = taskAnswerFromApi.maxScore ?: post.maxScore,
+                                )
+                                else -> null
+                            } ?: run {
+                                _uiState.value = TaskDetailUiState.StudentView(
+                                    task = post.toTaskDetail(),
+                                    submission = null,
+                                    taskAnswerId = null,
+                                    taskAnswerStatus = "",
+                                    taskAnswerFiles = emptyList(),
+                                    publicComments = post.comments.map { c ->
+                                        Comment(c.id, "${c.author.firstName.orEmpty()} ${c.author.lastName.orEmpty()}".trim(), c.text, formatIsoDate(c.createdAt))
+                                    },
+                                    privateComments = emptyList(),
+                                    commentInput = "",
+                                    selectedTab = StudentTab.PUBLIC_COMMENTS,
+                                    isAuthor = isAuthor,
+                                    courseId = courseId,
+                                )
+                                return@onSuccess
+                            }
+                            val submission = if (SUBMITTED_STATUSES.contains(status.uppercase())) {
                                 Submission(
-                                    submittedAt = answer.submittedAt?.let { formatIsoDate(it) } ?: "",
-                                    files = answer.files.mapNotNull { it.fileName },
-                                    score = answer.score,
-                                    maxScore = answer.maxScore ?: post.maxScore,
+                                    submittedAt = submittedAt?.let { formatIsoDate(it) } ?: "",
+                                    files = files.map { it.fileName },
+                                    score = score,
+                                    maxScore = maxScore,
                                     isNewGrade = false,
                                 )
-                            }
+                            } else null
                             _uiState.value = TaskDetailUiState.StudentView(
                                 task = task,
                                 submission = submission,
-                                taskAnswerId = taskAnswer?.id,
-                                attachedFiles = emptyList(),
+                                taskAnswerId = tid,
+                                taskAnswerStatus = status,
+                                taskAnswerFiles = files,
                                 publicComments = comments,
                                 privateComments = emptyList(),
                                 commentInput = "",
@@ -114,7 +189,7 @@ class TaskDetailViewModel(
                                 isAuthor = isAuthor,
                                 courseId = courseId,
                             )
-                            taskAnswer?.id?.let { loadPrivateComments(it) }
+                            loadPrivateComments(tid)
                         }
                         UserRole.TEACHER, UserRole.MAIN_TEACHER -> {
                             _uiState.value = TaskDetailUiState.TeacherView(
@@ -127,6 +202,7 @@ class TaskDetailViewModel(
                                 courseId = courseId,
                                 canEdit = isAuthor || userRole == UserRole.TEACHER || userRole == UserRole.MAIN_TEACHER,
                             )
+                            if (isTaskPost) loadTaskStudents(post.maxScore)
                         }
                     }
                 }
@@ -134,7 +210,6 @@ class TaskDetailViewModel(
                     sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка загрузки поста"))
                     sendEffect(TaskDetailUiEffect.NavigateBack)
                 }
-        }
     }
 
     private fun handleDeletePost() {
@@ -173,20 +248,44 @@ class TaskDetailViewModel(
 
     private fun handleFileAttached(uri: Uri, displayName: String) {
         val state = _uiState.value
-        if (state is TaskDetailUiState.StudentView && state.submission == null) {
-            val newFile = AttachedFile(uri = uri, displayName = displayName)
-            _uiState.value = state.copy(
-                attachedFiles = state.attachedFiles + newFile,
-            )
+        if (state is TaskDetailUiState.StudentView &&
+            state.submission == null &&
+            state.taskAnswerId != null &&
+            !state.isUploadingFile
+        ) {
+            _uiState.value = state.copy(isUploadingFile = true)
+            viewModelScope.launch {
+                val uploadResult = fileRepository.uploadFile(uri, contentResolver) { }
+                val currentState = _uiState.value as? TaskDetailUiState.StudentView ?: return@launch
+                _uiState.value = currentState.copy(isUploadingFile = false)
+                uploadResult
+                    .onSuccess { fileModel ->
+                        taskAnswerRepository.appendFiles(
+                            currentState.taskAnswerId!!,
+                            listOf(com.example.googleclass.feature.taskdetail.domain.model.TaskAnswerFile(fileModel.id, fileModel.fileName)),
+                        )
+                            .onSuccess { refreshStudentTaskAnswer(currentState.taskAnswerId!!) }
+                            .onFailure {
+                                sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка прикрепления файла"))
+                            }
+                    }
+                    .onFailure {
+                        sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка загрузки файла"))
+                    }
+            }
         }
     }
 
-    private fun handleFileRemoved(uri: Uri) {
+    private fun handleFileRemoved(fileId: String) {
         val state = _uiState.value
-        if (state is TaskDetailUiState.StudentView) {
-            _uiState.value = state.copy(
-                attachedFiles = state.attachedFiles.filter { it.uri != uri },
-            )
+        if (state is TaskDetailUiState.StudentView && state.taskAnswerId != null && state.submission == null) {
+            viewModelScope.launch {
+                taskAnswerRepository.unpinFile(state.taskAnswerId!!, fileId)
+                    .onSuccess { refreshStudentTaskAnswer(state.taskAnswerId!!) }
+                    .onFailure {
+                        sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка удаления файла"))
+                    }
+            }
         }
     }
 
@@ -295,9 +394,128 @@ class TaskDetailViewModel(
 
     private fun handleSubmitWork() {
         val state = _uiState.value
-        if (state is TaskDetailUiState.StudentView && state.attachedFiles.isNotEmpty()) {
-            val uris = state.attachedFiles.map { it.uri }
-            sendEffect(TaskDetailUiEffect.StartFileUpload(uris))
+        if (state is TaskDetailUiState.StudentView && state.taskAnswerId != null && state.submission == null) {
+            if (state.taskAnswerFiles.isEmpty()) {
+                sendEffect(TaskDetailUiEffect.ShowError("Прикрепите хотя бы один файл"))
+                return
+            }
+            viewModelScope.launch {
+                taskAnswerRepository.submitTask(state.taskAnswerId!!)
+                    .onSuccess { refreshStudentTaskAnswer(state.taskAnswerId!!) }
+                    .onFailure {
+                        sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка отправки работы"))
+                    }
+            }
+        }
+    }
+
+    private fun handleUnsubmitWork() {
+        val state = _uiState.value
+        if (state is TaskDetailUiState.StudentView && state.taskAnswerId != null && state.submission != null) {
+            viewModelScope.launch {
+                taskAnswerRepository.unsubmitTask(state.taskAnswerId!!)
+                    .onSuccess { refreshStudentTaskAnswer(state.taskAnswerId!!) }
+                    .onFailure {
+                        sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка отмены отправки"))
+                    }
+            }
+        }
+    }
+
+    private fun refreshStudentTaskAnswer(taskAnswerId: String) {
+        viewModelScope.launch {
+            taskAnswerRepository.getUserPostTaskAnswer(postId)
+                .getOrNull()
+                ?.let { ta ->
+                    val state = _uiState.value as? TaskDetailUiState.StudentView ?: return@launch
+                    if (state.taskAnswerId != taskAnswerId) return@launch
+                    val submission = if (SUBMITTED_STATUSES.contains(ta.status.uppercase())) {
+                        Submission(
+                            submittedAt = ta.submittedAt?.let { formatIsoDate(it) } ?: "",
+                            files = ta.files.map { it.fileName ?: "Файл" },
+                            score = ta.score,
+                            maxScore = ta.maxScore ?: state.task.maxScore,
+                            isNewGrade = false,
+                        )
+                    } else null
+                    _uiState.value = state.copy(
+                        submission = submission,
+                        taskAnswerStatus = ta.status,
+                        taskAnswerFiles = ta.files.map { TaskAnswerFileInfo(it.id, it.fileName ?: "Файл") },
+                    )
+                }
+        }
+    }
+
+    private fun loadTaskStudents(maxScore: Int) {
+        viewModelScope.launch {
+            taskAnswerRepository.getAllPostTaskAnswers(postId)
+                .onSuccess { taskAnswers ->
+                    val state = _uiState.value as? TaskDetailUiState.TeacherView ?: return@onSuccess
+                    val students = taskAnswers
+                        .filter { ta -> SUBMITTED_STATUSES.contains(ta.status.uppercase()) }
+                        .map { ta ->
+                            StudentSubmissionInfo(
+                                studentId = ta.userId ?: "",
+                                studentName = ta.userName ?: "Студент",
+                                taskAnswerId = ta.id,
+                                score = ta.score,
+                                maxScore = ta.maxScore ?: maxScore,
+                                status = SubmissionStatus.SUBMITTED,
+                            )
+                        }
+                    _uiState.value = state.copy(students = students)
+                }
+                .onFailure {
+                    sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка загрузки работ студентов"))
+                }
+        }
+    }
+
+    private fun handleEvaluateStudent(event: TaskDetailUiEvent.EvaluateStudent) {
+        val state = _uiState.value
+        if (state is TaskDetailUiState.TeacherView) {
+            _uiState.value = state.copy(
+                evaluateDialog = EvaluateDialogState(
+                    taskAnswerId = event.taskAnswerId,
+                    studentName = event.studentName,
+                    maxScore = event.maxScore,
+                    score = 0,
+                ),
+            )
+        }
+    }
+
+    private fun handleSetEvaluateScore(score: Int) {
+        val state = _uiState.value
+        if (state is TaskDetailUiState.TeacherView && state.evaluateDialog != null) {
+            _uiState.value = state.copy(
+                evaluateDialog = state.evaluateDialog.copy(score = score.coerceIn(0, state.evaluateDialog.maxScore)),
+            )
+        }
+    }
+
+    private fun handleSubmitEvaluate() {
+        val state = _uiState.value
+        if (state is TaskDetailUiState.TeacherView) {
+            val dialog = state.evaluateDialog ?: return
+            viewModelScope.launch {
+                taskAnswerRepository.evaluateTask(dialog.taskAnswerId, dialog.score)
+                    .onSuccess {
+                        _uiState.value = state.copy(evaluateDialog = null)
+                        loadTaskStudents(state.task.maxScore)
+                    }
+                    .onFailure {
+                        sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка выставления оценки"))
+                    }
+            }
+        }
+    }
+
+    private fun handleDismissEvaluateDialog() {
+        val state = _uiState.value
+        if (state is TaskDetailUiState.TeacherView) {
+            _uiState.value = state.copy(evaluateDialog = null)
         }
     }
 

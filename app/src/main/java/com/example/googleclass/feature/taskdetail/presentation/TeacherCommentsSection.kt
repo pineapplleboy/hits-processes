@@ -17,13 +17,23 @@ import com.example.googleclass.R
 import com.example.googleclass.common.presentation.component.CommentsSection
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 @Composable
 internal fun TeacherCommentsSection(
     selectedTab: TeacherTab,
     publicComments: List<Comment>,
     students: List<StudentSubmissionInfo>,
+    maxScore: Int,
     commentInput: String,
+    evaluateDialog: EvaluateDialogState?,
     onEvent: (TaskDetailUiEvent) -> Unit,
 ) {
     Card(
@@ -75,10 +85,65 @@ internal fun TeacherCommentsSection(
                 TeacherTab.STUDENTS -> {
                     StudentsList(
                         students = students,
+                        maxScore = maxScore,
                         onEvent = onEvent,
                     )
                 }
             }
+
+            evaluateDialog?.let { dialog ->
+                EvaluateDialog(
+                    studentName = dialog.studentName,
+                    maxScore = dialog.maxScore,
+                    score = dialog.score,
+                    onScoreChange = { onEvent(TaskDetailUiEvent.SetEvaluateScore(it)) },
+                    onDismiss = { onEvent(TaskDetailUiEvent.DismissEvaluateDialog) },
+                    onConfirm = { onEvent(TaskDetailUiEvent.SubmitEvaluate) },
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun EvaluateDialog(
+    studentName: String,
+    maxScore: Int,
+    score: Int,
+    onScoreChange: (Int) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    var scoreText by remember { mutableStateOf(score.toString())}
+    LaunchedEffect(score) {
+        scoreText = score.toString()
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Оценить: $studentName") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = scoreText,
+                    onValueChange = { new ->
+                        val filtered = new.filter { it.isDigit() }.take(4)
+                        scoreText = filtered
+                        onScoreChange(filtered.toIntOrNull() ?: 0)
+                    },
+                    label = { Text("Баллы (0–$maxScore)") },
+                    singleLine = true,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(android.R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
 }

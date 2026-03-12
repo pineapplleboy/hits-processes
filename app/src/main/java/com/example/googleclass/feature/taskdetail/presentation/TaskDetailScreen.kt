@@ -232,15 +232,22 @@ private fun StudentViewContent(
             onDownloadFile = { fileId -> onEvent(TaskDetailUiEvent.DownloadFile(fileId)) },
         )
 
-        if (state.submission != null) {
-            SubmissionCard(submission = state.submission)
-        } else {
-            SubmitWorkCard(
-                attachedFiles = state.attachedFiles,
-                onPickFromDocuments = onPickFromDocuments,
-                onPickFromGallery = onPickFromGallery,
-                onEvent = onEvent,
-            )
+        if (state.task.postType == "TASK") {
+            if (state.submission != null) {
+                SubmissionCard(
+                    submission = state.submission!!,
+                    showUnsubmit = true,
+                    onUnsubmit = { onEvent(TaskDetailUiEvent.UnsubmitWork) },
+                )
+            } else {
+                SubmitWorkCard(
+                    taskAnswerFiles = state.taskAnswerFiles,
+                    isUploadingFile = state.isUploadingFile,
+                    onPickFromDocuments = onPickFromDocuments,
+                    onPickFromGallery = onPickFromGallery,
+                    onEvent = onEvent,
+                )
+            }
         }
 
         StudentCommentsSection(
@@ -278,7 +285,9 @@ private fun TeacherViewContent(
             selectedTab = state.selectedTab,
             publicComments = state.publicComments,
             students = state.students,
+            maxScore = state.task.maxScore,
             commentInput = state.commentInput,
+            evaluateDialog = state.evaluateDialog,
             onEvent = onEvent,
         )
 
@@ -301,6 +310,7 @@ private fun StudentSubmittedPreview() {
                     description = "Напишите программу, которая выводит \"Hello, World!\" и вычисляет сумму чисел от 1 до 100.",
                     deadline = "20 февраля, 23:59",
                     maxScore = 100,
+                    postType = "TASK",
                 ),
                 submission = Submission(
                     submittedAt = "18 февраля, 15:30",
@@ -309,13 +319,13 @@ private fun StudentSubmittedPreview() {
                     maxScore = 100,
                     isNewGrade = true,
                 ),
+                taskAnswerId = "ta-1",
+                taskAnswerFiles = emptyList(),
                 publicComments = emptyList(),
                 privateComments = listOf(
                     Comment("1", "Иванов Иван Иванович", "Отличная работа!", "19 февраля, 10:00"),
                     Comment("2", "Сидоров Алексей", "Спасибо!", "19 февраля, 11:00"),
                 ),
-                taskAnswerId = "ta-1",
-                attachedFiles = emptyList(),
                 commentInput = "",
                 selectedTab = StudentTab.PUBLIC_COMMENTS,
             ),
@@ -339,6 +349,7 @@ private fun TeacherViewPreview() {
                     description = "Реализуйте функции для работы со списками: сортировка, поиск элемента, удаление дубликатов.",
                     deadline = "25 февраля, 23:59",
                     maxScore = 100,
+                    postType = "TASK",
                 ),
                 publicComments = emptyList(),
                 students = listOf(
@@ -349,6 +360,7 @@ private fun TeacherViewPreview() {
                 selectedTab = TeacherTab.STUDENTS,
                 isAuthor = true,
                 canEdit = true,
+                evaluateDialog = null,
             ),
             onEvent = {},
         )

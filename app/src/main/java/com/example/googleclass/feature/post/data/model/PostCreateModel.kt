@@ -7,5 +7,6 @@ data class PostCreateModel(
     val text: String,
     val files: List<AttachmentModel>,
     val postType: PostType,
-    val maxScore: Int
+    val maxScore: Int,
+    val deadline: String
 )

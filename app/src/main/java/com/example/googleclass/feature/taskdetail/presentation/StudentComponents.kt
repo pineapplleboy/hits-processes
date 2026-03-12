@@ -38,6 +38,7 @@ import com.example.googleclass.feature.taskdetail.domain.model.SubmissionStatus
 @Composable
 internal fun StudentsList(
     students: List<StudentSubmissionInfo>,
+    maxScore: Int,
     onEvent: (TaskDetailUiEvent) -> Unit,
 ) {
     Column(
@@ -47,12 +48,22 @@ internal fun StudentsList(
         students.forEach { student ->
             StudentItem(
                 student = student,
+                maxScore = maxScore,
                 onOpenChat = {
                     onEvent(
                         TaskDetailUiEvent.OpenStudentChat(
                             taskAnswerId = student.taskAnswerId,
                             studentName = student.studentName,
                             studentUserId = student.studentId,
+                        )
+                    )
+                },
+                onEvaluate = {
+                    onEvent(
+                        TaskDetailUiEvent.EvaluateStudent(
+                            taskAnswerId = student.taskAnswerId,
+                            studentName = student.studentName,
+                            maxScore = student.maxScore,
                         )
                     )
                 },
@@ -64,7 +75,9 @@ internal fun StudentsList(
 @Composable
 internal fun StudentItem(
     student: StudentSubmissionInfo,
+    maxScore: Int,
     onOpenChat: () -> Unit,
+    onEvaluate: () -> Unit,
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -108,27 +121,48 @@ internal fun StudentItem(
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.background)
-                    .clickable(onClick = onOpenChat)
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.chat),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = MediumGray,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.open_student_chat),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MediumGray,
-                )
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.background)
+                        .clickable(onClick = onEvaluate)
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = stringResource(R.string.evaluate_work),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = PrimaryBlue,
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.background)
+                        .clickable(onClick = onOpenChat)
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.chat),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MediumGray,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.open_student_chat),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MediumGray,
+                    )
+                }
             }
         }
     }
