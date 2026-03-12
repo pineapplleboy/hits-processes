@@ -26,8 +26,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.example.googleclass.R
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import com.example.googleclass.common.presentation.theme.ErrorRed
 import com.example.googleclass.common.presentation.theme.MediumGray
 import com.example.googleclass.common.presentation.theme.PrimaryBlue
@@ -49,6 +52,7 @@ internal fun StudentsList(
             StudentItem(
                 student = student,
                 maxScore = maxScore,
+                onDownloadFile = { fileId -> onEvent(TaskDetailUiEvent.DownloadFile(fileId)) },
                 onOpenChat = {
                     onEvent(
                         TaskDetailUiEvent.OpenStudentChat(
@@ -76,6 +80,7 @@ internal fun StudentsList(
 internal fun StudentItem(
     student: StudentSubmissionInfo,
     maxScore: Int,
+    onDownloadFile: (fileId: String) -> Unit,
     onOpenChat: () -> Unit,
     onEvaluate: () -> Unit,
 ) {
@@ -117,6 +122,40 @@ internal fun StudentItem(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MediumGray,
             )
+
+            if (student.files.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.files_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MediumGray,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    student.files.forEach { file ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clickable { onDownloadFile(file.id) }
+                                .fillMaxWidth(),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowDropDown,
+                                contentDescription = null,
+                                tint = PrimaryBlue,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = file.fileName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = PrimaryBlue,
+                                textDecoration = TextDecoration.Underline,
+                            )
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
