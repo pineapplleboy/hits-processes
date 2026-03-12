@@ -222,18 +222,44 @@ class FileTransferService : Service() {
         return try {
             val uri = FileProvider.getUriForFile(
                 this,
-                "${packageName}.fileprovider",
+                "$packageName.fileprovider",
                 file,
             )
-            val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
+            val mimeType = resolveMimeType(file)
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(uri, mimeType)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_ACTIVITY_NEW_TASK
+                )
             }
-            val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            PendingIntent.getActivity(this, file.name.hashCode(), intent, flags)
+            val chooser = Intent.createChooser(intent, file.name)
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    PendingIntent.FLAG_MUTABLE
+                } else {
+                    PendingIntent.FLAG_IMMUTABLE
+                }
+            PendingIntent.getActivity(this, file.absolutePath.hashCode(), chooser, flags)
         } catch (e: Exception) {
             null
+        }
+    }
+
+    private fun resolveMimeType(file: File): String {
+        val name = file.name.lowercase()
+        val ext = name.substringAfterLast('.', "")
+        return when (ext) {
+            "pdf" -> "application/pdf"
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "doc" -> "application/msword"
+            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "xls" -> "application/vnd.ms-excel"
+            "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            "txt" -> "text/plain"
+            else -> "application/octet-stream"
         }
     }
 
