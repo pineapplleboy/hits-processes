@@ -12,9 +12,9 @@ sealed class ScreenRoute(val route: String) {
         fun createRoute(courseId: String, postId: String, userRole: UserRole) =
             "task_detail/$courseId/$postId/${userRole.name}"
     }
-    data object StudentChat : ScreenRoute("student_chat/{taskAnswerId}/{studentName}/{studentUserId}") {
-        fun createRoute(taskAnswerId: String, studentName: String, studentUserId: String) =
-            "student_chat/$taskAnswerId/${studentName.encodeForRoute()}/$studentUserId"
+    data object StudentChat : ScreenRoute("student_chat/{taskAnswerId}/{studentName}/{studentUserId}/{currentUserId}") {
+        fun createRoute(taskAnswerId: String, studentName: String, studentUserId: String, currentUserId: String = "") =
+            "student_chat/$taskAnswerId/${studentName.encodeForRoute()}/$studentUserId/${currentUserId.encodeForRoute()}"
     }
     data object PostEditor : ScreenRoute("post_editor/{courseId}?postId={postId}") {
         fun createRoute(courseId: String, postId: String? = null): String =

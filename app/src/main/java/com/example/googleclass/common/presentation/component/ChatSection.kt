@@ -73,6 +73,7 @@ fun ChatMessageList(
 
 @Composable
 fun ChatBubble(message: ChatMessageUiModel) {
+    // Свои сообщения — справа, чужие — слева (как в мессенджерах)
     val alignment = if (message.isOutgoing) Alignment.End else Alignment.Start
     val bubbleColor = if (message.isOutgoing) {
         PrimaryBlue
@@ -86,12 +87,6 @@ fun ChatBubble(message: ChatMessageUiModel) {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = alignment,
     ) {
-        Text(
-            text = message.authorName,
-            style = MaterialTheme.typography.labelSmall,
-            color = MediumGray,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-        )
         Box(
             modifier = Modifier
                 .widthIn(max = 280.dp)
@@ -121,6 +116,12 @@ fun ChatBubble(message: ChatMessageUiModel) {
                 )
             }
         }
+        Text(
+            text = message.authorName,
+            style = MaterialTheme.typography.labelSmall,
+            color = MediumGray,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+        )
     }
 }
 

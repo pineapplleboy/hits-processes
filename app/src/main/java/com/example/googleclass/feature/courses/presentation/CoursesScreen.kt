@@ -8,12 +8,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -276,8 +278,6 @@ private fun CoursesContentBody(
     }
 }
 
-// region Action Bottom Sheet
-
 @Composable
 private fun CourseActionSheetContent(
     onJoinCourseClick: () -> Unit,
@@ -345,10 +345,6 @@ private fun ActionSheetItem(
         )
     }
 }
-
-// endregion
-
-// region Top Bar
 
 @Composable
 private fun CoursesTopBar(
@@ -421,10 +417,6 @@ private fun CoursesTopBar(
     }
 }
 
-// endregion
-
-// region Courses Tab
-
 @Composable
 private fun CoursesList(
     courses: List<CourseUiItem>,
@@ -496,10 +488,6 @@ private fun CourseCard(
         }
     }
 }
-
-// endregion
-
-// region Tasks Tab
 
 @Composable
 private fun TasksList(
@@ -848,5 +836,3 @@ private fun CoursesErrorPreview() {
         )
     }
 }
-
-// endregion

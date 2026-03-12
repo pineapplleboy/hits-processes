@@ -33,10 +33,11 @@ fun StudentChatScreen(
     taskAnswerId: String,
     studentName: String,
     studentUserId: String,
+    currentUserId: String,
     onNavigateBack: () -> Unit,
 ) {
     val viewModel: StudentChatViewModel = koinViewModel(
-        parameters = { parametersOf(taskAnswerId, studentName, studentUserId) }
+        parameters = { parametersOf(taskAnswerId, studentName, studentUserId, currentUserId) }
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -51,6 +52,7 @@ fun StudentChatScreen(
 
     StudentChatContent(
         state = uiState,
+        studentName = studentName,
         onEvent = viewModel::onEvent,
         onNavigateBack = onNavigateBack,
     )
@@ -60,10 +62,13 @@ fun StudentChatScreen(
 @Composable
 private fun StudentChatContent(
     state: StudentChatUiState,
+    studentName: String,
     onEvent: (StudentChatUiEvent) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
-    val title = if (state is StudentChatUiState.ChatContent) state.studentName else ""
+    val title = studentName.ifBlank { 
+        (state as? StudentChatUiState.ChatContent)?.studentName ?: "" 
+    }.ifBlank { "Чат" }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -105,6 +110,7 @@ private fun StudentChatContent(
                 messages = state.messages.map {
                     it.toUiModel(
                         studentName = state.studentName,
+                        currentUserId = state.currentUserId,
                         youLabel = stringResource(R.string.chat_you),
                     )
                 },
@@ -114,10 +120,22 @@ private fun StudentChatContent(
     }
 }
 
-private fun ChatMessage.toUiModel(studentName: String, youLabel: String = "Вы") = ChatMessageUiModel(
-    id = id,
-    text = text,
-    authorName = if (isFromTeacher) youLabel else studentName,
-    createdAt = createdAt,
-    isOutgoing = isFromTeacher,
-)
+private fun ChatMessage.toUiModel(
+    studentName: String,
+    currentUserId: String,
+    youLabel: String = "Вы",
+): ChatMessageUiModel {
+    val isFromCurrentUser = authorId == currentUserId
+    val displayAuthor = when {
+        isFromCurrentUser -> youLabel
+        authorName.isNotBlank() -> authorName  // реальное имя из API
+        else -> studentName.ifBlank { "Студент" }
+    }
+    return ChatMessageUiModel(
+        id = id,
+        text = text,
+        authorName = displayAuthor,
+        createdAt = createdAt,
+        isOutgoing = isFromCurrentUser,
+    )
+}

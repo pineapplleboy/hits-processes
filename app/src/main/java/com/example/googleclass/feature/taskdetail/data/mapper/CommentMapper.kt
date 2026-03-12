@@ -15,12 +15,13 @@ fun CommentDto.toComment(): Comment = Comment(
     createdAt = formatCommentDate(createdAt),
 )
 
-fun CommentDto.toChatMessage(studentUserId: String): ChatMessage = ChatMessage(
+fun CommentDto.toChatMessage(currentUserId: String): ChatMessage = ChatMessage(
     id = id,
     text = text,
+    authorId = author.id,
     authorName = "${author.firstName.orEmpty()} ${author.lastName.orEmpty()}".trim(),
     createdAt = formatCommentDate(createdAt),
-    isFromTeacher = author.id != studentUserId,
+    isFromTeacher = author.id == currentUserId,
 )
 
 private val isoFormats = listOf(

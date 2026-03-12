@@ -38,10 +38,10 @@ class CommentRepositoryImpl(
 
     override suspend fun getTaskAnswerCommentsAsChat(
         taskAnswerId: String,
-        studentUserId: String,
+        currentUserId: String,
     ): Result<List<ChatMessage>> = safeApiCall(
         apiCall = { commentApi.getTaskAnswerComments(taskAnswerId) },
-        converter = { dtos -> dtos.map { it.toChatMessage(studentUserId) } },
+        converter = { dtos -> dtos.map { it.toChatMessage(currentUserId) } },
     )
 
     override suspend fun createTaskAnswerComment(
