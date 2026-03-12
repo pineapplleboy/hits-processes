@@ -89,6 +89,7 @@
     <string name="add_private_comment_placeholder">Добавить личный комментарий…</string>
     <string name="send_comment">Отправить</string>
     <string name="open_student_chat">Открыть личный чат со студентом</string>
+    <string name="chat_you">Вы</string>
     <string name="status_submitted">СДАНО</string>
     <string name="status_overdue">ПРОСРОЧЕНО</string>
     <string name="status_pending">ОЖИДАНИЕ</string>
@@ -98,6 +99,8 @@
     <string name="attach_file">Прикрепить файл</string>
     <string name="remove_file">Удалить файл</string>
     <string name="submit_work">Отправить работу</string>
+    <string name="unsubmit_work">Отменить отправку</string>
+    <string name="evaluate_work">Оценить</string>
     <string name="upload_started">Загрузка файлов начата</string>
 
     <!-- File source picker -->

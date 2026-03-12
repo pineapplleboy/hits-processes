@@ -15,7 +15,9 @@ sealed interface TaskDetailUiState {
         val task: TaskDetail,
         val submission: Submission?,
         val taskAnswerId: String? = null,
-        val attachedFiles: List<AttachedFile>,
+        val taskAnswerStatus: String = "",
+        val taskAnswerFiles: List<TaskAnswerFileInfo> = emptyList(),
+        val isUploadingFile: Boolean = false,
         val publicComments: List<Comment>,
         val privateComments: List<Comment>,
         val commentInput: String,
@@ -33,12 +35,25 @@ sealed interface TaskDetailUiState {
         val isAuthor: Boolean = false,
         val courseId: String = "",
         val canEdit: Boolean = false,
+        val evaluateDialog: EvaluateDialogState? = null,
     ) : TaskDetailUiState
 }
+
+data class EvaluateDialogState(
+    val taskAnswerId: String,
+    val studentName: String,
+    val maxScore: Int,
+    val score: Int = 0,
+)
 
 data class AttachedFile(
     val uri: Uri,
     val displayName: String,
+)
+
+data class TaskAnswerFileInfo(
+    val id: String,
+    val fileName: String,
 )
 
 enum class StudentTab {
@@ -54,12 +69,13 @@ enum class TeacherTab {
 sealed interface TaskDetailUiEvent {
     data object NavigateBack : TaskDetailUiEvent
     data object SubmitWork : TaskDetailUiEvent
+    data object UnsubmitWork : TaskDetailUiEvent
     data object SendComment : TaskDetailUiEvent
     data object EditPost : TaskDetailUiEvent
     data object DeletePost : TaskDetailUiEvent
 
     data class FileAttached(val uri: Uri, val displayName: String) : TaskDetailUiEvent
-    data class FileRemoved(val uri: Uri) : TaskDetailUiEvent
+    data class FileRemoved(val fileId: String) : TaskDetailUiEvent
     data class CommentInputChanged(val text: String) : TaskDetailUiEvent
     data class StudentTabSelected(val tab: StudentTab) : TaskDetailUiEvent
     data class TeacherTabSelected(val tab: TeacherTab) : TaskDetailUiEvent
@@ -69,6 +85,10 @@ sealed interface TaskDetailUiEvent {
         val studentUserId: String,
     ) : TaskDetailUiEvent
     data class DownloadFile(val fileId: String) : TaskDetailUiEvent
+    data class EvaluateStudent(val taskAnswerId: String, val studentName: String, val maxScore: Int) : TaskDetailUiEvent
+    data class SetEvaluateScore(val score: Int) : TaskDetailUiEvent
+    data object SubmitEvaluate : TaskDetailUiEvent
+    data object DismissEvaluateDialog : TaskDetailUiEvent
 }
 
 sealed interface TaskDetailUiEffect {

@@ -38,3 +38,22 @@ suspend fun safeApiCallUnit(
         Result.failure(e)
     }
 }
+
+suspend fun <T, R> safeApiCallNullable(
+    apiCall: suspend () -> Response<T>,
+    converter: (T) -> R,
+): Result<R?> {
+    return try {
+        val response = apiCall()
+        when {
+            response.isSuccessful -> {
+                val body = response.body()
+                Result.success(if (body != null) converter(body) else null)
+            }
+            response.code() == 404 -> Result.success(null)
+            else -> Result.failure(HttpException(response))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+}

@@ -12,10 +12,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.googleclass.R
 import com.example.googleclass.common.presentation.component.ChatInputBar
@@ -37,16 +39,20 @@ fun StudentChatScreen(
         parameters = { parametersOf(taskAnswerId, studentName, studentUserId) }
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val uiEffect by viewModel.uiEffect.collectAsStateWithLifecycle(StudentChatUiEffect.None)
 
-    when (uiEffect) {
-        is StudentChatUiEffect.NavigateBack -> onNavigateBack()
-        is StudentChatUiEffect.None -> {}
+    LaunchedEffect(Unit) {
+        viewModel.uiEffect.collect { effect ->
+            when (effect) {
+                is StudentChatUiEffect.NavigateBack -> onNavigateBack()
+                is StudentChatUiEffect.None -> {}
+            }
+        }
     }
 
     StudentChatContent(
         state = uiState,
         onEvent = viewModel::onEvent,
+        onNavigateBack = onNavigateBack,
     )
 }
 
@@ -55,6 +61,7 @@ fun StudentChatScreen(
 private fun StudentChatContent(
     state: StudentChatUiState,
     onEvent: (StudentChatUiEvent) -> Unit,
+    onNavigateBack: () -> Unit,
 ) {
     val title = if (state is StudentChatUiState.ChatContent) state.studentName else ""
 
@@ -70,7 +77,7 @@ private fun StudentChatContent(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { onEvent(StudentChatUiEvent.NavigateBack) }) {
+                    IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.navigate_back),
@@ -95,17 +102,22 @@ private fun StudentChatContent(
         when (state) {
             is StudentChatUiState.Loading -> LoadingState()
             is StudentChatUiState.ChatContent -> ChatMessageList(
-                messages = state.messages.map { it.toUiModel() },
-                modifier = Modifier.padding(padding),
+                messages = state.messages.map {
+                    it.toUiModel(
+                        studentName = state.studentName,
+                        youLabel = stringResource(R.string.chat_you),
+                    )
+                },
+                modifier = Modifier.padding(padding).padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
     }
 }
 
-private fun ChatMessage.toUiModel() = ChatMessageUiModel(
+private fun ChatMessage.toUiModel(studentName: String, youLabel: String = "Вы") = ChatMessageUiModel(
     id = id,
     text = text,
-    authorName = authorName,
+    authorName = if (isFromTeacher) youLabel else studentName,
     createdAt = createdAt,
     isOutgoing = isFromTeacher,
 )

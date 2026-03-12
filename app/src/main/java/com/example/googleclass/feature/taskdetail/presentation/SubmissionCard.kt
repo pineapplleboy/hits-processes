@@ -31,7 +31,11 @@ import com.example.googleclass.common.presentation.theme.Success
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
 
 @Composable
-internal fun SubmissionCard(submission: Submission) {
+internal fun SubmissionCard(
+    submission: Submission,
+    showUnsubmit: Boolean = false,
+    onUnsubmit: () -> Unit = {},
+) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -115,6 +119,19 @@ internal fun SubmissionCard(submission: Submission) {
                         score = submission.score,
                         maxScore = submission.maxScore,
                         isNew = submission.isNewGrade,
+                    )
+                }
+            }
+
+            if (showUnsubmit) {
+                Spacer(modifier = Modifier.height(12.dp))
+                androidx.compose.material3.TextButton(
+                    onClick = onUnsubmit,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = stringResource(R.string.unsubmit_work),
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             }

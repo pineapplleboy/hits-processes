@@ -21,6 +21,7 @@ sealed interface PostEditorUiState {
         val text: String,
         val selectedPostType: PostType,
         val maxScore: String,
+        val deadline: String,
         val attachedFiles: List<PostAttachedFile>,
         val existingAttachments: List<ExistingAttachment>,
         val isSaving: Boolean,
@@ -46,6 +47,7 @@ sealed interface PostEditorUiEvent {
     data class FileAttached(val uri: Uri, val displayName: String) : PostEditorUiEvent
     data class FileRemoved(val uri: Uri) : PostEditorUiEvent
     data class ExistingAttachmentRemoved(val attachmentId: String) : PostEditorUiEvent
+    data class DeadlineChanged(val deadline: String) : PostEditorUiEvent
 }
 
 // -- Effects --

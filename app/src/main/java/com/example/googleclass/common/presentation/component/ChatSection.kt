@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -85,15 +86,12 @@ fun ChatBubble(message: ChatMessageUiModel) {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = alignment,
     ) {
-        if (!message.isOutgoing) {
-            Text(
-                text = message.authorName,
-                style = MaterialTheme.typography.labelSmall,
-                color = MediumGray,
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-            )
-        }
-
+        Text(
+            text = message.authorName,
+            style = MaterialTheme.typography.labelSmall,
+            color = MediumGray,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+        )
         Box(
             modifier = Modifier
                 .widthIn(max = 280.dp)
@@ -136,6 +134,7 @@ fun ChatInputBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .navigationBarsPadding()
             .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
