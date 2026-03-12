@@ -22,6 +22,7 @@ sealed class ScreenRoute(val route: String) {
             else "post_editor/$courseId"
     }
     data object Profile : ScreenRoute("profile")
+    data object ArchivedCourses : ScreenRoute("archived_courses")
 }
 
 private fun String.encodeForRoute(): String =

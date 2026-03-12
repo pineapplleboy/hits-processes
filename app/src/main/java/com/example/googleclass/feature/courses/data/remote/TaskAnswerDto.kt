@@ -14,10 +14,12 @@ data class TaskAnswerDto(
     val files: List<FileModel> = emptyList(),
     val maxScore: Int? = null,
     val postName: String? = null,
+    val postId: String? = null,
+    val courseId: String? = null,
     val userId: String? = null,
     val userName: String? = null,
     @SerialName("user") val user: UserModel? = null,
     @SerialName("userModel") val userModel: UserModel? = null,
-    @SerialName("author") val author: UserModel? = null,
+    @SerialName("author") val author: UserModel? = null
 )
 

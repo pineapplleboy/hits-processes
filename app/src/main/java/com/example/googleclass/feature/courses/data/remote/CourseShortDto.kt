@@ -8,4 +8,5 @@ data class CourseShortDto(
     @SerialName("id") val id: String,
     @SerialName("name") val name: String,
     @SerialName("description") val description: String? = null,
+    @SerialName("currentUserCourseRole") val currentUserCourseRole: String? = null,
 )

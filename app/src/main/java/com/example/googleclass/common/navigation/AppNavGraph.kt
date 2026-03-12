@@ -16,6 +16,7 @@ import com.example.googleclass.feature.course.presentation.CourseScreenRoute
 import com.example.googleclass.feature.courses.presentation.CoursesScreen
 import com.example.googleclass.feature.post.presentation.PostEditorMode
 import com.example.googleclass.feature.post.presentation.PostEditorScreen
+import com.example.googleclass.feature.courses.presentation.ArchivedCoursesScreen
 import com.example.googleclass.feature.profile.presentation.ProfileScreen
 import com.example.googleclass.feature.taskdetail.studentchat.presentation.StudentChatScreen
 import com.example.googleclass.feature.taskdetail.presentation.TaskDetailScreen
@@ -44,7 +45,15 @@ fun AppNavGraph(
                 onCourseClick = { courseId ->
                     navController.navigate(ScreenRoute.Course.createRoute(courseId))
                 },
-                onTaskClick = { },
+                onTaskClick = { courseId, postId ->
+                    navController.navigate(
+                        ScreenRoute.TaskDetail.createRoute(
+                            courseId = courseId,
+                            postId = postId,
+                            userRole = UserRole.STUDENT,
+                        )
+                    )
+                },
                 onLogoutClick = {
                     navController.navigate(ScreenRoute.Authorization.route) {
                         popUpTo(0) { inclusive = true }
@@ -166,12 +175,22 @@ fun AppNavGraph(
         composable(ScreenRoute.Profile.route) {
             ProfileScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onArchivedCoursesClick = { },
+                onArchivedCoursesClick = {
+                    navController.navigate(ScreenRoute.ArchivedCourses.route)
+                },
                 onSwitchUserClick = { },
                 onLogoutClick = {
                     navController.navigate(ScreenRoute.Authorization.route) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+            )
+        }
+        composable(ScreenRoute.ArchivedCourses.route) {
+            ArchivedCoursesScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onCourseClick = { courseId ->
+                    navController.navigate(ScreenRoute.Course.createRoute(courseId))
                 },
             )
         }
