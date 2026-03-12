@@ -208,8 +208,8 @@ private fun CoursesContentBody(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showActionSheet = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = PrimaryBlue,
+                contentColor = White,
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_add),
@@ -610,11 +610,32 @@ private fun TaskCard(
         modifier = modifier,
         onClick = onClick,
     ) {
-        Text(
-            text = task.title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top,
+        ) {
+            Text(
+                text = task.title,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            if (task.status == TaskStatus.NEW) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = PrimaryBlue.copy(alpha = 0.12f),
+                ) {
+                    Text(
+                        text = "НОВОЕ",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = PrimaryBlue,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -650,18 +671,27 @@ private fun TaskCard(
         }
 
         // Показываем дату сдачи или дедлайн если есть
-        val dateLabel = when {
-            task.submittedAt != null -> stringResource(R.string.submitted_at_format, task.submittedAt)
-            task.deadline != null -> stringResource(R.string.deadline_format, task.deadline)
-            else -> null
-        }
-        if (dateLabel != null) {
+        val dateText = task.submittedAt ?: task.deadline
+        val dateIcon = if (task.submittedAt != null) R.drawable.ic_check_circle else R.drawable.ic_schedule
+        val datePrefixRes = if (task.submittedAt != null) R.string.submitted_at_format else R.string.deadline_format
+        if (dateText != null) {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = dateLabel,
-                style = MaterialTheme.typography.labelMedium,
-                color = SecondaryText,
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    painter = painterResource(dateIcon),
+                    contentDescription = null,
+                    tint = SecondaryText,
+                    modifier = Modifier.size(14.dp),
+                )
+                Text(
+                    text = stringResource(datePrefixRes, dateText),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = SecondaryText,
+                )
+            }
         }
     }
 }

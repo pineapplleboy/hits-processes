@@ -22,6 +22,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.googleclass.R
+import com.example.googleclass.common.presentation.theme.PrimaryBlue
+import com.example.googleclass.common.presentation.theme.White
 
 @Composable
 fun UserAvatar(
@@ -61,8 +63,8 @@ fun CreateFAB(
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary
+        containerColor = PrimaryBlue,
+        contentColor = White,
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_add),

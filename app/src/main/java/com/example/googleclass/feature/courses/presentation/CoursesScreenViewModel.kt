@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.googleclass.common.network.UserApi
 import com.example.googleclass.feature.authorization.domain.repository.AuthRepository
+import com.example.googleclass.feature.taskdetail.presentation.TaskDetailViewModel
 import com.example.googleclass.feature.courses.data.remote.CourseCreateDto
 import com.example.googleclass.feature.courses.data.remote.CoursesApi
 import com.example.googleclass.feature.courses.data.remote.TaskAnswerApi
@@ -232,7 +233,7 @@ class CoursesScreenViewModel(
                             score = dto.score?.toString(),
                             maxScore = dto.maxScore?.toString(),
                             deadline = null,
-                            submittedAt = dto.submittedAt?.let { formatIsoDateTime(it) },
+                            submittedAt = dto.submittedAt?.let { TaskDetailViewModel.formatIsoDate(it) },
                         )
                     }
                 } else {
@@ -262,17 +263,5 @@ class CoursesScreenViewModel(
             else -> ""
         }
 
-        /** "2026-02-20T14:30:00" → "20 февраля 2026" */
-        fun formatIsoDateTime(iso: String): String = try {
-            val date = java.time.OffsetDateTime.parse(iso)
-            date.format(
-                java.time.format.DateTimeFormatter.ofPattern(
-                    "d MMMM yyyy",
-                    java.util.Locale("ru"),
-                )
-            )
-        } catch (_: Exception) {
-            iso
-        }
     }
 }
