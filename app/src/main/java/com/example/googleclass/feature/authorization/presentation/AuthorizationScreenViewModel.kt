@@ -35,10 +35,7 @@ class AuthorizationScreenViewModel(
                     _state.value = AuthorizationScreenState.AuthSuccess
                 }
                 .onFailure { e ->
-                    val message = when (e) {
-                        is AuthException -> e.message
-                        else -> e.message ?: "Ошибка входа"
-                    }
+                    val message = "Ошибка входа"
                     _state.value = AuthorizationScreenState.Default(
                         credentials = credentials,
                         errorMessage = message,
@@ -55,10 +52,7 @@ class AuthorizationScreenViewModel(
                     _state.value = AuthorizationScreenState.AuthSuccess
                 }
                 .onFailure { e ->
-                    val message = when (e) {
-                        is AuthException -> e.message
-                        else -> e.message ?: "Ошибка регистрации"
-                    }
+                    val message = "Ошибка регистрации"
                     _state.value = AuthorizationScreenState.Default(
                         credentials = _state.value.let { if (it is AuthorizationScreenState.Default) it.credentials else UserCredentials("", "") },
                         errorMessage = message,
