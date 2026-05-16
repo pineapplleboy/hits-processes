@@ -57,7 +57,9 @@ import com.example.googleclass.R
 import com.example.googleclass.common.presentation.component.LoadingState
 import com.example.googleclass.common.presentation.components.ClassroomTopAppBar
 import com.example.googleclass.common.presentation.theme.PrimaryBlue
+import com.example.googleclass.feature.post.data.model.PostCreateDto
 import com.example.googleclass.feature.post.data.model.PostType
+import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 import com.example.googleclass.feature.taskdetail.presentation.rememberFilePicker
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -190,7 +192,13 @@ private fun PostEditorForm(
             )
         }
 
-        if (state.selectedPostType == PostType.TASK && state.isPostTypeEditable) {
+        if (state.selectedPostType == PostType.TASK) {
+            TaskMarkEvaluationTypeSelector(
+                selectedType = state.taskMarkEvaluationType,
+                onTypeSelected = { onEvent(PostEditorUiEvent.TaskMarkEvaluationTypeSelected(it)) },
+                enabled = state.isPostTypeEditable,
+            )
+
             OutlinedTextField(
                 value = state.maxScore,
                 onValueChange = { onEvent(PostEditorUiEvent.MaxScoreChanged(it)) },
@@ -204,10 +212,67 @@ private fun PostEditorForm(
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                 ),
             )
+
+            if (state.taskMarkEvaluationType.needsMinScore()) {
+                OutlinedTextField(
+                    value = state.minScore,
+                    onValueChange = { onEvent(PostEditorUiEvent.MinScoreChanged(it)) },
+                    label = { Text(stringResource(R.string.task_min_score_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
+                )
+            }
+
+            if (state.taskMarkEvaluationType.needsMultiplier()) {
+                OutlinedTextField(
+                    value = state.multiplier,
+                    onValueChange = { onEvent(PostEditorUiEvent.MultiplierChanged(it)) },
+                    label = { Text(stringResource(R.string.task_multiplier_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
+                )
+            }
+
+            if (state.taskMarkEvaluationType.needsPassThreshold()) {
+                OutlinedTextField(
+                    value = state.passThreshold,
+                    onValueChange = { onEvent(PostEditorUiEvent.PassThresholdChanged(it)) },
+                    label = { Text(stringResource(R.string.task_pass_threshold_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
+                )
+            }
+
+            if (state.taskMarkEvaluationType.needsEvaluationFunction()) {
+                EvaluationFunctionSelector(
+                    selectedFunction = state.evaluationFunction,
+                    onFunctionSelected = { onEvent(PostEditorUiEvent.EvaluationFunctionSelected(it)) },
+                )
+            }
+
             DeadlinePicker(
                 value = state.deadline,
                 onValueChange = { onEvent(PostEditorUiEvent.DeadlineChanged(it)) },
             )
+
             OutlinedButton(
                 onClick = onNavigateToCriteria,
                 shape = RoundedCornerShape(16.dp),

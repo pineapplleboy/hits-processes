@@ -7,6 +7,17 @@ data class PostCreateDto(
     val text: String,
     val files: List<AttachmentDto>,
     val postType: PostType,
-    val maxScore: Int,
-    val deadline: String
-)
+    val taskMarkEvaluationType: TaskMarkEvaluationType? = null,
+    val maxScore: Float? = null,
+    val minScore: Float? = null,
+    val multiplier: Float? = null,
+    val passThreshold: Float? = null,
+    val evaluationFunction: EvaluationFunction? = null,
+    val deadline: String? = null,
+) {
+    @Serializable
+    enum class EvaluationFunction {
+        SUM,
+        MULTIPLY,
+    }
+}

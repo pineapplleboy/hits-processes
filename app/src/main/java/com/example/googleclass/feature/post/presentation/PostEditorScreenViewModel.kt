@@ -8,6 +8,7 @@ import com.example.googleclass.feature.post.data.model.AttachmentDto
 import com.example.googleclass.feature.post.data.model.PostCreateDto
 import com.example.googleclass.feature.post.data.model.PostType
 import com.example.googleclass.feature.post.data.model.PostUpdateDto
+import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 import com.example.googleclass.feature.post.domain.repository.PostRepository
 import com.example.googleclass.feature.taskdetail.domain.repository.FileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +45,24 @@ class PostEditorScreenViewModel(
             is PostEditorUiEvent.Save -> handleSave()
             is PostEditorUiEvent.TextChanged -> updateContent { copy(text = event.text) }
             is PostEditorUiEvent.PostTypeSelected -> handlePostTypeSelected(event.postType)
-            is PostEditorUiEvent.MaxScoreChanged -> handleMaxScoreChanged(event.value)
+            is PostEditorUiEvent.TaskMarkEvaluationTypeSelected -> updateContent {
+                copy(taskMarkEvaluationType = event.type)
+            }
+            is PostEditorUiEvent.MaxScoreChanged -> updateContent {
+                copy(maxScore = event.value.filter { it.isDigit() || it == '.' })
+            }
+            is PostEditorUiEvent.MinScoreChanged -> updateContent {
+                copy(minScore = event.value.filter { it.isDigit() || it == '.' })
+            }
+            is PostEditorUiEvent.MultiplierChanged -> updateContent {
+                copy(multiplier = event.value.filter { it.isDigit() || it == '.' })
+            }
+            is PostEditorUiEvent.PassThresholdChanged -> updateContent {
+                copy(passThreshold = event.value.filter { it.isDigit() || it == '.' })
+            }
+            is PostEditorUiEvent.EvaluationFunctionSelected -> updateContent {
+                copy(evaluationFunction = event.function)
+            }
             is PostEditorUiEvent.FileAttached -> handleFileAttached(event.uri, event.displayName)
             is PostEditorUiEvent.FileRemoved -> handleFileRemoved(event.uri)
             is PostEditorUiEvent.ExistingAttachmentRemoved -> handleExistingAttachmentRemoved(event.attachmentId)
@@ -60,7 +78,12 @@ class PostEditorScreenViewModel(
                     mode = mode,
                     text = "",
                     selectedPostType = PostType.ANNOUNCEMENT,
+                    taskMarkEvaluationType = TaskMarkEvaluationType.TEACHER_DECISION,
                     maxScore = "",
+                    minScore = "",
+                    multiplier = "1",
+                    passThreshold = "",
+                    evaluationFunction = PostCreateDto.EvaluationFunction.SUM,
                     deadline = defaultDeadline,
                     attachedFiles = emptyList(),
                     existingAttachments = emptyList(),
@@ -80,7 +103,14 @@ class PostEditorScreenViewModel(
                                 mode = mode,
                                 text = post.text,
                                 selectedPostType = post.postType,
-                                maxScore = post.maxScore.roundToInt().toString(),
+                                taskMarkEvaluationType = post.taskMarkEvaluationType
+                                    ?: TaskMarkEvaluationType.TEACHER_DECISION,
+                                maxScore = if (post.maxScore > 0) post.maxScore.roundToInt().toString() else "",
+                                minScore = post.minScore?.toString() ?: "",
+                                multiplier = post.multiplier?.toString() ?: "1",
+                                passThreshold = post.passThreshold?.toString() ?: "",
+                                evaluationFunction = post.evaluationFunction
+                                    ?: PostCreateDto.EvaluationFunction.SUM,
                                 deadline = deadlineDisplay,
                                 attachedFiles = emptyList(),
                                 existingAttachments = post.files.map {
@@ -115,11 +145,6 @@ class PostEditorScreenViewModel(
         }
     }
 
-    private fun handleMaxScoreChanged(value: String) {
-        val filtered = value.filter { it.isDigit() }
-        updateContent { copy(maxScore = filtered) }
-    }
-
     private fun handleFileAttached(uri: Uri, displayName: String) {
         updateContent {
             copy(attachedFiles = attachedFiles + PostAttachedFile(uri, displayName))
@@ -148,17 +173,12 @@ class PostEditorScreenViewModel(
         }
 
         if (state.selectedPostType == PostType.TASK && state.isPostTypeEditable) {
-            val score = state.maxScore.toIntOrNull()
-            if (score == null || score <= 0) {
-                sendEffect(PostEditorUiEffect.ShowError("Укажите максимальный балл"))
-                return
-            }
             if (state.deadline.isBlank()) {
                 sendEffect(PostEditorUiEffect.ShowError("Укажите срок сдачи"))
                 return
             }
             val deadlineMs = try {
-                java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
                     .parse(state.deadline.trim())?.time
             } catch (_: Exception) {
                 null
@@ -198,14 +218,17 @@ class PostEditorScreenViewModel(
                 is PostEditorMode.Create -> mode.courseId
                 is PostEditorMode.Edit -> mode.courseId
             }
+
+            val isTask = state.selectedPostType == PostType.TASK
+
             val saveResult = when (mode) {
                 is PostEditorMode.Create -> {
-                    val deadlineIso = if (state.selectedPostType == PostType.TASK) {
+                    val deadlineIso = if (isTask) {
                         parseDisplayToIso(state.deadline) ?: formatDeadlineToIso(
                             System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L
                         )
                     } else {
-                        formatDeadlineToIso(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000)
+                        null
                     }
                     postRepository.createPost(
                         courseId = courseId,
@@ -213,7 +236,12 @@ class PostEditorScreenViewModel(
                             text = state.text,
                             files = files,
                             postType = state.selectedPostType,
-                            maxScore = state.maxScore.toIntOrNull() ?: 0,
+                            taskMarkEvaluationType = if (isTask) state.taskMarkEvaluationType else null,
+                            maxScore = if (isTask) state.maxScore.toFloatOrNull() else null,
+                            minScore = if (isTask) state.minScore.toFloatOrNull() else null,
+                            multiplier = if (isTask) state.multiplier.toFloatOrNull() else null,
+                            passThreshold = if (isTask) state.passThreshold.toFloatOrNull() else null,
+                            evaluationFunction = if (isTask) state.evaluationFunction else null,
                             deadline = deadlineIso,
                         ),
                     ).map { }
@@ -226,6 +254,12 @@ class PostEditorScreenViewModel(
                         post = PostUpdateDto(
                             text = state.text,
                             files = files,
+                            taskMarkEvaluationType = if (isTask) state.taskMarkEvaluationType else null,
+                            maxScore = if (isTask) state.maxScore.toFloatOrNull() else null,
+                            minScore = if (isTask) state.minScore.toFloatOrNull() else null,
+                            multiplier = if (isTask) state.multiplier.toFloatOrNull() else null,
+                            passThreshold = if (isTask) state.passThreshold.toFloatOrNull() else null,
+                            evaluationFunction = if (isTask) state.evaluationFunction else null,
                         ),
                     )
                 }
