@@ -27,6 +27,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.math.roundToInt
 
 private val SUBMITTED_STATUSES = setOf("SUBMITTED", "COMPLETED", "COMPLETED_AFTER_DEADLINE", "COMPETED_AFTER_DEADLINE")
 
@@ -141,9 +142,9 @@ class TaskDetailViewModel(
                                     id = taskAnswerFromPost.id,
                                     status = taskAnswerFromPost.status,
                                     files = taskAnswerFromPost.files.map { TaskAnswerFileInfo(it.id, it.fileName ?: "Файл") },
-                                    score = taskAnswerFromPost.score,
+                                    score = taskAnswerFromPost.score?.roundToInt(),
                                     submittedAt = taskAnswerFromPost.submittedAt,
-                                    maxScore = taskAnswerFromPost.maxScore ?: post.maxScore,
+                                    maxScore = taskAnswerFromPost.maxScore?.roundToInt() ?: post.maxScore.roundToInt(),
                                 )
                                 taskAnswerFromApi != null -> TaskAnswerState(
                                     id = taskAnswerFromApi.id,
@@ -151,7 +152,7 @@ class TaskDetailViewModel(
                                     files = taskAnswerFromApi.files.map { TaskAnswerFileInfo(it.id, it.fileName ?: "Файл") },
                                     score = taskAnswerFromApi.score,
                                     submittedAt = taskAnswerFromApi.submittedAt,
-                                    maxScore = taskAnswerFromApi.maxScore ?: post.maxScore,
+                                    maxScore = taskAnswerFromApi.maxScore ?: post.maxScore.roundToInt(),
                                 )
                                 else -> null
                             } ?: run {
@@ -208,7 +209,7 @@ class TaskDetailViewModel(
                                 canEdit = isAuthor || userRole == UserRole.TEACHER || userRole == UserRole.MAIN_TEACHER,
                                 currentUserId = currentUserId ?: "",
                             )
-                            if (isTaskPost) loadTaskStudents(post.maxScore)
+                            if (isTaskPost) loadTaskStudents(post.maxScore.roundToInt())
                         }
                     }
                 }
@@ -593,7 +594,7 @@ private fun PostModel.toTaskDetail(): TaskDetail = TaskDetail(
     createdAt = TaskDetailViewModel.formatIsoDate(createdAt),
     description = text,
     deadline = deadline?.let { TaskDetailViewModel.formatIsoDate(it) } ?: "Без дедлайна",
-    maxScore = maxScore,
+    maxScore = maxScore.roundToInt(),
     files = files.map { TaskFile(id = it.id, fileName = it.fileName) },
     postType = postType.name,
 )

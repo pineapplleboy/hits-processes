@@ -1,5 +1,7 @@
 package com.example.googleclass.feature.courses.presentation
 
+import com.example.googleclass.feature.courses.data.remote.CourseMarkEvaluationType
+
 data class CourseUiItem(
     val id: String,
     val name: String,
@@ -49,6 +51,8 @@ sealed interface CoursesScreenState {
 data class CreateCourseDialogState(
     val name: String = "",
     val description: String = "",
+    val courseMarkEvaluationType: CourseMarkEvaluationType = CourseMarkEvaluationType.SUM,
+    val passThreshold: String = "",
     val courseId: String? = null,
     val isCreating: Boolean = false,
     val error: String? = null,

@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.math.roundToInt
 
 class PostEditorViewModel(
     private val mode: PostEditorMode,
@@ -79,7 +80,7 @@ class PostEditorViewModel(
                                 mode = mode,
                                 text = post.text,
                                 selectedPostType = post.postType,
-                                maxScore = post.maxScore.toString(),
+                                maxScore = post.maxScore.roundToInt().toString(),
                                 deadline = deadlineDisplay,
                                 attachedFiles = emptyList(),
                                 existingAttachments = post.files.map {

@@ -4,5 +4,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TaskRateRequestDto(
-    val rate: Int,
+    val rate: Float,
 )

@@ -8,11 +8,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TaskAnswerDto(
     val id: String,
-    val score: Int? = null,
+    val score: Float? = null,
     val submittedAt: String? = null,
     val status: String = "NOT_COMPLETED",
     val files: List<FileModel> = emptyList(),
-    val maxScore: Int? = null,
+    val maxScore: Float? = null,
     val postName: String? = null,
     val postId: String? = null,
     val courseId: String? = null,

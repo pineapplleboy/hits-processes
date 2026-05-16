@@ -31,7 +31,7 @@ class TaskAnswerRepositoryImpl(
     )
 
     override suspend fun evaluateTask(taskAnswerId: String, score: Int): Result<Unit> = safeApiCallUnit(
-        apiCall = { taskAnswerApi.evaluateTask(taskAnswerId, TaskRateRequestDto(rate = score)) },
+        apiCall = { taskAnswerApi.evaluateTask(taskAnswerId, TaskRateRequestDto(rate = score.toFloat())) },
     )
 
     override suspend fun submitTask(taskAnswerId: String): Result<Unit> = safeApiCallUnit(

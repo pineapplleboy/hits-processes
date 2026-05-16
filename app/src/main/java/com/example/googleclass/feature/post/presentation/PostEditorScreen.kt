@@ -26,6 +26,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -65,6 +66,7 @@ import org.koin.core.parameter.parametersOf
 fun PostEditorScreen(
     mode: PostEditorMode,
     onNavigateBack: () -> Unit,
+    onNavigateToCriteria: () -> Unit = {},
     onNavigateToCourseFeed: (courseId: String) -> Unit = {},
 ) {
     val viewModel: PostEditorViewModel = koinViewModel(
@@ -106,6 +108,7 @@ fun PostEditorScreen(
     PostEditorContent(
         state = uiState,
         onEvent = viewModel::onEvent,
+        onNavigateToCriteria = onNavigateToCriteria,
         onPickFromDocuments = { filePicker.launchDocuments() },
         onPickFromGallery = { filePicker.launchGallery() },
     )
@@ -115,6 +118,7 @@ fun PostEditorScreen(
 private fun PostEditorContent(
     state: PostEditorUiState,
     onEvent: (PostEditorUiEvent) -> Unit,
+    onNavigateToCriteria: () -> Unit = {},
     onPickFromDocuments: () -> Unit = {},
     onPickFromGallery: () -> Unit = {},
 ) {
@@ -139,6 +143,7 @@ private fun PostEditorContent(
             is PostEditorUiState.Content -> PostEditorForm(
                 state = state,
                 onEvent = onEvent,
+                onNavigateToCriteria = onNavigateToCriteria,
                 onPickFromDocuments = onPickFromDocuments,
                 onPickFromGallery = onPickFromGallery,
                 modifier = Modifier.padding(padding),
@@ -151,6 +156,7 @@ private fun PostEditorContent(
 private fun PostEditorForm(
     state: PostEditorUiState.Content,
     onEvent: (PostEditorUiEvent) -> Unit,
+    onNavigateToCriteria: () -> Unit,
     onPickFromDocuments: () -> Unit,
     onPickFromGallery: () -> Unit,
     modifier: Modifier = Modifier,
@@ -202,6 +208,13 @@ private fun PostEditorForm(
                 value = state.deadline,
                 onValueChange = { onEvent(PostEditorUiEvent.DeadlineChanged(it)) },
             )
+            OutlinedButton(
+                onClick = onNavigateToCriteria,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(text = stringResource(R.string.criteria_open_button))
+            }
         }
 
         PostAttachmentSection(

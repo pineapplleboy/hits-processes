@@ -161,4 +161,12 @@
     <string name="archived_courses_title">Архив курсов</string>
     <string name="archived_courses_empty">У вас нет архивных курсов</string>
     <string name="tasks_empty">У вас пока нет заданий</string>
+    <string name="criteria_open_button">Критерии оценивания</string>
+    <string name="criteria_screen_title">Критерии оценивания</string>
+    <string name="criteria_count_format">%d критериев</string>
+    <string name="criteria_add">Добавить критерий</string>
+    <string name="criteria_edit">Изменить</string>
+    <string name="criteria_delete">Удалить критерий</string>
+    <string name="criteria_pass_fail">+/-</string>
+    <string name="criteria_max_points_format">Максимум: %d баллов</string>
 </resources>

@@ -4,6 +4,7 @@ import com.example.googleclass.feature.courses.data.remote.TaskAnswerDto
 import com.example.googleclass.feature.taskdetail.data.model.FileModel
 import com.example.googleclass.feature.taskdetail.domain.model.TaskAnswer
 import com.example.googleclass.feature.taskdetail.domain.model.TaskAnswerFile
+import kotlin.math.roundToInt
 
 private fun TaskAnswerDto.resolveUserName(): String? {
     if (!userName.isNullOrBlank()) return userName
@@ -13,11 +14,11 @@ private fun TaskAnswerDto.resolveUserName(): String? {
 
 fun TaskAnswerDto.toTaskAnswer(): TaskAnswer = TaskAnswer(
     id = id,
-    score = score,
+    score = score?.roundToInt(),
     submittedAt = submittedAt,
     status = status,
     files = files.map { it.toTaskAnswerFile() },
-    maxScore = maxScore,
+    maxScore = maxScore?.roundToInt(),
     postName = postName,
     userId = userId ?: user?.id ?: userModel?.id ?: author?.id,
     userName = resolveUserName(),
