@@ -10,6 +10,10 @@ import com.example.googleclass.feature.post.data.model.PostType
 import com.example.googleclass.feature.post.data.model.PostUpdateDto
 import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 import com.example.googleclass.feature.post.domain.repository.PostRepository
+import com.example.googleclass.feature.post.presentation.needsEvaluationFunction
+import com.example.googleclass.feature.post.presentation.needsMinScore
+import com.example.googleclass.feature.post.presentation.needsMultiplier
+import com.example.googleclass.feature.post.presentation.needsPassThreshold
 import com.example.googleclass.feature.taskdetail.domain.repository.FileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -230,36 +234,38 @@ class PostEditorScreenViewModel(
                     } else {
                         null
                     }
+                    val evalType = state.taskMarkEvaluationType
                     postRepository.createPost(
                         courseId = courseId,
                         post = PostCreateDto(
                             text = state.text,
                             files = files,
                             postType = state.selectedPostType,
-                            taskMarkEvaluationType = if (isTask) state.taskMarkEvaluationType else null,
+                            taskMarkEvaluationType = if (isTask) evalType else null,
                             maxScore = if (isTask) state.maxScore.toFloatOrNull() else null,
-                            minScore = if (isTask) state.minScore.toFloatOrNull() else null,
-                            multiplier = if (isTask) state.multiplier.toFloatOrNull() else null,
-                            passThreshold = if (isTask) state.passThreshold.toFloatOrNull() else null,
-                            evaluationFunction = if (isTask) state.evaluationFunction else null,
+                            minScore = if (isTask && evalType.needsMinScore()) state.minScore.toFloatOrNull() else null,
+                            multiplier = if (isTask && evalType.needsMultiplier()) state.multiplier.toFloatOrNull() else null,
+                            passThreshold = if (isTask && evalType.needsPassThreshold()) state.passThreshold.toFloatOrNull() else null,
+                            evaluationFunction = if (isTask && evalType.needsEvaluationFunction()) state.evaluationFunction else null,
                             deadline = deadlineIso,
                         ),
                     ).map { }
                 }
 
                 is PostEditorMode.Edit -> {
+                    val editEvalType = state.taskMarkEvaluationType
                     postRepository.editPost(
                         courseId = courseId,
                         postId = mode.postId,
                         post = PostUpdateDto(
                             text = state.text,
                             files = files,
-                            taskMarkEvaluationType = if (isTask) state.taskMarkEvaluationType else null,
+                            taskMarkEvaluationType = if (isTask) editEvalType else null,
                             maxScore = if (isTask) state.maxScore.toFloatOrNull() else null,
-                            minScore = if (isTask) state.minScore.toFloatOrNull() else null,
-                            multiplier = if (isTask) state.multiplier.toFloatOrNull() else null,
-                            passThreshold = if (isTask) state.passThreshold.toFloatOrNull() else null,
-                            evaluationFunction = if (isTask) state.evaluationFunction else null,
+                            minScore = if (isTask && editEvalType.needsMinScore()) state.minScore.toFloatOrNull() else null,
+                            multiplier = if (isTask && editEvalType.needsMultiplier()) state.multiplier.toFloatOrNull() else null,
+                            passThreshold = if (isTask && editEvalType.needsPassThreshold()) state.passThreshold.toFloatOrNull() else null,
+                            evaluationFunction = if (isTask && editEvalType.needsEvaluationFunction()) state.evaluationFunction else null,
                         ),
                     )
                 }
