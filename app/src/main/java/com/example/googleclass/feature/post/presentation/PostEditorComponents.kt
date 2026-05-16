@@ -400,6 +400,12 @@ private fun TaskMarkEvaluationType.toUiLabel(): String = when (this) {
     TaskMarkEvaluationType.PASS_FAIL -> stringResource(R.string.task_eval_pass_fail)
 }
 
+fun TaskMarkEvaluationType.needsMaxScore(): Boolean = when (this) {
+    TaskMarkEvaluationType.PASS_FAIL,
+    TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL -> false
+    else -> true
+}
+
 fun TaskMarkEvaluationType.needsMinScore(): Boolean = when (this) {
     TaskMarkEvaluationType.SUM,
     TaskMarkEvaluationType.MEAN_VALUE,

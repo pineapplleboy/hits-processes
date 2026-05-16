@@ -11,6 +11,7 @@ import com.example.googleclass.feature.post.data.model.PostUpdateDto
 import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 import com.example.googleclass.feature.post.domain.repository.PostRepository
 import com.example.googleclass.feature.post.presentation.needsEvaluationFunction
+import com.example.googleclass.feature.post.presentation.needsMaxScore
 import com.example.googleclass.feature.post.presentation.needsMinScore
 import com.example.googleclass.feature.post.presentation.needsMultiplier
 import com.example.googleclass.feature.post.presentation.needsPassThreshold
@@ -242,7 +243,7 @@ class PostEditorScreenViewModel(
                             files = files,
                             postType = state.selectedPostType,
                             taskMarkEvaluationType = if (isTask) evalType else null,
-                            maxScore = if (isTask) state.maxScore.toFloatOrNull() else null,
+                            maxScore = if (isTask && evalType.needsMaxScore()) state.maxScore.toFloatOrNull() else null,
                             minScore = if (isTask && evalType.needsMinScore()) state.minScore.toFloatOrNull() else null,
                             multiplier = if (isTask && evalType.needsMultiplier()) state.multiplier.toFloatOrNull() else null,
                             passThreshold = if (isTask && evalType.needsPassThreshold()) state.passThreshold.toFloatOrNull() else null,
@@ -261,7 +262,7 @@ class PostEditorScreenViewModel(
                             text = state.text,
                             files = files,
                             taskMarkEvaluationType = if (isTask) editEvalType else null,
-                            maxScore = if (isTask) state.maxScore.toFloatOrNull() else null,
+                            maxScore = if (isTask && editEvalType.needsMaxScore()) state.maxScore.toFloatOrNull() else null,
                             minScore = if (isTask && editEvalType.needsMinScore()) state.minScore.toFloatOrNull() else null,
                             multiplier = if (isTask && editEvalType.needsMultiplier()) state.multiplier.toFloatOrNull() else null,
                             passThreshold = if (isTask && editEvalType.needsPassThreshold()) state.passThreshold.toFloatOrNull() else null,

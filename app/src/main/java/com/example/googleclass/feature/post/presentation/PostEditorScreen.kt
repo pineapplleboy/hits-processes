@@ -199,19 +199,21 @@ private fun PostEditorForm(
                 enabled = state.isPostTypeEditable,
             )
 
-            OutlinedTextField(
-                value = state.maxScore,
-                onValueChange = { onEvent(PostEditorUiEvent.MaxScoreChanged(it)) },
-                label = { Text(stringResource(R.string.max_score_hint)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                ),
-            )
+            if (state.taskMarkEvaluationType.needsMaxScore()) {
+                OutlinedTextField(
+                    value = state.maxScore,
+                    onValueChange = { onEvent(PostEditorUiEvent.MaxScoreChanged(it)) },
+                    label = { Text(stringResource(R.string.max_score_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
+                )
+            }
 
             if (state.taskMarkEvaluationType.needsMinScore()) {
                 OutlinedTextField(
