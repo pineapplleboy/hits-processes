@@ -187,4 +187,14 @@
     <string name="task_eval_function_label">Функция оценивания</string>
     <string name="task_eval_function_sum">Сумма</string>
     <string name="task_eval_function_multiply">Произведение</string>
+    <string name="criteria_max_points_format">Мак��имум: %d баллов</string>
+
+    <!-- Marks -->
+    <string name="marks_title">Оценки</string>
+    <string name="marks_empty">Пока нет студентов</string>
+    <string name="marks_students_count">Студенты (%d)</string>
+    <string name="marks_passed">Зачтено</string>
+    <string name="marks_not_passed">Не сдано</string>
+    <string name="marks_loading_error">Ошибка загрузки: %d</string>
+    <string name="marks_unknown_error">Неизвестная ошибка</string>
 </resources>

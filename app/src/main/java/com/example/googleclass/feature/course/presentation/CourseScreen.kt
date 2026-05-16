@@ -1,6 +1,8 @@
 package com.example.googleclass.feature.course.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -189,11 +194,17 @@ fun CourseScreen(
                 title = course.name,
                 onNavigateBack = onNavigateBack,
                 actions = {
+                    if (!isTeacher && course.score != null) {
+                        CourseScoreBadge(
+                            score = course.score,
+                            isPassFail = course.courseMarkEvaluationType == "PASS_FAIL",
+                        )
+                    }
                     if (isTeacher) {
                         IconButton(onClick = onMarksClick) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_school),
-                                contentDescription = "Оценки",
+                                contentDescription = stringResource(R.string.marks_title),
                             )
                         }
                     }
@@ -217,7 +228,7 @@ fun CourseScreen(
             )
         }
     ) { paddingValues ->
-        androidx.compose.foundation.layout.Box(
+        Box(
             modifier = modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -270,7 +281,7 @@ fun CourseScreen(
             }
 
             if (isTeacher && selectedTab == 0) {
-                androidx.compose.foundation.layout.Box(
+                Box(
                     modifier = Modifier
                         .fillMaxSize(),
                     contentAlignment = Alignment.BottomEnd
@@ -671,6 +682,43 @@ private fun ParticipantsTab(
     }
 }
 
+
+@Composable
+private fun CourseScoreBadge(
+    score: Float,
+    isPassFail: Boolean,
+) {
+    if (isPassFail) {
+        val passed = score.toInt() == 1
+        val backgroundColor = if (passed) Color(0xFF4CAF50) else Color(0xFFF44336)
+        val text = if (passed) {
+            stringResource(R.string.marks_passed)
+        } else {
+            stringResource(R.string.marks_not_passed)
+        }
+
+        Box(
+            modifier = Modifier
+                .padding(end = 4.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(backgroundColor)
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White,
+            )
+        }
+    } else {
+        Text(
+            text = if (score % 1f == 0f) score.toInt().toString() else score.toString(),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(end = 4.dp),
+        )
+    }
+}
 
 @Preview(showBackground = true, name = "Экран курса (преподаватель)")
 @Composable

@@ -9,19 +9,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class StudentMarkItem(
-    val userId: String,
-    val name: String,
-    val email: String,
-    val role: String,
-)
-
-sealed interface MarksScreenState {
-    data object Loading : MarksScreenState
-    data class Error(val message: String) : MarksScreenState
-    data class Content(val students: List<StudentMarkItem>) : MarksScreenState
-}
-
 class MarksScreenViewModel(
     private val courseId: String,
     private val courseDetailApi: CourseDetailApi,
@@ -42,9 +29,12 @@ class MarksScreenViewModel(
         _uiState.value = MarksScreenState.Loading
         viewModelScope.launch {
             try {
+                val courseResponse = courseDetailApi.getCourse(courseId)
+                val isPassFail = courseResponse.body()?.courseMarkEvaluationType == "PASS_FAIL"
+
                 val response = courseDetailApi.getCourseUsers(courseId)
                 if (!response.isSuccessful) {
-                    _uiState.value = MarksScreenState.Error("Ошибка загрузки: ${response.code()}")
+                    _uiState.value = MarksScreenState.Error("${response.code()}")
                     Log.d(TAG, "getCourseUsers: error ${response.code()}")
                     return@launch
                 }
@@ -61,6 +51,8 @@ class MarksScreenViewModel(
                                 .ifBlank { user.email },
                             email = user.email,
                             role = dto.userRole,
+                            score = dto.score,
+                            isPassFail = isPassFail,
                         )
                     }
                     .sortedBy { it.name }
@@ -68,7 +60,7 @@ class MarksScreenViewModel(
                 _uiState.value = MarksScreenState.Content(students = students)
                 Log.d(TAG, "getCourseUsers: success, students = ${students.size}")
             } catch (e: Exception) {
-                _uiState.value = MarksScreenState.Error(e.message ?: "Неизвестная ошибка")
+                _uiState.value = MarksScreenState.Error(e.message ?: "")
                 Log.d(TAG, "getCourseUsers: exception", e)
             }
         }
