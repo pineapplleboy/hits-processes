@@ -10,7 +10,7 @@ import com.example.googleclass.common.network.UserApi
 import com.example.googleclass.feature.authorization.domain.repository.AuthRepository
 import kotlinx.coroutines.launch
 
-class ProfileViewModel(
+class ProfileScreenViewModel(
     private val userApi: UserApi,
     private val authRepository: AuthRepository,
 ) : ViewModel() {
@@ -67,6 +67,6 @@ class ProfileViewModel(
     }
 
     companion object {
-        private const val TAG = "ProfileViewModel"
+        private const val TAG = "ProfileScreenViewModel"
     }
 }

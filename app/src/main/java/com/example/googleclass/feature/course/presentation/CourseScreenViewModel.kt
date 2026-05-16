@@ -19,11 +19,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed interface CourseDetailUiState {
+sealed interface CourseScreenState {
 
-    data object Loading : CourseDetailUiState
+    data object Loading : CourseScreenState
 
-    data class Error(val message: String) : CourseDetailUiState
+    data class Error(val message: String) : CourseScreenState
 
     data class Content(
         val course: Course,
@@ -33,10 +33,10 @@ sealed interface CourseDetailUiState {
         val userRole: UserRole,
         val publications: List<Publication>,
         val users: Map<String, User>,
-    ) : CourseDetailUiState
+    ) : CourseScreenState
 }
 
-class CourseDetailViewModel(
+class CourseScreenViewModel(
     private val courseId: String,
     private val getCourseDetailUseCase: GetCourseDetailUseCase,
     private val repository: com.example.googleclass.feature.course.domain.repository.CourseDetailRepository,
@@ -44,16 +44,16 @@ class CourseDetailViewModel(
     private val userApi: UserApi,
 ) : ViewModel() {
 
-    private val _uiState: MutableStateFlow<CourseDetailUiState> =
-        MutableStateFlow(CourseDetailUiState.Loading)
-    val uiState: StateFlow<CourseDetailUiState> = _uiState.asStateFlow()
+    private val _uiState: MutableStateFlow<CourseScreenState> =
+        MutableStateFlow(CourseScreenState.Loading)
+    val uiState: StateFlow<CourseScreenState> = _uiState.asStateFlow()
 
     init {
         refresh()
     }
 
     fun refresh() {
-        _uiState.value = CourseDetailUiState.Loading
+        _uiState.value = CourseScreenState.Loading
         viewModelScope.launch {
             try {
                 val profileResponse = userApi.getMyProfile()
@@ -65,7 +65,7 @@ class CourseDetailViewModel(
 
                 val detailResult = getCourseDetailUseCase(courseId)
                 if (detailResult.isFailure) {
-                    _uiState.value = CourseDetailUiState.Error(
+                    _uiState.value = CourseScreenState.Error(
                         detailResult.exceptionOrNull()?.message ?: "Не удалось загрузить курс"
                     )
                     return@launch
@@ -90,7 +90,7 @@ class CourseDetailViewModel(
                 val isTeacher = role == UserRole.MAIN_TEACHER || role == UserRole.TEACHER
                 val isMainTeacher = role == UserRole.MAIN_TEACHER
 
-                _uiState.value = CourseDetailUiState.Content(
+                _uiState.value = CourseScreenState.Content(
                     course = data.course,
                     currentUser = currentUser,
                     isTeacher = isTeacher,
@@ -100,14 +100,14 @@ class CourseDetailViewModel(
                     users = data.users,
                 )
             } catch (e: Exception) {
-                _uiState.value = CourseDetailUiState.Error(e.message ?: "Неизвестная ошибка")
+                _uiState.value = CourseScreenState.Error(e.message ?: "Неизвестная ошибка")
             }
         }
     }
 
     fun onPromoteClick(userId: String, currentRole: UserRole) {
         val state = _uiState.value
-        if (state !is CourseDetailUiState.Content) return
+        if (state !is CourseScreenState.Content) return
 
         val targetRole = when (currentRole) {
             UserRole.STUDENT -> UserRole.TEACHER
@@ -123,7 +123,7 @@ class CourseDetailViewModel(
 
     fun onDemoteClick(userId: String, currentRole: UserRole) {
         val state = _uiState.value
-        if (state !is CourseDetailUiState.Content) return
+        if (state !is CourseScreenState.Content) return
 
         viewModelScope.launch {
             when (currentRole) {
@@ -150,7 +150,7 @@ class CourseDetailViewModel(
 
     fun updateCourse(name: String, description: String) {
         if (name.length < 3 || description.length < 3) {
-            Log.d("CourseDetailViewModel", "updateCourse: validation failed")
+            Log.d("CourseScreenViewModel", "updateCourse: validation failed")
             return
         }
         viewModelScope.launch {
@@ -163,13 +163,13 @@ class CourseDetailViewModel(
                     ),
                 )
                 if (response.isSuccessful) {
-                    Log.d("CourseDetailViewModel", "updateCourse: success")
+                    Log.d("CourseScreenViewModel", "updateCourse: success")
                     refresh()
                 } else {
-                    Log.d("CourseDetailViewModel", "updateCourse: error ${response.code()}")
+                    Log.d("CourseScreenViewModel", "updateCourse: error ${response.code()}")
                 }
             } catch (e: Exception) {
-                Log.d("CourseDetailViewModel", "updateCourse: exception", e)
+                Log.d("CourseScreenViewModel", "updateCourse: exception", e)
             }
         }
     }
@@ -179,20 +179,20 @@ class CourseDetailViewModel(
             try {
                 val response = coursesApi.leaveCourse(courseId)
                 if (response.isSuccessful) {
-                    Log.d("CourseDetailViewModel", "leaveCourse: success")
-                    _uiState.value = CourseDetailUiState.Error("Вы вышли из курса")
+                    Log.d("CourseScreenViewModel", "leaveCourse: success")
+                    _uiState.value = CourseScreenState.Error("Вы вышли из курса")
                 } else {
-                    Log.d("CourseDetailViewModel", "leaveCourse: error ${response.code()}")
+                    Log.d("CourseScreenViewModel", "leaveCourse: error ${response.code()}")
                 }
             } catch (e: Exception) {
-                Log.d("CourseDetailViewModel", "leaveCourse: exception", e)
+                Log.d("CourseScreenViewModel", "leaveCourse: exception", e)
             }
         }
     }
 
     fun toggleArchive() {
         val state = _uiState.value
-        if (state !is CourseDetailUiState.Content) return
+        if (state !is CourseScreenState.Content) return
 
         val targetArchived = !state.course.isArchived
         viewModelScope.launch {
@@ -202,13 +202,13 @@ class CourseDetailViewModel(
                     isArchived = targetArchived,
                 )
                 if (response.isSuccessful) {
-                    Log.d("CourseDetailViewModel", "toggleArchive: success -> $targetArchived")
+                    Log.d("CourseScreenViewModel", "toggleArchive: success -> $targetArchived")
                     refresh()
                 } else {
-                    Log.d("CourseDetailViewModel", "toggleArchive: error ${response.code()}")
+                    Log.d("CourseScreenViewModel", "toggleArchive: error ${response.code()}")
                 }
             } catch (e: Exception) {
-                Log.d("CourseDetailViewModel", "toggleArchive: exception", e)
+                Log.d("CourseScreenViewModel", "toggleArchive: exception", e)
             }
         }
     }

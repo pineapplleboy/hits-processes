@@ -1,6 +1,6 @@
 package com.example.googleclass.feature.courses.data.remote
 
-import com.example.googleclass.feature.taskdetail.data.model.FileModel
+import com.example.googleclass.feature.taskdetail.data.model.FileDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -43,7 +43,7 @@ interface TaskAnswerApi {
     @POST("api/v1/task-answer/pin-file/{taskAnswerId}")
     suspend fun appendFiles(
         @Path("taskAnswerId") taskAnswerId: String,
-        @Body files: List<FileModel>,
+        @Body files: List<FileDto>,
     ): Response<Unit>
 
     @DELETE("api/v1/task-answer/unpin-file/{taskAnswerId}/file/{fileId}")

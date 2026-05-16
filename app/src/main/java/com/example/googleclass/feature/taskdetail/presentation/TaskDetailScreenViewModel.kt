@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.googleclass.common.network.UserApi
 import com.example.googleclass.feature.course.domain.model.UserRole
-import com.example.googleclass.feature.post.data.model.PostModel
+import com.example.googleclass.feature.post.data.model.PostDto
 import com.example.googleclass.feature.post.data.model.PostType
 import com.example.googleclass.feature.post.domain.repository.PostRepository
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
@@ -40,7 +40,7 @@ private data class TaskAnswerState(
     val maxScore: Int,
 )
 
-class TaskDetailViewModel(
+class TaskDetailScreenViewModel(
     private val courseId: String,
     private val postId: String,
     private val userRole: UserRole,
@@ -52,9 +52,9 @@ class TaskDetailViewModel(
     private val userApi: UserApi,
 ) : ViewModel() {
 
-    private val _uiState: MutableStateFlow<TaskDetailUiState> =
-        MutableStateFlow(TaskDetailUiState.Loading)
-    val uiState: StateFlow<TaskDetailUiState> = _uiState.asStateFlow()
+    private val _uiState: MutableStateFlow<TaskDetailScreenState> =
+        MutableStateFlow(TaskDetailScreenState.Loading)
+    val uiState: StateFlow<TaskDetailScreenState> = _uiState.asStateFlow()
 
     private val _uiEffect = MutableSharedFlow<TaskDetailUiEffect>(extraBufferCapacity = 1)
     val uiEffect = _uiEffect
@@ -76,7 +76,7 @@ class TaskDetailViewModel(
             is TaskDetailUiEvent.TeacherTabSelected -> handleTeacherTab(event.tab)
             is TaskDetailUiEvent.OpenStudentChat -> {
                 val state = _uiState.value
-                val currentUserId = (state as? TaskDetailUiState.TeacherView)?.currentUserId ?: ""
+                val currentUserId = (state as? TaskDetailScreenState.TeacherView)?.currentUserId ?: ""
                 sendEffect(
                     TaskDetailUiEffect.NavigateToStudentChat(
                         taskAnswerId = event.taskAnswerId,
@@ -102,7 +102,7 @@ class TaskDetailViewModel(
 
     private fun loadPost() {
         viewModelScope.launch {
-            _uiState.value = TaskDetailUiState.Loading
+            _uiState.value = TaskDetailScreenState.Loading
             try {
                 loadPostInternal()
             } catch (e: Exception) {
@@ -156,7 +156,7 @@ class TaskDetailViewModel(
                                 )
                                 else -> null
                             } ?: run {
-                                _uiState.value = TaskDetailUiState.StudentView(
+                                _uiState.value = TaskDetailScreenState.StudentView(
                                     task = post.toTaskDetail(),
                                     submission = null,
                                     taskAnswerId = null,
@@ -182,7 +182,7 @@ class TaskDetailViewModel(
                                     isNewGrade = false,
                                 )
                             } else null
-                            _uiState.value = TaskDetailUiState.StudentView(
+                            _uiState.value = TaskDetailScreenState.StudentView(
                                 task = task,
                                 submission = submission,
                                 taskAnswerId = tid,
@@ -198,7 +198,7 @@ class TaskDetailViewModel(
                             loadPrivateComments(tid)
                         }
                         UserRole.TEACHER, UserRole.MAIN_TEACHER -> {
-                            _uiState.value = TaskDetailUiState.TeacherView(
+                            _uiState.value = TaskDetailScreenState.TeacherView(
                                 task = task,
                                 publicComments = comments,
                                 students = emptyList(),
@@ -233,29 +233,29 @@ class TaskDetailViewModel(
 
     private fun handleStudentTab(tab: StudentTab) {
         val state = _uiState.value
-        if (state is TaskDetailUiState.StudentView) {
+        if (state is TaskDetailScreenState.StudentView) {
             _uiState.value = state.copy(selectedTab = tab)
         }
     }
 
     private fun handleTeacherTab(tab: TeacherTab) {
         val state = _uiState.value
-        if (state is TaskDetailUiState.TeacherView) {
+        if (state is TaskDetailScreenState.TeacherView) {
             _uiState.value = state.copy(selectedTab = tab)
         }
     }
 
     private fun handleCommentInput(text: String) {
         when (val state = _uiState.value) {
-            is TaskDetailUiState.StudentView -> _uiState.value = state.copy(commentInput = text)
-            is TaskDetailUiState.TeacherView -> _uiState.value = state.copy(commentInput = text)
+            is TaskDetailScreenState.StudentView -> _uiState.value = state.copy(commentInput = text)
+            is TaskDetailScreenState.TeacherView -> _uiState.value = state.copy(commentInput = text)
             else -> Unit
         }
     }
 
     private fun handleFileAttached(uri: Uri, displayName: String) {
         val state = _uiState.value
-        if (state is TaskDetailUiState.StudentView &&
+        if (state is TaskDetailScreenState.StudentView &&
             state.submission == null &&
             state.taskAnswerId != null &&
             !state.isUploadingFile
@@ -263,7 +263,7 @@ class TaskDetailViewModel(
             _uiState.value = state.copy(isUploadingFile = true)
             viewModelScope.launch {
                 val uploadResult = fileRepository.uploadFile(uri, contentResolver) { }
-                val currentState = _uiState.value as? TaskDetailUiState.StudentView ?: return@launch
+                val currentState = _uiState.value as? TaskDetailScreenState.StudentView ?: return@launch
                 _uiState.value = currentState.copy(isUploadingFile = false)
                 uploadResult
                     .onSuccess { fileModel ->
@@ -285,7 +285,7 @@ class TaskDetailViewModel(
 
     private fun handleFileRemoved(fileId: String) {
         val state = _uiState.value
-        if (state is TaskDetailUiState.StudentView && state.taskAnswerId != null && state.submission == null) {
+        if (state is TaskDetailScreenState.StudentView && state.taskAnswerId != null && state.submission == null) {
             viewModelScope.launch {
                 taskAnswerRepository.unpinFile(state.taskAnswerId!!, fileId)
                     .onSuccess { refreshStudentTaskAnswer(state.taskAnswerId!!) }
@@ -298,7 +298,7 @@ class TaskDetailViewModel(
 
     private fun handleSendComment() {
         when (val state = _uiState.value) {
-            is TaskDetailUiState.StudentView -> {
+            is TaskDetailScreenState.StudentView -> {
                 if (state.commentInput.isBlank()) return
                 val text = state.commentInput
                 _uiState.value = state.copy(commentInput = "")
@@ -313,7 +313,7 @@ class TaskDetailViewModel(
                 }
             }
 
-            is TaskDetailUiState.TeacherView -> {
+            is TaskDetailScreenState.TeacherView -> {
                 if (state.commentInput.isBlank()) return
                 val text = state.commentInput
                 _uiState.value = state.copy(commentInput = "")
@@ -343,10 +343,10 @@ class TaskDetailViewModel(
             commentRepository.getPostComments(postId)
                 .onSuccess { comments ->
                     when (val state = _uiState.value) {
-                        is TaskDetailUiState.StudentView -> {
+                        is TaskDetailScreenState.StudentView -> {
                             _uiState.value = state.copy(publicComments = comments)
                         }
-                        is TaskDetailUiState.TeacherView -> {
+                        is TaskDetailScreenState.TeacherView -> {
                             _uiState.value = state.copy(publicComments = comments)
                         }
                         else -> Unit
@@ -367,7 +367,7 @@ class TaskDetailViewModel(
             commentRepository.getTaskAnswerComments(taskAnswerId)
                 .onSuccess { comments ->
                     val state = _uiState.value
-                    if (state is TaskDetailUiState.StudentView && state.taskAnswerId == taskAnswerId) {
+                    if (state is TaskDetailScreenState.StudentView && state.taskAnswerId == taskAnswerId) {
                         _uiState.value = state.copy(privateComments = comments)
                     }
                 }
@@ -392,7 +392,7 @@ class TaskDetailViewModel(
                         )
                     )
                     val state = _uiState.value
-                    if (state is TaskDetailUiState.StudentView) {
+                    if (state is TaskDetailScreenState.StudentView) {
                         _uiState.value = state.copy(commentInput = text)
                     }
                 }
@@ -401,7 +401,7 @@ class TaskDetailViewModel(
 
     private fun handleSubmitWork() {
         val state = _uiState.value
-        if (state is TaskDetailUiState.StudentView && state.taskAnswerId != null && state.submission == null) {
+        if (state is TaskDetailScreenState.StudentView && state.taskAnswerId != null && state.submission == null) {
             if (state.taskAnswerFiles.isEmpty()) {
                 sendEffect(TaskDetailUiEffect.ShowError("Прикрепите хотя бы один файл"))
                 return
@@ -418,7 +418,7 @@ class TaskDetailViewModel(
 
     private fun handleUnsubmitWork() {
         val state = _uiState.value
-        if (state is TaskDetailUiState.StudentView && state.taskAnswerId != null && state.submission != null) {
+        if (state is TaskDetailScreenState.StudentView && state.taskAnswerId != null && state.submission != null) {
             viewModelScope.launch {
                 taskAnswerRepository.unsubmitTask(state.taskAnswerId!!)
                     .onSuccess { refreshStudentTaskAnswer(state.taskAnswerId!!) }
@@ -434,7 +434,7 @@ class TaskDetailViewModel(
             taskAnswerRepository.getUserPostTaskAnswer(postId)
                 .getOrNull()
                 ?.let { ta ->
-                    val state = _uiState.value as? TaskDetailUiState.StudentView ?: return@launch
+                    val state = _uiState.value as? TaskDetailScreenState.StudentView ?: return@launch
                     if (state.taskAnswerId != taskAnswerId) return@launch
                     val submission = if (SUBMITTED_STATUSES.contains(ta.status.uppercase())) {
                         Submission(
@@ -458,7 +458,7 @@ class TaskDetailViewModel(
         viewModelScope.launch {
             taskAnswerRepository.getAllPostTaskAnswers(postId)
                 .onSuccess { taskAnswers ->
-                    val state = _uiState.value as? TaskDetailUiState.TeacherView ?: return@onSuccess
+                    val state = _uiState.value as? TaskDetailScreenState.TeacherView ?: return@onSuccess
                     val students = taskAnswers
                         .filter { ta -> SUBMITTED_STATUSES.contains(ta.status.uppercase()) }
                         .map { ta ->
@@ -482,7 +482,7 @@ class TaskDetailViewModel(
 
     private fun handleEvaluateStudent(event: TaskDetailUiEvent.EvaluateStudent) {
         val state = _uiState.value
-        if (state is TaskDetailUiState.TeacherView) {
+        if (state is TaskDetailScreenState.TeacherView) {
             _uiState.value = state.copy(
                 evaluateDialog = EvaluateDialogState(
                     taskAnswerId = event.taskAnswerId,
@@ -496,7 +496,7 @@ class TaskDetailViewModel(
 
     private fun handleSetEvaluateScore(score: Int) {
         val state = _uiState.value
-        if (state is TaskDetailUiState.TeacherView && state.evaluateDialog != null) {
+        if (state is TaskDetailScreenState.TeacherView && state.evaluateDialog != null) {
             _uiState.value = state.copy(
                 evaluateDialog = state.evaluateDialog.copy(score = score.coerceIn(0, state.evaluateDialog.maxScore)),
             )
@@ -505,7 +505,7 @@ class TaskDetailViewModel(
 
     private fun handleSubmitEvaluate() {
         val state = _uiState.value
-        if (state is TaskDetailUiState.TeacherView) {
+        if (state is TaskDetailScreenState.TeacherView) {
             val dialog = state.evaluateDialog ?: return
             viewModelScope.launch {
                 taskAnswerRepository.evaluateTask(dialog.taskAnswerId, dialog.score)
@@ -533,7 +533,7 @@ class TaskDetailViewModel(
 
     private fun handleDismissEvaluateDialog() {
         val state = _uiState.value
-        if (state is TaskDetailUiState.TeacherView) {
+        if (state is TaskDetailScreenState.TeacherView) {
             _uiState.value = state.copy(evaluateDialog = null)
         }
     }
@@ -586,14 +586,14 @@ class TaskDetailViewModel(
     }
 }
 
-private fun PostModel.toTaskDetail(): TaskDetail = TaskDetail(
+private fun PostDto.toTaskDetail(): TaskDetail = TaskDetail(
     id = id,
     title = text.take(80),
     authorId = author.id,
     authorName = "${author.firstName.orEmpty()} ${author.lastName.orEmpty()}".trim(),
-    createdAt = TaskDetailViewModel.formatIsoDate(createdAt),
+    createdAt = TaskDetailScreenViewModel.formatIsoDate(createdAt),
     description = text,
-    deadline = deadline?.let { TaskDetailViewModel.formatIsoDate(it) } ?: "Без дедлайна",
+    deadline = deadline?.let { TaskDetailScreenViewModel.formatIsoDate(it) } ?: "Без дедлайна",
     maxScore = maxScore.roundToInt(),
     files = files.map { TaskFile(id = it.id, fileName = it.fileName) },
     postType = postType.name,

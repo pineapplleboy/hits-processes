@@ -39,7 +39,7 @@ import org.koin.androidx.compose.koinViewModel
 fun ArchivedCoursesScreen(
     onNavigateBack: () -> Unit,
     onCourseClick: (String) -> Unit,
-    viewModel: ArchivedCoursesViewModel = koinViewModel(),
+    viewModel: ArchivedCoursesScreenViewModel = koinViewModel(),
 ) {
     ArchivedCoursesScreenContent(
         state = viewModel.state,

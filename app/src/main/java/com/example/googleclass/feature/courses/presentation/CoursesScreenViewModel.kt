@@ -9,7 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.googleclass.common.network.UserApi
 import com.example.googleclass.feature.authorization.domain.repository.AuthRepository
 import com.example.googleclass.feature.courses.data.remote.CourseMarkEvaluationType
-import com.example.googleclass.feature.taskdetail.presentation.TaskDetailViewModel
+import com.example.googleclass.feature.taskdetail.presentation.TaskDetailScreenViewModel
 import com.example.googleclass.feature.courses.data.remote.CourseCreateDto
 import com.example.googleclass.feature.courses.data.remote.CoursesApi
 import com.example.googleclass.feature.courses.data.remote.TaskAnswerApi
@@ -268,7 +268,7 @@ class CoursesScreenViewModel(
                             score = dto.score?.toString(),
                             maxScore = dto.maxScore?.toString(),
                             deadline = null,
-                            submittedAt = dto.submittedAt?.let { TaskDetailViewModel.formatIsoDate(it) },
+                            submittedAt = dto.submittedAt?.let { TaskDetailScreenViewModel.formatIsoDate(it) },
                         )
                     }
                 } else {

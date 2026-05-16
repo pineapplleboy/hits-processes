@@ -12,9 +12,9 @@ sealed interface PostEditorMode {
 
 // -- State --
 
-sealed interface PostEditorUiState {
+sealed interface PostEditorScreenState {
 
-    data object Loading : PostEditorUiState
+    data object Loading : PostEditorScreenState
 
     data class Content(
         val mode: PostEditorMode,
@@ -26,7 +26,7 @@ sealed interface PostEditorUiState {
         val existingAttachments: List<ExistingAttachment>,
         val isSaving: Boolean,
         val isPostTypeEditable: Boolean,
-    ) : PostEditorUiState
+    ) : PostEditorScreenState
 }
 
 data class ExistingAttachment(val id: String, val displayName: String)

@@ -5,7 +5,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import com.example.googleclass.common.network.safeApiCall
 import com.example.googleclass.feature.taskdetail.data.api.FileApi
-import com.example.googleclass.feature.taskdetail.data.model.FileModel
+import com.example.googleclass.feature.taskdetail.data.model.FileDto
 import com.example.googleclass.feature.taskdetail.data.progress.ProgressRequestBody
 import com.example.googleclass.feature.taskdetail.domain.repository.FileRepository
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +25,7 @@ class FileRepositoryImpl(
         uri: Uri,
         contentResolver: ContentResolver,
         onProgress: (percent: Int) -> Unit,
-    ): Result<FileModel> = withContext(Dispatchers.IO) {
+    ): Result<FileDto> = withContext(Dispatchers.IO) {
         try {
             val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
                 ?: return@withContext Result.failure(IllegalStateException("Cannot open input stream for $uri"))

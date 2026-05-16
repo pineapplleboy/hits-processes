@@ -7,9 +7,9 @@ import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmission
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
 
-sealed interface TaskDetailUiState {
+sealed interface TaskDetailScreenState {
 
-    data object Loading : TaskDetailUiState
+    data object Loading : TaskDetailScreenState
 
     data class StudentView(
         val task: TaskDetail,
@@ -24,7 +24,7 @@ sealed interface TaskDetailUiState {
         val selectedTab: StudentTab,
         val isAuthor: Boolean = false,
         val courseId: String = "",
-    ) : TaskDetailUiState
+    ) : TaskDetailScreenState
 
     data class TeacherView(
         val task: TaskDetail,
@@ -37,7 +37,7 @@ sealed interface TaskDetailUiState {
         val canEdit: Boolean = false,
         val evaluateDialog: EvaluateDialogState? = null,
         val currentUserId: String = "",
-    ) : TaskDetailUiState
+    ) : TaskDetailScreenState
 }
 
 data class EvaluateDialogState(

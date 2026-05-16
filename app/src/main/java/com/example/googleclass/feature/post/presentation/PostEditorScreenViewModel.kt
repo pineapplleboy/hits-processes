@@ -4,10 +4,10 @@ import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.googleclass.feature.post.data.model.AttachmentModel
-import com.example.googleclass.feature.post.data.model.PostCreateModel
+import com.example.googleclass.feature.post.data.model.AttachmentDto
+import com.example.googleclass.feature.post.data.model.PostCreateDto
 import com.example.googleclass.feature.post.data.model.PostType
-import com.example.googleclass.feature.post.data.model.PostUpdateModel
+import com.example.googleclass.feature.post.data.model.PostUpdateDto
 import com.example.googleclass.feature.post.domain.repository.PostRepository
 import com.example.googleclass.feature.taskdetail.domain.repository.FileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,16 +20,16 @@ import java.util.Locale
 import java.util.TimeZone
 import kotlin.math.roundToInt
 
-class PostEditorViewModel(
+class PostEditorScreenViewModel(
     private val mode: PostEditorMode,
     private val postRepository: PostRepository,
     private val fileRepository: FileRepository,
     private val contentResolver: ContentResolver,
 ) : ViewModel() {
 
-    private val _uiState: MutableStateFlow<PostEditorUiState> =
-        MutableStateFlow(PostEditorUiState.Loading)
-    val uiState: StateFlow<PostEditorUiState> = _uiState.asStateFlow()
+    private val _uiState: MutableStateFlow<PostEditorScreenState> =
+        MutableStateFlow(PostEditorScreenState.Loading)
+    val uiState: StateFlow<PostEditorScreenState> = _uiState.asStateFlow()
 
     private val _uiEffect = MutableStateFlow<PostEditorUiEffect>(PostEditorUiEffect.None)
     val uiEffect: StateFlow<PostEditorUiEffect> = _uiEffect.asStateFlow()
@@ -56,7 +56,7 @@ class PostEditorViewModel(
         when (mode) {
             is PostEditorMode.Create -> {
                 val defaultDeadline = formatDeadlineForDisplay(System.currentTimeMillis())
-                _uiState.value = PostEditorUiState.Content(
+                _uiState.value = PostEditorScreenState.Content(
                     mode = mode,
                     text = "",
                     selectedPostType = PostType.ANNOUNCEMENT,
@@ -76,7 +76,7 @@ class PostEditorViewModel(
                             val deadlineDisplay = post.deadline?.takeIf { it.isNotBlank() }
                                 ?.let { parseIsoToDisplay(it) }
                                 ?: formatDeadlineForDisplay(System.currentTimeMillis())
-                            _uiState.value = PostEditorUiState.Content(
+                            _uiState.value = PostEditorScreenState.Content(
                                 mode = mode,
                                 text = post.text,
                                 selectedPostType = post.postType,
@@ -140,7 +140,7 @@ class PostEditorViewModel(
 
     private fun handleSave() {
         val state = _uiState.value
-        if (state !is PostEditorUiState.Content || state.isSaving) return
+        if (state !is PostEditorScreenState.Content || state.isSaving) return
 
         if (state.text.isBlank()) {
             sendEffect(PostEditorUiEffect.ShowError("Введите текст публикации"))
@@ -192,7 +192,7 @@ class PostEditorViewModel(
             }
 
             val allFileIds = state.existingAttachments.map { it.id } + uploadedFileIds
-            val files = allFileIds.map { AttachmentModel(id = it) }
+            val files = allFileIds.map { AttachmentDto(id = it) }
 
             val courseId = when (mode) {
                 is PostEditorMode.Create -> mode.courseId
@@ -209,7 +209,7 @@ class PostEditorViewModel(
                     }
                     postRepository.createPost(
                         courseId = courseId,
-                        post = PostCreateModel(
+                        post = PostCreateDto(
                             text = state.text,
                             files = files,
                             postType = state.selectedPostType,
@@ -223,7 +223,7 @@ class PostEditorViewModel(
                     postRepository.editPost(
                         courseId = courseId,
                         postId = mode.postId,
-                        post = PostUpdateModel(
+                        post = PostUpdateDto(
                             text = state.text,
                             files = files,
                         ),
@@ -245,10 +245,10 @@ class PostEditorViewModel(
     }
 
     private inline fun updateContent(
-        transform: PostEditorUiState.Content.() -> PostEditorUiState.Content,
+        transform: PostEditorScreenState.Content.() -> PostEditorScreenState.Content,
     ) {
         val state = _uiState.value
-        if (state is PostEditorUiState.Content) {
+        if (state is PostEditorScreenState.Content) {
             _uiState.value = state.transform()
         }
     }

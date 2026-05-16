@@ -4,7 +4,7 @@ import com.example.googleclass.common.network.UserApi
 import com.example.googleclass.feature.course.data.repository.CourseDetailRepositoryImpl
 import com.example.googleclass.feature.course.domain.repository.CourseDetailRepository
 import com.example.googleclass.feature.course.domain.usecase.GetCourseDetailUseCase
-import com.example.googleclass.feature.course.presentation.CourseDetailViewModel
+import com.example.googleclass.feature.course.presentation.CourseScreenViewModel
 import com.example.googleclass.feature.courses.data.remote.CoursesApi
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -18,7 +18,7 @@ val courseDetailModule = module {
     factory { GetCourseDetailUseCase(get()) }
 
     viewModel { (courseId: String) ->
-        CourseDetailViewModel(
+        CourseScreenViewModel(
             courseId = courseId,
             getCourseDetailUseCase = get(),
             repository = get<CourseDetailRepository>(),

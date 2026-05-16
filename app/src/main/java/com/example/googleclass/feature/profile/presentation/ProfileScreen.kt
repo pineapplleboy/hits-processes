@@ -51,7 +51,7 @@ fun ProfileScreen(
     onArchivedCoursesClick: () -> Unit,
     onSwitchUserClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    viewModel: ProfileViewModel = koinViewModel(),
+    viewModel: ProfileScreenViewModel = koinViewModel(),
 ) {
     LaunchedEffect(viewModel.logoutCompleted) {
         if (viewModel.logoutCompleted) onLogoutClick()

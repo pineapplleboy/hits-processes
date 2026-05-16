@@ -4,7 +4,7 @@ import com.example.googleclass.feature.course.domain.model.Comment
 import com.example.googleclass.feature.course.domain.model.AssignmentStatus
 import com.example.googleclass.feature.course.domain.model.Publication
 import com.example.googleclass.feature.course.domain.model.PublicationType
-import com.example.googleclass.feature.post.data.model.PostModel
+import com.example.googleclass.feature.post.data.model.PostDto
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -14,7 +14,7 @@ private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).app
     timeZone = java.util.TimeZone.getTimeZone("UTC")
 }
 
-fun PostModel.toPublication(): Publication {
+fun PostDto.toPublication(): Publication {
     val title = text.lines().firstOrNull()?.take(80) ?: text.take(80).ifEmpty { "Публикация" }
     val createdAtDate = createdAt.parseOrNull() ?: Date(0)
     val deadlineDate = deadline
@@ -57,7 +57,7 @@ fun PostModel.toPublication(): Publication {
     )
 }
 
-private fun com.example.googleclass.feature.post.data.model.PostCommentModel.toComment(): Comment {
+private fun com.example.googleclass.feature.post.data.model.PostCommentDto.toComment(): Comment {
     val date = createdAt.parseOrNull() ?: Date(0)
     return Comment(userId = author.id, text = text, createdAt = date)
 }

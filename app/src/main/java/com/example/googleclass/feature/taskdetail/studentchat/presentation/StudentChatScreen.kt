@@ -36,7 +36,7 @@ fun StudentChatScreen(
     currentUserId: String,
     onNavigateBack: () -> Unit,
 ) {
-    val viewModel: StudentChatViewModel = koinViewModel(
+    val viewModel: StudentChatScreenViewModel = koinViewModel(
         parameters = { parametersOf(taskAnswerId, studentName, studentUserId, currentUserId) }
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -61,13 +61,13 @@ fun StudentChatScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StudentChatContent(
-    state: StudentChatUiState,
+    state: StudentChatScreenState,
     studentName: String,
     onEvent: (StudentChatUiEvent) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     val title = studentName.ifBlank { 
-        (state as? StudentChatUiState.ChatContent)?.studentName ?: "" 
+        (state as? StudentChatScreenState.ChatContent)?.studentName ?: "" 
     }.ifBlank { "Чат" }
 
     Scaffold(
@@ -95,7 +95,7 @@ private fun StudentChatContent(
             )
         },
         bottomBar = {
-            if (state is StudentChatUiState.ChatContent) {
+            if (state is StudentChatScreenState.ChatContent) {
                 ChatInputBar(
                     value = state.messageInput,
                     onValueChange = { onEvent(StudentChatUiEvent.MessageInputChanged(it)) },
@@ -105,8 +105,8 @@ private fun StudentChatContent(
         },
     ) { padding ->
         when (state) {
-            is StudentChatUiState.Loading -> LoadingState()
-            is StudentChatUiState.ChatContent -> ChatMessageList(
+            is StudentChatScreenState.Loading -> LoadingState()
+            is StudentChatScreenState.ChatContent -> ChatMessageList(
                 messages = state.messages.map {
                     it.toUiModel(
                         studentName = state.studentName,
