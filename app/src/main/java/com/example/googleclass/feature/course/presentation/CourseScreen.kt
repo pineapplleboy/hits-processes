@@ -70,6 +70,7 @@ fun CourseScreenRoute(
     onPostClick: (String) -> Unit,
     onAssignmentClick: (taskId: String, userRole: UserRole) -> Unit,
     onCreatePublicationClick: () -> Unit,
+    onMarksClick: () -> Unit = {},
 ) {
     val viewModel: CourseScreenViewModel = koinViewModel(parameters = { parametersOf(courseId) })
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -146,6 +147,7 @@ fun CourseScreenRoute(
                 onToggleArchiveClick = { viewModel.toggleArchive() },
                 onPromoteClick = { userId, role -> viewModel.onPromoteClick(userId, role) },
                 onDemoteClick = { userId, role -> viewModel.onDemoteClick(userId, role) },
+                onMarksClick = onMarksClick,
             )
         }
     }
@@ -171,6 +173,7 @@ fun CourseScreen(
     onToggleArchiveClick: () -> Unit,
     onPromoteClick: (String, UserRole) -> Unit,
     onDemoteClick: (String, UserRole) -> Unit,
+    onMarksClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -186,6 +189,14 @@ fun CourseScreen(
                 title = course.name,
                 onNavigateBack = onNavigateBack,
                 actions = {
+                    if (isTeacher) {
+                        IconButton(onClick = onMarksClick) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_school),
+                                contentDescription = "Оценки",
+                            )
+                        }
+                    }
                     if (isMainTeacher) {
                         IconButton(onClick = onEditCourseClick) {
                             Icon(
@@ -728,6 +739,7 @@ private fun CourseScreenPreview() {
             onLeaveCourseClick = { },
             onPromoteClick = { _, _ -> },
             onDemoteClick = { _, _ -> },
+            onMarksClick = {},
         )
     }
 }
