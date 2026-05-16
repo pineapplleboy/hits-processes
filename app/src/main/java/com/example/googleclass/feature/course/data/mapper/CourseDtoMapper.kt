@@ -1,6 +1,6 @@
 package com.example.googleclass.feature.course.data.mapper
 
-import com.example.googleclass.common.network.dto.UserModel
+import com.example.googleclass.common.network.dto.UserDto
 import com.example.googleclass.feature.course.data.remote.dto.CourseDto
 import com.example.googleclass.feature.course.data.remote.dto.UserCourseDto
 import com.example.googleclass.feature.course.domain.model.Course
@@ -19,7 +19,7 @@ fun CourseDto.toDomain(participants: List<CourseParticipant> = emptyList()): Cou
         participants = participants,
     )
 
-fun UserModel.toDomain(): User = User(
+fun UserDto.toDomain(): User = User(
     id = id,
     name = listOfNotNull(firstName, lastName)
         .joinToString(" ")

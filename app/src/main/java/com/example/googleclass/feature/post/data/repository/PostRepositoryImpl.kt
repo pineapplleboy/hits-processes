@@ -1,12 +1,12 @@
 package com.example.googleclass.feature.post.data.repository
 
-import com.example.googleclass.common.network.dto.IdResponseModel
+import com.example.googleclass.common.network.dto.IdResponseDto
 import com.example.googleclass.common.network.safeApiCall
 import com.example.googleclass.common.network.safeApiCallUnit
 import com.example.googleclass.feature.post.data.api.PostApi
-import com.example.googleclass.feature.post.data.model.PostCreateModel
-import com.example.googleclass.feature.post.data.model.PostModel
-import com.example.googleclass.feature.post.data.model.PostUpdateModel
+import com.example.googleclass.feature.post.data.model.PostCreateDto
+import com.example.googleclass.feature.post.data.model.PostDto
+import com.example.googleclass.feature.post.data.model.PostUpdateDto
 import com.example.googleclass.feature.post.domain.repository.PostRepository
 
 class PostRepositoryImpl(
@@ -15,8 +15,8 @@ class PostRepositoryImpl(
 
     override suspend fun createPost(
         courseId: String,
-        post: PostCreateModel,
-    ): Result<IdResponseModel> = safeApiCall(
+        post: PostCreateDto,
+    ): Result<IdResponseDto> = safeApiCall(
         apiCall = { postApi.createPost(courseId, post) },
         converter = { it },
     )
@@ -24,7 +24,7 @@ class PostRepositoryImpl(
     override suspend fun editPost(
         courseId: String,
         postId: String,
-        post: PostUpdateModel,
+        post: PostUpdateDto,
     ): Result<Unit> = safeApiCallUnit(
         apiCall = { postApi.editPost(courseId, postId, post) },
     )
@@ -32,7 +32,7 @@ class PostRepositoryImpl(
     override suspend fun getPost(
         courseId: String,
         postId: String,
-    ): Result<PostModel> = safeApiCall(
+    ): Result<PostDto> = safeApiCall(
         apiCall = { postApi.getCoursePost(courseId, postId) },
         converter = { it },
     )

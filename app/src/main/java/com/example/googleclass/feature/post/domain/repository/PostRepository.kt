@@ -1,27 +1,27 @@
 package com.example.googleclass.feature.post.domain.repository
 
-import com.example.googleclass.common.network.dto.IdResponseModel
-import com.example.googleclass.feature.post.data.model.PostCreateModel
-import com.example.googleclass.feature.post.data.model.PostModel
-import com.example.googleclass.feature.post.data.model.PostUpdateModel
+import com.example.googleclass.common.network.dto.IdResponseDto
+import com.example.googleclass.feature.post.data.model.PostCreateDto
+import com.example.googleclass.feature.post.data.model.PostDto
+import com.example.googleclass.feature.post.data.model.PostUpdateDto
 
 interface PostRepository {
 
     suspend fun createPost(
         courseId: String,
-        post: PostCreateModel,
-    ): Result<IdResponseModel>
+        post: PostCreateDto,
+    ): Result<IdResponseDto>
 
     suspend fun editPost(
         courseId: String,
         postId: String,
-        post: PostUpdateModel,
+        post: PostUpdateDto,
     ): Result<Unit>
 
     suspend fun getPost(
         courseId: String,
         postId: String,
-    ): Result<PostModel>
+    ): Result<PostDto>
 
     suspend fun deletePost(
         courseId: String,

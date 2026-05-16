@@ -55,7 +55,7 @@ fun TaskDetailScreen(
     onNavigateToCourseFeed: (courseId: String) -> Unit = {},
     onNavigateToStudentChat: (taskAnswerId: String, studentName: String, studentUserId: String, currentUserId: String) -> Unit = { _, _, _, _ -> },
 ) {
-    val viewModel: TaskDetailViewModel = koinViewModel(
+    val viewModel: TaskDetailScreenViewModel = koinViewModel(
         parameters = { parametersOf(courseId, postId, userRole) }
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -138,19 +138,19 @@ fun showToast(context: Context, @StringRes text: Int) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TaskDetailContent(
-    state: TaskDetailUiState,
+    state: TaskDetailScreenState,
     onEvent: (TaskDetailUiEvent) -> Unit,
     onPickFromDocuments: () -> Unit = {},
     onPickFromGallery: () -> Unit = {},
 ) {
     val canEdit = when (state) {
-        is TaskDetailUiState.TeacherView -> state.canEdit
-        is TaskDetailUiState.StudentView -> state.isAuthor
+        is TaskDetailScreenState.TeacherView -> state.canEdit
+        is TaskDetailScreenState.StudentView -> state.isAuthor
         else -> false
     }
     val canDelete = when (state) {
-        is TaskDetailUiState.TeacherView -> state.isAuthor
-        is TaskDetailUiState.StudentView -> state.isAuthor
+        is TaskDetailScreenState.TeacherView -> state.isAuthor
+        is TaskDetailScreenState.StudentView -> state.isAuthor
         else -> false
     }
 
@@ -193,9 +193,9 @@ private fun TaskDetailContent(
         },
     ) { padding ->
         when (state) {
-            is TaskDetailUiState.Loading -> LoadingState()
+            is TaskDetailScreenState.Loading -> LoadingState()
 
-            is TaskDetailUiState.StudentView -> StudentViewContent(
+            is TaskDetailScreenState.StudentView -> StudentViewContent(
                 state = state,
                 onEvent = onEvent,
                 onPickFromDocuments = onPickFromDocuments,
@@ -203,7 +203,7 @@ private fun TaskDetailContent(
                 modifier = Modifier.padding(padding),
             )
 
-            is TaskDetailUiState.TeacherView -> TeacherViewContent(
+            is TaskDetailScreenState.TeacherView -> TeacherViewContent(
                 state = state,
                 onEvent = onEvent,
                 modifier = Modifier.padding(padding),
@@ -214,7 +214,7 @@ private fun TaskDetailContent(
 
 @Composable
 private fun StudentViewContent(
-    state: TaskDetailUiState.StudentView,
+    state: TaskDetailScreenState.StudentView,
     onEvent: (TaskDetailUiEvent) -> Unit,
     onPickFromDocuments: () -> Unit,
     onPickFromGallery: () -> Unit,
@@ -267,7 +267,7 @@ private fun StudentViewContent(
 
 @Composable
 private fun TeacherViewContent(
-    state: TaskDetailUiState.TeacherView,
+    state: TaskDetailScreenState.TeacherView,
     onEvent: (TaskDetailUiEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -303,7 +303,7 @@ private fun TeacherViewContent(
 private fun StudentSubmittedPreview() {
     GoogleClassTheme {
         TaskDetailContent(
-            state = TaskDetailUiState.StudentView(
+            state = TaskDetailScreenState.StudentView(
                 task = TaskDetail(
                     id = "1",
                     title = "Задание 1: Основы синтаксиса",
@@ -342,7 +342,7 @@ private fun StudentSubmittedPreview() {
 private fun TeacherViewPreview() {
     GoogleClassTheme {
         TaskDetailContent(
-            state = TaskDetailUiState.TeacherView(
+            state = TaskDetailScreenState.TeacherView(
                 task = TaskDetail(
                     id = "2",
                     title = "Задание 2: Работа со списками",

@@ -1,9 +1,9 @@
 package com.example.googleclass.feature.post.data.api
 
-import com.example.googleclass.common.network.dto.IdResponseModel
-import com.example.googleclass.feature.post.data.model.PostCreateModel
-import com.example.googleclass.feature.post.data.model.PostModel
-import com.example.googleclass.feature.post.data.model.PostUpdateModel
+import com.example.googleclass.common.network.dto.IdResponseDto
+import com.example.googleclass.feature.post.data.model.PostCreateDto
+import com.example.googleclass.feature.post.data.model.PostDto
+import com.example.googleclass.feature.post.data.model.PostUpdateDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -17,14 +17,14 @@ interface PostApi {
     @POST(CREATE_POST)
     suspend fun createPost(
         @Path("courseId") courseId: String,
-        @Body post: PostCreateModel
-    ): Response<IdResponseModel>
+        @Body post: PostCreateDto
+    ): Response<IdResponseDto>
 
     @PUT(EDIT_POST)
     suspend fun editPost(
         @Path("courseId") courseId: String,
         @Path("postId") postId: String,
-        @Body post: PostUpdateModel
+        @Body post: PostUpdateDto
     ): Response<Unit>
 
     @DELETE(DELETE_POST)
@@ -34,13 +34,13 @@ interface PostApi {
     ): Response<Unit>
 
     @GET(GET_COURSE_POSTS)
-    suspend fun getCoursePosts(@Path("courseId") courseId: String): Response<List<PostModel>>
+    suspend fun getCoursePosts(@Path("courseId") courseId: String): Response<List<PostDto>>
 
     @GET(GET_POST)
     suspend fun getCoursePost(
         @Path("courseId") courseId: String,
         @Path("postId") postId: String
-    ): Response<PostModel>
+    ): Response<PostDto>
 
     private companion object {
         const val CREATE_POST = "api/v1/courses/{courseId}/posts"

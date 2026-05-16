@@ -9,7 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.googleclass.feature.courses.data.remote.CoursesApi
 import kotlinx.coroutines.launch
 
-class ArchivedCoursesViewModel(
+class ArchivedCoursesScreenViewModel(
     private val coursesApi: CoursesApi,
 ) : ViewModel() {
 

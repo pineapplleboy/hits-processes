@@ -8,7 +8,7 @@ import com.example.googleclass.feature.taskdetail.data.repository.TaskAnswerRepo
 import com.example.googleclass.feature.taskdetail.domain.repository.CommentRepository
 import com.example.googleclass.feature.taskdetail.domain.repository.FileRepository
 import com.example.googleclass.feature.taskdetail.domain.repository.TaskAnswerRepository
-import com.example.googleclass.feature.taskdetail.presentation.TaskDetailViewModel
+import com.example.googleclass.feature.taskdetail.presentation.TaskDetailScreenViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -18,7 +18,7 @@ val taskDetailModule = module {
     single<CommentRepository> { CommentRepositoryImpl(get()) }
     single<TaskAnswerRepository> { TaskAnswerRepositoryImpl(get<TaskAnswerApi>()) }
     viewModel { (courseId: String, postId: String, userRole: UserRole) ->
-        TaskDetailViewModel(
+        TaskDetailScreenViewModel(
             courseId = courseId,
             postId = postId,
             userRole = userRole,

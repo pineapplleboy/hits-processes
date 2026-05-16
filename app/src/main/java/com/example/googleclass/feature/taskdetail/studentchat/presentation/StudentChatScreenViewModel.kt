@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class StudentChatViewModel(
+class StudentChatScreenViewModel(
     private val taskAnswerId: String,
     private val studentName: String,
     private val studentUserId: String,
@@ -18,9 +18,9 @@ class StudentChatViewModel(
     private val commentRepository: CommentRepository,
 ) : ViewModel() {
 
-    private val _uiState: MutableStateFlow<StudentChatUiState> =
-        MutableStateFlow(StudentChatUiState.Loading)
-    val uiState: StateFlow<StudentChatUiState> = _uiState.asStateFlow()
+    private val _uiState: MutableStateFlow<StudentChatScreenState> =
+        MutableStateFlow(StudentChatScreenState.Loading)
+    val uiState: StateFlow<StudentChatScreenState> = _uiState.asStateFlow()
 
     private val _uiEffect = MutableSharedFlow<StudentChatUiEffect>(extraBufferCapacity = 1)
     val uiEffect = _uiEffect
@@ -39,14 +39,14 @@ class StudentChatViewModel(
 
     private fun handleInputChanged(text: String) {
         val state = _uiState.value
-        if (state is StudentChatUiState.ChatContent) {
+        if (state is StudentChatScreenState.ChatContent) {
             _uiState.value = state.copy(messageInput = text)
         }
     }
 
     private fun handleSendMessage() {
         val state = _uiState.value
-        if (state is StudentChatUiState.ChatContent && state.messageInput.isNotBlank()) {
+        if (state is StudentChatScreenState.ChatContent && state.messageInput.isNotBlank()) {
             val text = state.messageInput
             _uiState.value = state.copy(messageInput = "")
 
@@ -70,16 +70,16 @@ class StudentChatViewModel(
         viewModelScope.launch {
             commentRepository.getTaskAnswerCommentsAsChat(taskAnswerId, currentUserId)
                 .onSuccess { messages ->
-                    _uiState.value = StudentChatUiState.ChatContent(
+                    _uiState.value = StudentChatScreenState.ChatContent(
                         studentId = taskAnswerId,
                         studentName = studentName,
                         currentUserId = currentUserId,
                         messages = messages,
-                        messageInput = (_uiState.value as? StudentChatUiState.ChatContent)?.messageInput.orEmpty(),
+                        messageInput = (_uiState.value as? StudentChatScreenState.ChatContent)?.messageInput.orEmpty(),
                     )
                 }
                 .onFailure {
-                    _uiState.value = StudentChatUiState.ChatContent(
+                    _uiState.value = StudentChatScreenState.ChatContent(
                         studentId = taskAnswerId,
                         studentName = studentName,
                         currentUserId = currentUserId,

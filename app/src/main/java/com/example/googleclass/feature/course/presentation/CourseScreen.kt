@@ -71,7 +71,7 @@ fun CourseScreenRoute(
     onAssignmentClick: (taskId: String, userRole: UserRole) -> Unit,
     onCreatePublicationClick: () -> Unit,
 ) {
-    val viewModel: CourseDetailViewModel = koinViewModel(parameters = { parametersOf(courseId) })
+    val viewModel: CourseScreenViewModel = koinViewModel(parameters = { parametersOf(courseId) })
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showEditDialog by remember { mutableStateOf(false) }
 
@@ -81,8 +81,8 @@ fun CourseScreenRoute(
     }
 
     when (val state = uiState) {
-        is CourseDetailUiState.Loading -> LoadingState()
-        is CourseDetailUiState.Error -> {
+        is CourseScreenState.Loading -> LoadingState()
+        is CourseScreenState.Error -> {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -98,7 +98,7 @@ fun CourseScreenRoute(
             }
         }
 
-        is CourseDetailUiState.Content -> {
+        is CourseScreenState.Content -> {
             if (showEditDialog) {
                 EditCourseDialog(
                     initialName = state.course.name,

@@ -11,7 +11,7 @@ import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.course.domain.repository.CourseDetailRepository
 import com.example.googleclass.feature.course.domain.repository.CourseDetailResult
 import com.example.googleclass.feature.post.data.api.PostApi
-import com.example.googleclass.feature.post.data.model.PostModel
+import com.example.googleclass.feature.post.data.model.PostDto
 
 class CourseDetailRepositoryImpl(
     private val courseDetailApi: CourseDetailApi,
@@ -25,7 +25,7 @@ class CourseDetailRepositoryImpl(
 
     override suspend fun getCoursePosts(courseId: String): Result<List<com.example.googleclass.feature.course.domain.model.Publication>> = safeApiCall(
         apiCall = { postApi.getCoursePosts(courseId) },
-        converter = { list: List<PostModel> -> list.map { it.toPublication() } },
+        converter = { list: List<PostDto> -> list.map { it.toPublication() } },
     )
 
     override suspend fun getCourseWithParticipantsAndUsers(courseId: String): Result<CourseDetailResult> {

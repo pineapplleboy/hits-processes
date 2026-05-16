@@ -2,8 +2,8 @@ package com.example.googleclass.feature.taskdetail.studentchat.presentation
 
 import com.example.googleclass.feature.taskdetail.studentchat.domain.model.ChatMessage
 
-sealed interface StudentChatUiState {
-    data object Loading : StudentChatUiState
+sealed interface StudentChatScreenState {
+    data object Loading : StudentChatScreenState
 
     data class ChatContent(
         val studentId: String,
@@ -11,7 +11,7 @@ sealed interface StudentChatUiState {
         val currentUserId: String,
         val messages: List<ChatMessage>,
         val messageInput: String,
-    ) : StudentChatUiState
+    ) : StudentChatScreenState
 }
 
 sealed interface StudentChatUiEvent {

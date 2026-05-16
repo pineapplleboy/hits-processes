@@ -5,7 +5,7 @@ import com.example.googleclass.common.network.safeApiCallNullable
 import com.example.googleclass.common.network.safeApiCallUnit
 import com.example.googleclass.feature.courses.data.remote.TaskAnswerApi
 import com.example.googleclass.feature.courses.data.remote.TaskRateRequestDto
-import com.example.googleclass.feature.taskdetail.data.mapper.toFileModel
+import com.example.googleclass.feature.taskdetail.data.mapper.toFileDto
 import com.example.googleclass.feature.taskdetail.data.mapper.toTaskAnswer
 import com.example.googleclass.feature.taskdetail.domain.model.TaskAnswer
 import com.example.googleclass.feature.taskdetail.domain.model.TaskAnswerFile
@@ -47,7 +47,7 @@ class TaskAnswerRepositoryImpl(
             apiCall = {
                 taskAnswerApi.appendFiles(
                     taskAnswerId = taskAnswerId,
-                    files = files.map { it.toFileModel() },
+                    files = files.map { it.toFileDto() },
                 )
             },
         )

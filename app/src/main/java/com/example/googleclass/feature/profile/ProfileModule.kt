@@ -2,14 +2,14 @@ package com.example.googleclass.feature.profile
 
 import com.example.googleclass.common.network.UserApi
 import com.example.googleclass.feature.authorization.domain.repository.AuthRepository
-import com.example.googleclass.feature.profile.presentation.ProfileViewModel
+import com.example.googleclass.feature.profile.presentation.ProfileScreenViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val profileModule = module {
 
     viewModel {
-        ProfileViewModel(
+        ProfileScreenViewModel(
             userApi = get<UserApi>(),
             authRepository = get<AuthRepository>(),
         )

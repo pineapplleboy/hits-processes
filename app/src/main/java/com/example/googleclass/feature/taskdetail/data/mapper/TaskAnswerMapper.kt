@@ -1,7 +1,7 @@
 package com.example.googleclass.feature.taskdetail.data.mapper
 
 import com.example.googleclass.feature.courses.data.remote.TaskAnswerDto
-import com.example.googleclass.feature.taskdetail.data.model.FileModel
+import com.example.googleclass.feature.taskdetail.data.model.FileDto
 import com.example.googleclass.feature.taskdetail.domain.model.TaskAnswer
 import com.example.googleclass.feature.taskdetail.domain.model.TaskAnswerFile
 import kotlin.math.roundToInt
@@ -24,12 +24,12 @@ fun TaskAnswerDto.toTaskAnswer(): TaskAnswer = TaskAnswer(
     userName = resolveUserName(),
 )
 
-fun FileModel.toTaskAnswerFile(): TaskAnswerFile = TaskAnswerFile(
+fun FileDto.toTaskAnswerFile(): TaskAnswerFile = TaskAnswerFile(
     id = id,
     fileName = fileName,
 )
 
-fun TaskAnswerFile.toFileModel(): FileModel = FileModel(
+fun TaskAnswerFile.toFileDto(): FileDto = FileDto(
     id = id,
     fileName = fileName,
 )

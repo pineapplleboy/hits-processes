@@ -69,7 +69,7 @@ fun PostEditorScreen(
     onNavigateToCriteria: () -> Unit = {},
     onNavigateToCourseFeed: (courseId: String) -> Unit = {},
 ) {
-    val viewModel: PostEditorViewModel = koinViewModel(
+    val viewModel: PostEditorScreenViewModel = koinViewModel(
         parameters = { parametersOf(mode) },
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -116,13 +116,13 @@ fun PostEditorScreen(
 
 @Composable
 private fun PostEditorContent(
-    state: PostEditorUiState,
+    state: PostEditorScreenState,
     onEvent: (PostEditorUiEvent) -> Unit,
     onNavigateToCriteria: () -> Unit = {},
     onPickFromDocuments: () -> Unit = {},
     onPickFromGallery: () -> Unit = {},
 ) {
-    val isCreateMode = state is PostEditorUiState.Content &&
+    val isCreateMode = state is PostEditorScreenState.Content &&
         state.mode is PostEditorMode.Create
 
     Scaffold(
@@ -138,9 +138,9 @@ private fun PostEditorContent(
         },
     ) { padding ->
         when (state) {
-            is PostEditorUiState.Loading -> LoadingState()
+            is PostEditorScreenState.Loading -> LoadingState()
 
-            is PostEditorUiState.Content -> PostEditorForm(
+            is PostEditorScreenState.Content -> PostEditorForm(
                 state = state,
                 onEvent = onEvent,
                 onNavigateToCriteria = onNavigateToCriteria,
@@ -154,7 +154,7 @@ private fun PostEditorContent(
 
 @Composable
 private fun PostEditorForm(
-    state: PostEditorUiState.Content,
+    state: PostEditorScreenState.Content,
     onEvent: (PostEditorUiEvent) -> Unit,
     onNavigateToCriteria: () -> Unit,
     onPickFromDocuments: () -> Unit,
@@ -375,7 +375,7 @@ private fun DeadlinePicker(
                             ).show()
                             return@TextButton
                         }
-                        onValueChange(PostEditorViewModel.formatDeadlineForDisplay(cal.timeInMillis))
+                        onValueChange(PostEditorScreenViewModel.formatDeadlineForDisplay(cal.timeInMillis))
                         showTimePicker = false
                         pendingDateMillis = null
                     },
