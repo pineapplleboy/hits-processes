@@ -52,6 +52,7 @@ val networkModule = module {
         val json = Json {
             ignoreUnknownKeys = true
             coerceInputValues = true
+            encodeDefaults = true
         }
         Retrofit.Builder()
             .baseUrl(BASE_URL)
@@ -90,6 +91,7 @@ val networkModule = module {
         val json = Json {
             ignoreUnknownKeys = true
             coerceInputValues = true
+            encodeDefaults = true
         }
         Retrofit.Builder()
             .baseUrl(BASE_URL)

@@ -12,7 +12,7 @@ data class PostModel(
     val postType: PostType,
     val createdAt: String,
     val deadline: String? = null,
-    val maxScore: Int,
+    val maxScore: Float = 0f,
     val comments: List<PostCommentModel> = emptyList(),
     val taskAnswer: TaskAnswerInPostModel? = null,
 )

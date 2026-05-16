@@ -21,6 +21,7 @@ sealed class ScreenRoute(val route: String) {
             if (postId != null) "post_editor/$courseId?postId=$postId"
             else "post_editor/$courseId"
     }
+    data object Criteria : ScreenRoute("criteria")
     data object Profile : ScreenRoute("profile")
     data object ArchivedCourses : ScreenRoute("archived_courses")
 }

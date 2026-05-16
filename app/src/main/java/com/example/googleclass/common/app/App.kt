@@ -8,6 +8,7 @@ import com.example.googleclass.R
 import com.example.googleclass.feature.authorization.authorizationModule
 import com.example.googleclass.common.network.networkModule
 import com.example.googleclass.feature.course.courseDetailModule
+import com.example.googleclass.feature.criteria.criteriaModule
 import com.example.googleclass.feature.courses.coursesModule
 import com.example.googleclass.feature.post.postModule
 import com.example.googleclass.feature.profile.profileModule
@@ -32,6 +33,7 @@ class App : Application() {
                 studentChatModule,
                 coursesModule,
                 courseDetailModule,
+                criteriaModule,
                 postModule,
                 profileModule,
             )

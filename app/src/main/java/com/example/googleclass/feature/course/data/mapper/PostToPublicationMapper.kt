@@ -8,6 +8,7 @@ import com.example.googleclass.feature.post.data.model.PostModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
     timeZone = java.util.TimeZone.getTimeZone("UTC")
@@ -18,7 +19,7 @@ fun PostModel.toPublication(): Publication {
     val createdAtDate = createdAt.parseOrNull() ?: Date(0)
     val deadlineDate = deadline
         ?.takeIf { it.isNotBlank() }?.parseOrNull()
-    val maxScoreValue = if (maxScore <= 0) null else maxScore
+    val maxScoreValue = if (maxScore <= 0f) null else maxScore.roundToInt()
     val files = this.files.map { it.fileName?.takeIf { n -> n.isNotBlank() } ?: "Файл" }
     val commentsList = comments.map { it.toComment() }
     val assignmentStatus = taskAnswer?.let { answer ->

@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.googleclass.common.network.UserApi
 import com.example.googleclass.feature.authorization.domain.repository.AuthRepository
+import com.example.googleclass.feature.courses.data.remote.CourseMarkEvaluationType
 import com.example.googleclass.feature.taskdetail.presentation.TaskDetailViewModel
 import com.example.googleclass.feature.courses.data.remote.CourseCreateDto
 import com.example.googleclass.feature.courses.data.remote.CoursesApi
@@ -74,6 +75,24 @@ class CoursesScreenViewModel(
         dialogState = dialogState?.copy(description = value, error = null)
     }
 
+    fun onCourseMarkEvaluationTypeChanged(value: CourseMarkEvaluationType) {
+        val current = dialogState ?: return
+        dialogState = current.copy(
+            courseMarkEvaluationType = value,
+            passThreshold = if (value == CourseMarkEvaluationType.PASS_FAIL) {
+                current.passThreshold.ifBlank { "60" }
+            } else {
+                ""
+            },
+            error = null,
+        )
+    }
+
+    fun onCoursePassThresholdChanged(value: String) {
+        val filtered = value.filter { it.isDigit() || it == '.' || it == ',' }
+        dialogState = dialogState?.copy(passThreshold = filtered, error = null)
+    }
+
     fun submitCreateCourse() {
         val dialog = dialogState ?: return
         if (dialog.isCreating) return
@@ -90,12 +109,28 @@ class CoursesScreenViewModel(
             return
         }
 
+        val passThreshold = if (dialog.courseMarkEvaluationType == CourseMarkEvaluationType.PASS_FAIL) {
+            val parsed = dialog.passThreshold.replace(',', '.').toFloatOrNull()
+            if (parsed == null || parsed < 0f) {
+                dialogState = dialog.copy(error = "Укажите корректный проходной балл")
+                return
+            }
+            parsed
+        } else {
+            null
+        }
+
         dialogState = dialog.copy(isCreating = true, error = null)
 
         viewModelScope.launch {
             try {
                 val response = coursesApi.createCourse(
-                    CourseCreateDto(name = name, description = description)
+                    CourseCreateDto(
+                        name = name,
+                        description = description,
+                        courseMarkEvaluationType = dialog.courseMarkEvaluationType,
+                        passThreshold = passThreshold,
+                    )
                 )
                 if (response.isSuccessful) {
                     Log.d(TAG, "createCourse: success")

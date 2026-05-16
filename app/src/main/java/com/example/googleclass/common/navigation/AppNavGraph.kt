@@ -13,6 +13,7 @@ import com.example.googleclass.feature.course.domain.model.CourseParticipant
 import com.example.googleclass.feature.course.domain.model.User
 import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.course.presentation.CourseScreenRoute
+import com.example.googleclass.feature.criteria.presentation.CriteriaScreen
 import com.example.googleclass.feature.courses.presentation.CoursesScreen
 import com.example.googleclass.feature.post.presentation.PostEditorMode
 import com.example.googleclass.feature.post.presentation.PostEditorScreen
@@ -161,6 +162,9 @@ fun AppNavGraph(
             PostEditorScreen(
                 mode = mode,
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateToCriteria = {
+                    navController.navigate(ScreenRoute.Criteria.route)
+                },
                 onNavigateToCourseFeed = { cId ->
                     val route = ScreenRoute.Course.createRoute(cId)
                     if (!navController.popBackStack(route, false)) {
@@ -170,6 +174,11 @@ fun AppNavGraph(
                         }
                     }
                 },
+            )
+        }
+        composable(ScreenRoute.Criteria.route) {
+            CriteriaScreen(
+                onNavigateBack = { navController.popBackStack() },
             )
         }
         composable(ScreenRoute.Profile.route) {

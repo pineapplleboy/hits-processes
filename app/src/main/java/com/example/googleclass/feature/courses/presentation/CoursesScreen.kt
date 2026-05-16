@@ -22,7 +22,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -65,6 +68,7 @@ import com.example.googleclass.common.presentation.theme.PrimaryBlue
 import com.example.googleclass.common.presentation.theme.SecondaryText
 import com.example.googleclass.common.presentation.theme.Success
 import com.example.googleclass.common.presentation.theme.White
+import com.example.googleclass.feature.courses.data.remote.CourseMarkEvaluationType
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -108,6 +112,8 @@ fun CoursesScreen(
         onDismissCreateDialog = viewModel::dismissCreateCourseDialog,
         onCourseNameChanged = viewModel::onCourseNameChanged,
         onCourseDescriptionChanged = viewModel::onCourseDescriptionChanged,
+        onCourseMarkEvaluationTypeChanged = viewModel::onCourseMarkEvaluationTypeChanged,
+        onCoursePassThresholdChanged = viewModel::onCoursePassThresholdChanged,
         onSubmitCreateCourse = viewModel::submitCreateCourse,
         onJoinCourseClick = viewModel::openJoinCourseDialog,
         onDismissJoinDialog = viewModel::dismissJoinCourseDialog,
@@ -131,6 +137,8 @@ fun CoursesScreenContent(
     onDismissCreateDialog: () -> Unit,
     onCourseNameChanged: (String) -> Unit,
     onCourseDescriptionChanged: (String) -> Unit,
+    onCourseMarkEvaluationTypeChanged: (CourseMarkEvaluationType) -> Unit,
+    onCoursePassThresholdChanged: (String) -> Unit,
     onSubmitCreateCourse: () -> Unit,
     onJoinCourseClick: () -> Unit,
     onDismissJoinDialog: () -> Unit,
@@ -165,6 +173,8 @@ fun CoursesScreenContent(
             onDismiss = onDismissCreateDialog,
             onNameChanged = onCourseNameChanged,
             onDescriptionChanged = onCourseDescriptionChanged,
+            onCourseMarkEvaluationTypeChanged = onCourseMarkEvaluationTypeChanged,
+            onPassThresholdChanged = onCoursePassThresholdChanged,
             onConfirm = onSubmitCreateCourse,
         )
     }
@@ -700,14 +710,19 @@ private fun TaskCard(
 
 // region Create Course Dialog
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CreateCourseDialog(
     dialogState: CreateCourseDialogState,
     onDismiss: () -> Unit,
     onNameChanged: (String) -> Unit,
     onDescriptionChanged: (String) -> Unit,
+    onCourseMarkEvaluationTypeChanged: (CourseMarkEvaluationType) -> Unit,
+    onPassThresholdChanged: (String) -> Unit,
     onConfirm: () -> Unit,
 ) {
+    var evaluationTypeExpanded by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -741,6 +756,53 @@ private fun CreateCourseDialog(
                     isError = dialogState.error != null && dialogState.description.trim().length < 3,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                ExposedDropdownMenuBox(
+                    expanded = evaluationTypeExpanded,
+                    onExpandedChange = {
+                        if (!dialogState.isCreating) {
+                            evaluationTypeExpanded = !evaluationTypeExpanded
+                        }
+                    },
+                ) {
+                    OutlinedTextField(
+                        value = dialogState.courseMarkEvaluationType.toUiLabel(),
+                        onValueChange = {},
+                        readOnly = true,
+                        enabled = !dialogState.isCreating,
+                        label = { Text("Тип оценивания") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = evaluationTypeExpanded)
+                        },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                    )
+                    ExposedDropdownMenu(
+                        expanded = evaluationTypeExpanded,
+                        onDismissRequest = { evaluationTypeExpanded = false },
+                    ) {
+                        CourseMarkEvaluationType.entries.forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type.toUiLabel()) },
+                                onClick = {
+                                    onCourseMarkEvaluationTypeChanged(type)
+                                    evaluationTypeExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+                if (dialogState.courseMarkEvaluationType == CourseMarkEvaluationType.PASS_FAIL) {
+                    OutlinedTextField(
+                        value = dialogState.passThreshold,
+                        onValueChange = onPassThresholdChanged,
+                        label = { Text("Проходной балл") },
+                        singleLine = true,
+                        enabled = !dialogState.isCreating,
+                        isError = dialogState.error != null && dialogState.passThreshold.isBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 if (dialogState.error != null) {
                     Text(
                         text = dialogState.error,
@@ -833,6 +895,14 @@ private fun JoinCourseDialog(
 
 // endregion
 
+private fun CourseMarkEvaluationType.toUiLabel(): String = when (this) {
+    CourseMarkEvaluationType.SUM -> "Сумма"
+    CourseMarkEvaluationType.MEAN_VALUE -> "Среднее значение"
+    CourseMarkEvaluationType.COEFFICIENTS_SUM -> "Сумма с коэффициентами"
+    CourseMarkEvaluationType.COEFFICIENTS_MEAN_VALUE -> "Среднее с коэффициентами"
+    CourseMarkEvaluationType.PASS_FAIL -> "Зачет/Незачет"
+}
+
 // region Previews
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -864,6 +934,8 @@ private fun CoursesContentPreview() {
             onDismissCreateDialog = {},
             onCourseNameChanged = {},
             onCourseDescriptionChanged = {},
+            onCourseMarkEvaluationTypeChanged = {},
+            onCoursePassThresholdChanged = {},
             onSubmitCreateCourse = {},
             onJoinCourseClick = {},
             onDismissJoinDialog = {},
@@ -882,6 +954,8 @@ private fun CoursesCreateDialogPreview() {
             onDismiss = {},
             onNameChanged = {},
             onDescriptionChanged = {},
+            onCourseMarkEvaluationTypeChanged = {},
+            onPassThresholdChanged = {},
             onConfirm = {},
         )
     }
@@ -918,6 +992,8 @@ private fun CoursesLoadingPreview() {
             onDismissCreateDialog = {},
             onCourseNameChanged = {},
             onCourseDescriptionChanged = {},
+            onCourseMarkEvaluationTypeChanged = {},
+            onCoursePassThresholdChanged = {},
             onSubmitCreateCourse = {},
             onJoinCourseClick = {},
             onDismissJoinDialog = {},
@@ -945,6 +1021,8 @@ private fun CoursesErrorPreview() {
             onDismissCreateDialog = {},
             onCourseNameChanged = {},
             onCourseDescriptionChanged = {},
+            onCourseMarkEvaluationTypeChanged = {},
+            onCoursePassThresholdChanged = {},
             onSubmitCreateCourse = {},
             onJoinCourseClick = {},
             onDismissJoinDialog = {},
