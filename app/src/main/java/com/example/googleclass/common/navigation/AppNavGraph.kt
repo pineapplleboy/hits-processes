@@ -18,6 +18,7 @@ import com.example.googleclass.feature.courses.presentation.CoursesScreen
 import com.example.googleclass.feature.post.presentation.PostEditorMode
 import com.example.googleclass.feature.post.presentation.PostEditorScreen
 import com.example.googleclass.feature.courses.presentation.ArchivedCoursesScreen
+import com.example.googleclass.feature.course.presentation.marks.MarksScreen
 import com.example.googleclass.feature.profile.presentation.ProfileScreen
 import com.example.googleclass.feature.taskdetail.studentchat.presentation.StudentChatScreen
 import com.example.googleclass.feature.taskdetail.presentation.TaskDetailScreen
@@ -81,6 +82,9 @@ fun AppNavGraph(
                 },
                 onCreatePublicationClick = {
                     navController.navigate(ScreenRoute.PostEditor.createRoute(courseId))
+                },
+                onMarksClick = {
+                    navController.navigate(ScreenRoute.Marks.createRoute(courseId))
                 },
             )
         }
@@ -201,6 +205,16 @@ fun AppNavGraph(
                 onCourseClick = { courseId ->
                     navController.navigate(ScreenRoute.Course.createRoute(courseId))
                 },
+            )
+        }
+        composable(
+            route = ScreenRoute.Marks.route,
+            arguments = listOf(navArgument("courseId") { defaultValue = "" }),
+        ) { backStackEntry ->
+            val courseId = backStackEntry.arguments?.getString("courseId") ?: ""
+            MarksScreen(
+                courseId = courseId,
+                onNavigateBack = { navController.popBackStack() },
             )
         }
     }

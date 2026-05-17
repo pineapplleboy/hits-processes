@@ -11,4 +11,5 @@ data class Course(
     val currentUserRole: UserRole? = null,
     val participants: List<CourseParticipant> = emptyList(),
     val courseMarkEvaluationType: TaskMarkEvaluationType? = null,
+    val score: Float? = null,
 )

@@ -13,4 +13,6 @@ data class CourseDto(
     @SerialName("createdAt") val createdAt: String? = null,
     @SerialName("currentUserCourseRole") val currentUserCourseRole: String? = null,
     @SerialName("courseMarkEvaluationType") val courseMarkEvaluationType: String? = null,
+    @SerialName("passThreshold") val passThreshold: Float? = null,
+    @SerialName("score") val score: Float? = null
 )

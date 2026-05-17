@@ -8,4 +8,5 @@ import kotlinx.serialization.Serializable
 data class UserCourseDto(
     @SerialName("userModel") val userModel: UserDto,
     @SerialName("userRole") val userRole: String,
+    @SerialName("score") val score: Float? = null
 )
