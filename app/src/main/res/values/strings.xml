@@ -183,6 +183,7 @@
     <string name="task_min_score_hint">Минимальный балл</string>
     <string name="task_multiplier_hint">Множитель</string>
     <string name="task_pass_threshold_hint">Порог прохождения (от 0 до 1)</string>
+    <string name="task_pass_threshold_error">Значение должно быть от 0 до 1</string>
     <string name="task_eval_function_label">Функция оценивания</string>
     <string name="task_eval_function_sum">Сумма</string>
     <string name="task_eval_function_multiply">Произведение</string>

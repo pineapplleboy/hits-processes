@@ -231,7 +231,7 @@ private fun PostEditorForm(
                 )
             }
 
-            if (state.taskMarkEvaluationType.needsMultiplier()) {
+            if (state.courseMarkEvaluationType.needsMultiplier()) {
                 OutlinedTextField(
                     value = state.multiplier,
                     onValueChange = { onEvent(PostEditorUiEvent.MultiplierChanged(it)) },
@@ -248,10 +248,18 @@ private fun PostEditorForm(
             }
 
             if (state.taskMarkEvaluationType.needsPassThreshold()) {
+                val thresholdValue = state.passThreshold.toFloatOrNull()
+                val isThresholdError = state.passThreshold.isNotBlank() &&
+                    (thresholdValue == null || thresholdValue < 0f || thresholdValue > 1f)
+
                 OutlinedTextField(
                     value = state.passThreshold,
                     onValueChange = { onEvent(PostEditorUiEvent.PassThresholdChanged(it)) },
                     label = { Text(stringResource(R.string.task_pass_threshold_hint)) },
+                    isError = isThresholdError,
+                    supportingText = if (isThresholdError) {
+                        { Text(stringResource(R.string.task_pass_threshold_error)) }
+                    } else null,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
@@ -263,7 +271,7 @@ private fun PostEditorForm(
                 )
             }
 
-            if (state.taskMarkEvaluationType.needsEvaluationFunction()) {
+            if (state.courseMarkEvaluationType.needsEvaluationFunction()) {
                 EvaluationFunctionSelector(
                     selectedFunction = state.evaluationFunction,
                     onFunctionSelected = { onEvent(PostEditorUiEvent.EvaluationFunctionSelected(it)) },
@@ -292,7 +300,13 @@ private fun PostEditorForm(
             onPickFromGallery = onPickFromGallery,
         )
 
-        val isFormValid = state.text.isNotBlank() && !state.isSaving
+        val hasThresholdError = state.selectedPostType == PostType.TASK &&
+            state.taskMarkEvaluationType.needsPassThreshold() &&
+            state.passThreshold.let {
+                val v = it.toFloatOrNull()
+                it.isNotBlank() && (v == null || v < 0f || v > 1f)
+            }
+        val isFormValid = state.text.isNotBlank() && !state.isSaving && !hasThresholdError
 
         Button(
             onClick = { onEvent(PostEditorUiEvent.Save) },

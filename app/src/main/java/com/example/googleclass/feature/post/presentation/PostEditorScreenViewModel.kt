@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.googleclass.feature.course.domain.repository.CourseDetailRepository
 import com.example.googleclass.feature.post.data.model.AttachmentDto
 import com.example.googleclass.feature.post.data.model.PostCreateDto
 import com.example.googleclass.feature.post.data.model.PostType
@@ -30,6 +31,7 @@ class PostEditorScreenViewModel(
     private val mode: PostEditorMode,
     private val postRepository: PostRepository,
     private val fileRepository: FileRepository,
+    private val courseDetailRepository: CourseDetailRepository,
     private val contentResolver: ContentResolver,
 ) : ViewModel() {
 
@@ -76,29 +78,38 @@ class PostEditorScreenViewModel(
     }
 
     private fun loadInitialData() {
-        when (mode) {
-            is PostEditorMode.Create -> {
-                val defaultDeadline = formatDeadlineForDisplay(System.currentTimeMillis())
-                _uiState.value = PostEditorScreenState.Content(
-                    mode = mode,
-                    text = "",
-                    selectedPostType = PostType.ANNOUNCEMENT,
-                    taskMarkEvaluationType = TaskMarkEvaluationType.TEACHER_DECISION,
-                    maxScore = "",
-                    minScore = "",
-                    multiplier = "1",
-                    passThreshold = "",
-                    evaluationFunction = PostCreateDto.EvaluationFunction.SUM,
-                    deadline = defaultDeadline,
-                    attachedFiles = emptyList(),
-                    existingAttachments = emptyList(),
-                    isSaving = false,
-                    isPostTypeEditable = true,
-                )
-            }
+        val courseId = when (mode) {
+            is PostEditorMode.Create -> mode.courseId
+            is PostEditorMode.Edit -> mode.courseId
+        }
 
-            is PostEditorMode.Edit -> {
-                viewModelScope.launch {
+        viewModelScope.launch {
+            val courseResult = courseDetailRepository.getCourse(courseId)
+            val courseEvalType = courseResult.getOrNull()?.courseMarkEvaluationType
+
+            when (mode) {
+                is PostEditorMode.Create -> {
+                    val defaultDeadline = formatDeadlineForDisplay(System.currentTimeMillis())
+                    _uiState.value = PostEditorScreenState.Content(
+                        mode = mode,
+                        text = "",
+                        selectedPostType = PostType.ANNOUNCEMENT,
+                        taskMarkEvaluationType = TaskMarkEvaluationType.TEACHER_DECISION,
+                        courseMarkEvaluationType = courseEvalType,
+                        maxScore = "",
+                        minScore = "",
+                        multiplier = "1",
+                        passThreshold = "",
+                        evaluationFunction = PostCreateDto.EvaluationFunction.SUM,
+                        deadline = defaultDeadline,
+                        attachedFiles = emptyList(),
+                        existingAttachments = emptyList(),
+                        isSaving = false,
+                        isPostTypeEditable = true,
+                    )
+                }
+
+                is PostEditorMode.Edit -> {
                     postRepository.getPost(mode.courseId, mode.postId)
                         .onSuccess { post ->
                             val deadlineDisplay = post.deadline?.takeIf { it.isNotBlank() }
@@ -110,6 +121,7 @@ class PostEditorScreenViewModel(
                                 selectedPostType = post.postType,
                                 taskMarkEvaluationType = post.taskMarkEvaluationType
                                     ?: TaskMarkEvaluationType.TEACHER_DECISION,
+                                courseMarkEvaluationType = courseEvalType,
                                 maxScore = if (post.maxScore > 0) post.maxScore.roundToInt().toString() else "",
                                 minScore = post.minScore?.toString() ?: "",
                                 multiplier = post.multiplier?.toString() ?: "1",
@@ -236,6 +248,7 @@ class PostEditorScreenViewModel(
                         null
                     }
                     val evalType = state.taskMarkEvaluationType
+                    val courseEvalType = state.courseMarkEvaluationType
                     postRepository.createPost(
                         courseId = courseId,
                         post = PostCreateDto(
@@ -245,9 +258,9 @@ class PostEditorScreenViewModel(
                             taskMarkEvaluationType = if (isTask) evalType else null,
                             maxScore = if (isTask && evalType.needsMaxScore()) state.maxScore.toFloatOrNull() else null,
                             minScore = if (isTask && evalType.needsMinScore()) state.minScore.toFloatOrNull() else null,
-                            multiplier = if (isTask && evalType.needsMultiplier()) state.multiplier.toFloatOrNull() else null,
+                            multiplier = if (isTask && courseEvalType.needsMultiplier()) state.multiplier.toFloatOrNull() else null,
                             passThreshold = if (isTask && evalType.needsPassThreshold()) state.passThreshold.toFloatOrNull() else null,
-                            evaluationFunction = if (isTask && evalType.needsEvaluationFunction()) state.evaluationFunction else null,
+                            evaluationFunction = if (isTask && courseEvalType.needsEvaluationFunction()) state.evaluationFunction else null,
                             deadline = deadlineIso,
                         ),
                     ).map { }
@@ -255,6 +268,7 @@ class PostEditorScreenViewModel(
 
                 is PostEditorMode.Edit -> {
                     val editEvalType = state.taskMarkEvaluationType
+                    val editCourseEvalType = state.courseMarkEvaluationType
                     postRepository.editPost(
                         courseId = courseId,
                         postId = mode.postId,
@@ -264,9 +278,9 @@ class PostEditorScreenViewModel(
                             taskMarkEvaluationType = if (isTask) editEvalType else null,
                             maxScore = if (isTask && editEvalType.needsMaxScore()) state.maxScore.toFloatOrNull() else null,
                             minScore = if (isTask && editEvalType.needsMinScore()) state.minScore.toFloatOrNull() else null,
-                            multiplier = if (isTask && editEvalType.needsMultiplier()) state.multiplier.toFloatOrNull() else null,
+                            multiplier = if (isTask && editCourseEvalType.needsMultiplier()) state.multiplier.toFloatOrNull() else null,
                             passThreshold = if (isTask && editEvalType.needsPassThreshold()) state.passThreshold.toFloatOrNull() else null,
-                            evaluationFunction = if (isTask && editEvalType.needsEvaluationFunction()) state.evaluationFunction else null,
+                            evaluationFunction = if (isTask && editCourseEvalType.needsEvaluationFunction()) state.evaluationFunction else null,
                         ),
                     )
                 }

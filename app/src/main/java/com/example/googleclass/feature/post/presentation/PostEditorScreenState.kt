@@ -23,6 +23,7 @@ sealed interface PostEditorScreenState {
         val text: String,
         val selectedPostType: PostType,
         val taskMarkEvaluationType: TaskMarkEvaluationType,
+        val courseMarkEvaluationType: TaskMarkEvaluationType?,
         val maxScore: String,
         val minScore: String,
         val multiplier: String,

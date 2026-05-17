@@ -17,6 +17,7 @@ val postModule = module {
             mode = mode,
             postRepository = get(),
             fileRepository = get(),
+            courseDetailRepository = get(),
             contentResolver = androidContext().contentResolver,
         )
     }

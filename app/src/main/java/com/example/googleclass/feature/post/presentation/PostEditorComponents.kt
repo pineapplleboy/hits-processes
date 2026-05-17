@@ -407,29 +407,27 @@ fun TaskMarkEvaluationType.needsMaxScore(): Boolean = when (this) {
 }
 
 fun TaskMarkEvaluationType.needsMinScore(): Boolean = when (this) {
+    TaskMarkEvaluationType.TEACHER_DECISION,
     TaskMarkEvaluationType.SUM,
     TaskMarkEvaluationType.MEAN_VALUE,
     TaskMarkEvaluationType.COEFFICIENTS_SUM,
-    TaskMarkEvaluationType.COEFFICIENTS_MEAN_VALUE -> true
+    TaskMarkEvaluationType.COEFFICIENTS_MEAN_VALUE,
+    TaskMarkEvaluationType.SELF_ASSESSMENT -> true
     else -> false
 }
 
-fun TaskMarkEvaluationType.needsMultiplier(): Boolean = when (this) {
+fun TaskMarkEvaluationType?.needsMultiplier(): Boolean = when (this) {
     TaskMarkEvaluationType.COEFFICIENTS_SUM,
     TaskMarkEvaluationType.COEFFICIENTS_MEAN_VALUE -> true
     else -> false
 }
 
 fun TaskMarkEvaluationType.needsPassThreshold(): Boolean = when (this) {
-    TaskMarkEvaluationType.PASS_FAIL,
-    TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL -> true
+    TaskMarkEvaluationType.PASS_FAIL -> true
     else -> false
 }
 
-fun TaskMarkEvaluationType.needsEvaluationFunction(): Boolean = when (this) {
-    TaskMarkEvaluationType.SUM,
-    TaskMarkEvaluationType.MEAN_VALUE,
-    TaskMarkEvaluationType.COEFFICIENTS_SUM,
-    TaskMarkEvaluationType.COEFFICIENTS_MEAN_VALUE -> true
+fun TaskMarkEvaluationType?.needsEvaluationFunction(): Boolean = when (this) {
+    TaskMarkEvaluationType.COEFFICIENTS_SUM -> true
     else -> false
 }
