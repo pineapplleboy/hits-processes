@@ -12,4 +12,5 @@ data class CourseDto(
     @SerialName("isArchived") val isArchived: Boolean = false,
     @SerialName("createdAt") val createdAt: String? = null,
     @SerialName("currentUserCourseRole") val currentUserCourseRole: String? = null,
+    @SerialName("courseMarkEvaluationType") val courseMarkEvaluationType: String? = null,
 )

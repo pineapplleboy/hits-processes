@@ -4,11 +4,18 @@ import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.googleclass.feature.course.domain.repository.CourseDetailRepository
 import com.example.googleclass.feature.post.data.model.AttachmentDto
 import com.example.googleclass.feature.post.data.model.PostCreateDto
 import com.example.googleclass.feature.post.data.model.PostType
 import com.example.googleclass.feature.post.data.model.PostUpdateDto
+import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 import com.example.googleclass.feature.post.domain.repository.PostRepository
+import com.example.googleclass.feature.post.presentation.needsEvaluationFunction
+import com.example.googleclass.feature.post.presentation.needsMaxScore
+import com.example.googleclass.feature.post.presentation.needsMinScore
+import com.example.googleclass.feature.post.presentation.needsMultiplier
+import com.example.googleclass.feature.post.presentation.needsPassThreshold
 import com.example.googleclass.feature.taskdetail.domain.repository.FileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +31,7 @@ class PostEditorScreenViewModel(
     private val mode: PostEditorMode,
     private val postRepository: PostRepository,
     private val fileRepository: FileRepository,
+    private val courseDetailRepository: CourseDetailRepository,
     private val contentResolver: ContentResolver,
 ) : ViewModel() {
 
@@ -44,7 +52,24 @@ class PostEditorScreenViewModel(
             is PostEditorUiEvent.Save -> handleSave()
             is PostEditorUiEvent.TextChanged -> updateContent { copy(text = event.text) }
             is PostEditorUiEvent.PostTypeSelected -> handlePostTypeSelected(event.postType)
-            is PostEditorUiEvent.MaxScoreChanged -> handleMaxScoreChanged(event.value)
+            is PostEditorUiEvent.TaskMarkEvaluationTypeSelected -> updateContent {
+                copy(taskMarkEvaluationType = event.type)
+            }
+            is PostEditorUiEvent.MaxScoreChanged -> updateContent {
+                copy(maxScore = event.value.filter { it.isDigit() || it == '.' })
+            }
+            is PostEditorUiEvent.MinScoreChanged -> updateContent {
+                copy(minScore = event.value.filter { it.isDigit() || it == '.' })
+            }
+            is PostEditorUiEvent.MultiplierChanged -> updateContent {
+                copy(multiplier = event.value.filter { it.isDigit() || it == '.' })
+            }
+            is PostEditorUiEvent.PassThresholdChanged -> updateContent {
+                copy(passThreshold = event.value.filter { it.isDigit() || it == '.' })
+            }
+            is PostEditorUiEvent.EvaluationFunctionSelected -> updateContent {
+                copy(evaluationFunction = event.function)
+            }
             is PostEditorUiEvent.FileAttached -> handleFileAttached(event.uri, event.displayName)
             is PostEditorUiEvent.FileRemoved -> handleFileRemoved(event.uri)
             is PostEditorUiEvent.ExistingAttachmentRemoved -> handleExistingAttachmentRemoved(event.attachmentId)
@@ -53,24 +78,38 @@ class PostEditorScreenViewModel(
     }
 
     private fun loadInitialData() {
-        when (mode) {
-            is PostEditorMode.Create -> {
-                val defaultDeadline = formatDeadlineForDisplay(System.currentTimeMillis())
-                _uiState.value = PostEditorScreenState.Content(
-                    mode = mode,
-                    text = "",
-                    selectedPostType = PostType.ANNOUNCEMENT,
-                    maxScore = "",
-                    deadline = defaultDeadline,
-                    attachedFiles = emptyList(),
-                    existingAttachments = emptyList(),
-                    isSaving = false,
-                    isPostTypeEditable = true,
-                )
-            }
+        val courseId = when (mode) {
+            is PostEditorMode.Create -> mode.courseId
+            is PostEditorMode.Edit -> mode.courseId
+        }
 
-            is PostEditorMode.Edit -> {
-                viewModelScope.launch {
+        viewModelScope.launch {
+            val courseResult = courseDetailRepository.getCourse(courseId)
+            val courseEvalType = courseResult.getOrNull()?.courseMarkEvaluationType
+
+            when (mode) {
+                is PostEditorMode.Create -> {
+                    val defaultDeadline = formatDeadlineForDisplay(System.currentTimeMillis())
+                    _uiState.value = PostEditorScreenState.Content(
+                        mode = mode,
+                        text = "",
+                        selectedPostType = PostType.ANNOUNCEMENT,
+                        taskMarkEvaluationType = TaskMarkEvaluationType.TEACHER_DECISION,
+                        courseMarkEvaluationType = courseEvalType,
+                        maxScore = "",
+                        minScore = "",
+                        multiplier = "1",
+                        passThreshold = "",
+                        evaluationFunction = PostCreateDto.EvaluationFunction.SUM,
+                        deadline = defaultDeadline,
+                        attachedFiles = emptyList(),
+                        existingAttachments = emptyList(),
+                        isSaving = false,
+                        isPostTypeEditable = true,
+                    )
+                }
+
+                is PostEditorMode.Edit -> {
                     postRepository.getPost(mode.courseId, mode.postId)
                         .onSuccess { post ->
                             val deadlineDisplay = post.deadline?.takeIf { it.isNotBlank() }
@@ -80,7 +119,15 @@ class PostEditorScreenViewModel(
                                 mode = mode,
                                 text = post.text,
                                 selectedPostType = post.postType,
-                                maxScore = post.maxScore.roundToInt().toString(),
+                                taskMarkEvaluationType = post.taskMarkEvaluationType
+                                    ?: TaskMarkEvaluationType.TEACHER_DECISION,
+                                courseMarkEvaluationType = courseEvalType,
+                                maxScore = if (post.maxScore > 0) post.maxScore.roundToInt().toString() else "",
+                                minScore = post.minScore?.toString() ?: "",
+                                multiplier = post.multiplier?.toString() ?: "1",
+                                passThreshold = post.passThreshold?.toString() ?: "",
+                                evaluationFunction = post.evaluationFunction
+                                    ?: PostCreateDto.EvaluationFunction.SUM,
                                 deadline = deadlineDisplay,
                                 attachedFiles = emptyList(),
                                 existingAttachments = post.files.map {
@@ -115,11 +162,6 @@ class PostEditorScreenViewModel(
         }
     }
 
-    private fun handleMaxScoreChanged(value: String) {
-        val filtered = value.filter { it.isDigit() }
-        updateContent { copy(maxScore = filtered) }
-    }
-
     private fun handleFileAttached(uri: Uri, displayName: String) {
         updateContent {
             copy(attachedFiles = attachedFiles + PostAttachedFile(uri, displayName))
@@ -148,17 +190,12 @@ class PostEditorScreenViewModel(
         }
 
         if (state.selectedPostType == PostType.TASK && state.isPostTypeEditable) {
-            val score = state.maxScore.toIntOrNull()
-            if (score == null || score <= 0) {
-                sendEffect(PostEditorUiEffect.ShowError("Укажите максимальный балл"))
-                return
-            }
             if (state.deadline.isBlank()) {
                 sendEffect(PostEditorUiEffect.ShowError("Укажите срок сдачи"))
                 return
             }
             val deadlineMs = try {
-                java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
                     .parse(state.deadline.trim())?.time
             } catch (_: Exception) {
                 null
@@ -198,34 +235,52 @@ class PostEditorScreenViewModel(
                 is PostEditorMode.Create -> mode.courseId
                 is PostEditorMode.Edit -> mode.courseId
             }
+
+            val isTask = state.selectedPostType == PostType.TASK
+
             val saveResult = when (mode) {
                 is PostEditorMode.Create -> {
-                    val deadlineIso = if (state.selectedPostType == PostType.TASK) {
+                    val deadlineIso = if (isTask) {
                         parseDisplayToIso(state.deadline) ?: formatDeadlineToIso(
                             System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L
                         )
                     } else {
-                        formatDeadlineToIso(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000)
+                        null
                     }
+                    val evalType = state.taskMarkEvaluationType
+                    val courseEvalType = state.courseMarkEvaluationType
                     postRepository.createPost(
                         courseId = courseId,
                         post = PostCreateDto(
                             text = state.text,
                             files = files,
                             postType = state.selectedPostType,
-                            maxScore = state.maxScore.toIntOrNull() ?: 0,
+                            taskMarkEvaluationType = if (isTask) evalType else null,
+                            maxScore = if (isTask && evalType.needsMaxScore()) state.maxScore.toFloatOrNull() else null,
+                            minScore = if (isTask && evalType.needsMinScore()) state.minScore.toFloatOrNull() else null,
+                            multiplier = if (isTask && courseEvalType.needsMultiplier()) state.multiplier.toFloatOrNull() else null,
+                            passThreshold = if (isTask && evalType.needsPassThreshold()) state.passThreshold.toFloatOrNull() else null,
+                            evaluationFunction = if (isTask && courseEvalType.needsEvaluationFunction()) state.evaluationFunction else null,
                             deadline = deadlineIso,
                         ),
                     ).map { }
                 }
 
                 is PostEditorMode.Edit -> {
+                    val editEvalType = state.taskMarkEvaluationType
+                    val editCourseEvalType = state.courseMarkEvaluationType
                     postRepository.editPost(
                         courseId = courseId,
                         postId = mode.postId,
                         post = PostUpdateDto(
                             text = state.text,
                             files = files,
+                            taskMarkEvaluationType = if (isTask) editEvalType else null,
+                            maxScore = if (isTask && editEvalType.needsMaxScore()) state.maxScore.toFloatOrNull() else null,
+                            minScore = if (isTask && editEvalType.needsMinScore()) state.minScore.toFloatOrNull() else null,
+                            multiplier = if (isTask && editCourseEvalType.needsMultiplier()) state.multiplier.toFloatOrNull() else null,
+                            passThreshold = if (isTask && editEvalType.needsPassThreshold()) state.passThreshold.toFloatOrNull() else null,
+                            evaluationFunction = if (isTask && editCourseEvalType.needsEvaluationFunction()) state.evaluationFunction else null,
                         ),
                     )
                 }

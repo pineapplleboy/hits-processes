@@ -1,7 +1,9 @@
 package com.example.googleclass.feature.post.presentation
 
 import android.net.Uri
+import com.example.googleclass.feature.post.data.model.PostCreateDto
 import com.example.googleclass.feature.post.data.model.PostType
+import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 
 // -- Mode --
 
@@ -20,7 +22,13 @@ sealed interface PostEditorScreenState {
         val mode: PostEditorMode,
         val text: String,
         val selectedPostType: PostType,
+        val taskMarkEvaluationType: TaskMarkEvaluationType,
+        val courseMarkEvaluationType: TaskMarkEvaluationType?,
         val maxScore: String,
+        val minScore: String,
+        val multiplier: String,
+        val passThreshold: String,
+        val evaluationFunction: PostCreateDto.EvaluationFunction,
         val deadline: String,
         val attachedFiles: List<PostAttachedFile>,
         val existingAttachments: List<ExistingAttachment>,
@@ -43,7 +51,12 @@ sealed interface PostEditorUiEvent {
     data object Save : PostEditorUiEvent
     data class TextChanged(val text: String) : PostEditorUiEvent
     data class PostTypeSelected(val postType: PostType) : PostEditorUiEvent
+    data class TaskMarkEvaluationTypeSelected(val type: TaskMarkEvaluationType) : PostEditorUiEvent
     data class MaxScoreChanged(val value: String) : PostEditorUiEvent
+    data class MinScoreChanged(val value: String) : PostEditorUiEvent
+    data class MultiplierChanged(val value: String) : PostEditorUiEvent
+    data class PassThresholdChanged(val value: String) : PostEditorUiEvent
+    data class EvaluationFunctionSelected(val function: PostCreateDto.EvaluationFunction) : PostEditorUiEvent
     data class FileAttached(val uri: Uri, val displayName: String) : PostEditorUiEvent
     data class FileRemoved(val uri: Uri) : PostEditorUiEvent
     data class ExistingAttachmentRemoved(val attachmentId: String) : PostEditorUiEvent

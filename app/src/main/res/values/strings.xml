@@ -169,4 +169,22 @@
     <string name="criteria_delete">Удалить критерий</string>
     <string name="criteria_pass_fail">+/-</string>
     <string name="criteria_max_points_format">Максимум: %d баллов</string>
+
+    <!-- Task evaluation strategy -->
+    <string name="task_evaluation_type_label">Стратегия оценивания</string>
+    <string name="task_eval_teacher_decision">Решение преподавателя</string>
+    <string name="task_eval_teacher_decision_pass_fail">Решение преподавателя (зачёт)</string>
+    <string name="task_eval_sum">Сумма</string>
+    <string name="task_eval_mean_value">Среднее значение</string>
+    <string name="task_eval_coefficients_sum">Сумма с коэффициентами</string>
+    <string name="task_eval_coefficients_mean_value">Среднее с коэффициентами</string>
+    <string name="task_eval_self_assessment">Самооценка</string>
+    <string name="task_eval_pass_fail">Зачёт/Незачёт</string>
+    <string name="task_min_score_hint">Минимальный балл</string>
+    <string name="task_multiplier_hint">Множитель</string>
+    <string name="task_pass_threshold_hint">Порог прохождения (от 0 до 1)</string>
+    <string name="task_pass_threshold_error">Значение должно быть от 0 до 1</string>
+    <string name="task_eval_function_label">Функция оценивания</string>
+    <string name="task_eval_function_sum">Сумма</string>
+    <string name="task_eval_function_multiply">Произведение</string>
 </resources>

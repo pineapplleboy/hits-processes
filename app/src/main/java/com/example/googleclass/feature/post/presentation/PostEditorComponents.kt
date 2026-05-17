@@ -38,7 +38,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.googleclass.R
 import com.example.googleclass.common.presentation.theme.MediumGray
+import com.example.googleclass.feature.post.data.model.PostCreateDto
 import com.example.googleclass.feature.post.data.model.PostType
+import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -300,4 +302,132 @@ internal fun ExistingAttachmentRow(
             tint = MediumGray,
         )
     }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun TaskMarkEvaluationTypeSelector(
+    selectedType: TaskMarkEvaluationType,
+    onTypeSelected: (TaskMarkEvaluationType) -> Unit,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.task_evaluation_type_label),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            TaskMarkEvaluationType.entries.forEach { type ->
+                FilterChip(
+                    selected = type == selectedType,
+                    onClick = { if (enabled) onTypeSelected(type) },
+                    enabled = enabled,
+                    label = {
+                        Text(
+                            text = type.toUiLabel(),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun EvaluationFunctionSelector(
+    selectedFunction: PostCreateDto.EvaluationFunction,
+    onFunctionSelected: (PostCreateDto.EvaluationFunction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.task_eval_function_label),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            PostCreateDto.EvaluationFunction.entries.forEach { func ->
+                FilterChip(
+                    selected = func == selectedFunction,
+                    onClick = { onFunctionSelected(func) },
+                    label = {
+                        Text(
+                            text = when (func) {
+                                PostCreateDto.EvaluationFunction.SUM -> stringResource(R.string.task_eval_function_sum)
+                                PostCreateDto.EvaluationFunction.MULTIPLY -> stringResource(R.string.task_eval_function_multiply)
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TaskMarkEvaluationType.toUiLabel(): String = when (this) {
+    TaskMarkEvaluationType.TEACHER_DECISION -> stringResource(R.string.task_eval_teacher_decision)
+    TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL -> stringResource(R.string.task_eval_teacher_decision_pass_fail)
+    TaskMarkEvaluationType.SUM -> stringResource(R.string.task_eval_sum)
+    TaskMarkEvaluationType.MEAN_VALUE -> stringResource(R.string.task_eval_mean_value)
+    TaskMarkEvaluationType.COEFFICIENTS_SUM -> stringResource(R.string.task_eval_coefficients_sum)
+    TaskMarkEvaluationType.COEFFICIENTS_MEAN_VALUE -> stringResource(R.string.task_eval_coefficients_mean_value)
+    TaskMarkEvaluationType.SELF_ASSESSMENT -> stringResource(R.string.task_eval_self_assessment)
+    TaskMarkEvaluationType.PASS_FAIL -> stringResource(R.string.task_eval_pass_fail)
+}
+
+fun TaskMarkEvaluationType.needsMaxScore(): Boolean = when (this) {
+    TaskMarkEvaluationType.PASS_FAIL,
+    TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL -> false
+    else -> true
+}
+
+fun TaskMarkEvaluationType.needsMinScore(): Boolean = when (this) {
+    TaskMarkEvaluationType.TEACHER_DECISION,
+    TaskMarkEvaluationType.SUM,
+    TaskMarkEvaluationType.MEAN_VALUE,
+    TaskMarkEvaluationType.COEFFICIENTS_SUM,
+    TaskMarkEvaluationType.COEFFICIENTS_MEAN_VALUE,
+    TaskMarkEvaluationType.SELF_ASSESSMENT -> true
+    else -> false
+}
+
+fun TaskMarkEvaluationType?.needsMultiplier(): Boolean = when (this) {
+    TaskMarkEvaluationType.COEFFICIENTS_SUM,
+    TaskMarkEvaluationType.COEFFICIENTS_MEAN_VALUE -> true
+    else -> false
+}
+
+fun TaskMarkEvaluationType.needsPassThreshold(): Boolean = when (this) {
+    TaskMarkEvaluationType.PASS_FAIL -> true
+    else -> false
+}
+
+fun TaskMarkEvaluationType?.needsEvaluationFunction(): Boolean = when (this) {
+    TaskMarkEvaluationType.COEFFICIENTS_SUM -> true
+    else -> false
 }

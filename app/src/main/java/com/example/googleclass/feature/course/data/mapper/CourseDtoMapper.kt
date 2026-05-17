@@ -7,6 +7,7 @@ import com.example.googleclass.feature.course.domain.model.Course
 import com.example.googleclass.feature.course.domain.model.CourseParticipant
 import com.example.googleclass.feature.course.domain.model.User
 import com.example.googleclass.feature.course.domain.model.UserRole
+import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 
 fun CourseDto.toDomain(participants: List<CourseParticipant> = emptyList()): Course =
     Course(
@@ -17,6 +18,9 @@ fun CourseDto.toDomain(participants: List<CourseParticipant> = emptyList()): Cou
         isArchived = isArchived,
         currentUserRole = currentUserCourseRole?.toUserRole(),
         participants = participants,
+        courseMarkEvaluationType = courseMarkEvaluationType?.let {
+            runCatching { TaskMarkEvaluationType.valueOf(it) }.getOrNull()
+        },
     )
 
 fun UserDto.toDomain(): User = User(
