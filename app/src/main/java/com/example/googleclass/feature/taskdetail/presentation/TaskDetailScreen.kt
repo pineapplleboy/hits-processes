@@ -291,6 +291,10 @@ private fun TeacherViewContent(
             commentInput = state.commentInput,
             evaluateDialog = state.evaluateDialog,
             showTabs = state.task.postType == "TASK",
+            canEvaluateDirectly = state.task.taskMarkEvaluationType in listOf(
+                com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType.TEACHER_DECISION,
+                com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL,
+            ),
             onEvent = onEvent,
         )
 

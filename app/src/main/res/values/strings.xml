@@ -16,6 +16,7 @@
     <string name="password_error">Пароль: от 8 до 32 символов</string>
 
     <!-- Курс -->
+    <string name="course_score_label">Оценка</string>
     <string name="course_description_label">Описание</string>
     <string name="course_archived">Архивный</string>
     <string name="course_active">Активный</string>
@@ -168,7 +169,6 @@
     <string name="criteria_edit">Изменить</string>
     <string name="criteria_delete">Удалить критерий</string>
     <string name="criteria_pass_fail">+/-</string>
-    <string name="criteria_max_points_format">Максимум: %d баллов</string>
 
     <!-- Task evaluation strategy -->
     <string name="task_evaluation_type_label">Стратегия оценивания</string>

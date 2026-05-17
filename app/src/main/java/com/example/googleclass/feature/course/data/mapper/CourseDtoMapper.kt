@@ -7,6 +7,7 @@ import com.example.googleclass.feature.course.domain.model.Course
 import com.example.googleclass.feature.course.domain.model.CourseParticipant
 import com.example.googleclass.feature.course.domain.model.User
 import com.example.googleclass.feature.course.domain.model.UserRole
+import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 
 fun CourseDto.toDomain(participants: List<CourseParticipant> = emptyList()): Course =
     Course(

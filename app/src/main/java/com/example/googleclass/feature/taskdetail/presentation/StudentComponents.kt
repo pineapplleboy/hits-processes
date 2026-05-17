@@ -41,6 +41,7 @@ import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmission
 internal fun StudentsList(
     students: List<StudentSubmissionInfo>,
     maxScore: Int,
+    canEvaluateDirectly: Boolean = true,
     onEvent: (TaskDetailUiEvent) -> Unit,
 ) {
     Column(
@@ -51,6 +52,7 @@ internal fun StudentsList(
             StudentItem(
                 student = student,
                 maxScore = maxScore,
+                canEvaluateDirectly = canEvaluateDirectly,
                 onDownloadFile = { fileId -> onEvent(TaskDetailUiEvent.DownloadFile(fileId)) },
                 onOpenChat = {
                     onEvent(
@@ -79,6 +81,7 @@ internal fun StudentsList(
 internal fun StudentItem(
     student: StudentSubmissionInfo,
     maxScore: Int,
+    canEvaluateDirectly: Boolean = true,
     onDownloadFile: (fileId: String) -> Unit,
     onOpenChat: () -> Unit,
     onEvaluate: () -> Unit,
@@ -162,21 +165,23 @@ internal fun StudentItem(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.background)
-                        .clickable(onClick = onEvaluate)
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Text(
-                        text = stringResource(R.string.evaluate_work),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = PrimaryBlue,
-                    )
+                if (canEvaluateDirectly) {
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.background)
+                            .clickable(onClick = onEvaluate)
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.evaluate_work),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = PrimaryBlue,
+                        )
+                    }
                 }
                 Row(
                     modifier = Modifier

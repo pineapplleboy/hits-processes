@@ -1,5 +1,7 @@
 package com.example.googleclass.feature.taskdetail.domain.model
 
+import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
+
 data class TaskDetail(
     val id: String,
     val title: String,
@@ -11,6 +13,7 @@ data class TaskDetail(
     val maxScore: Int,
     val files: List<TaskFile> = emptyList(),
     val postType: String = "",
+    val taskMarkEvaluationType: TaskMarkEvaluationType? = null,
 )
 
 data class TaskFile(

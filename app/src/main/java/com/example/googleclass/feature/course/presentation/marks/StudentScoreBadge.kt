@@ -43,10 +43,15 @@ fun StudentScoreBadge(
             )
         }
     } else {
+        val scoreColor = when {
+            score < 3f -> Color(0xFFF44336)
+            score < 4f -> Color(0xFFFF9800)
+            else -> Color(0xFF4CAF50)
+        }
         Text(
             text = if (score % 1f == 0f) score.toInt().toString() else score.toString(),
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
+            color = scoreColor,
         )
     }
 }

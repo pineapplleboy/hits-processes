@@ -62,6 +62,7 @@ import com.example.googleclass.feature.course.domain.model.PublicationType
 import com.example.googleclass.feature.course.domain.model.Submission
 import com.example.googleclass.feature.course.domain.model.User
 import com.example.googleclass.feature.course.domain.model.UserRole
+import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import java.text.SimpleDateFormat
@@ -194,12 +195,6 @@ fun CourseScreen(
                 title = course.name,
                 onNavigateBack = onNavigateBack,
                 actions = {
-                    if (!isTeacher && course.score != null) {
-                        CourseScoreBadge(
-                            score = course.score,
-                            isPassFail = course.courseMarkEvaluationType == "PASS_FAIL",
-                        )
-                    }
                     if (isTeacher) {
                         IconButton(onClick = onMarksClick) {
                             Icon(
@@ -353,16 +348,39 @@ private fun CourseInfoBlock(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (!course.description.isNullOrBlank()) {
-                Text(
-                    text = stringResource(R.string.course_description_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = course.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Box(modifier = Modifier){
+                    Column {
+                        Text(
+                            text = stringResource(R.string.course_description_label),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = course.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    if (!isTeacher && course.score != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.course_score_label),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(end = 8.dp),
+                            )
+                            CourseScoreBadge(
+                                score = course.score,
+                                isPassFail = course.courseMarkEvaluationType == TaskMarkEvaluationType.PASS_FAIL,
+                            )
+                        }
+                    }
+                }
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -429,17 +447,17 @@ private fun PublicationCard(
     ) {
         CardHeaderWithIcon(
             icon = {
-                    Icon(
-                        painter = painterResource(
-                            when (publication.type) {
-                                PublicationType.ANNOUNCEMENT -> R.drawable.ic_notifications
-                                PublicationType.ASSIGNMENT -> R.drawable.ic_assignment
-                                PublicationType.MATERIAL -> R.drawable.ic_description
-                            }
-                        ),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                    )
+                Icon(
+                    painter = painterResource(
+                        when (publication.type) {
+                            PublicationType.ANNOUNCEMENT -> R.drawable.ic_notifications
+                            PublicationType.ASSIGNMENT -> R.drawable.ic_assignment
+                            PublicationType.MATERIAL -> R.drawable.ic_description
+                        }
+                    ),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                )
             },
             title = publication.title,
             subtitle = "$authorName · ${dateFormat.format(publication.createdAt)}",
@@ -711,10 +729,15 @@ private fun CourseScoreBadge(
             )
         }
     } else {
+        val scoreColor = when {
+            score < 3f -> Color(0xFFF44336)
+            score < 4f -> Color(0xFFFF9800)
+            else -> Color(0xFF4CAF50)
+        }
         Text(
             text = if (score % 1f == 0f) score.toInt().toString() else score.toString(),
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
+            color = scoreColor,
             modifier = Modifier.padding(end = 4.dp),
         )
     }
