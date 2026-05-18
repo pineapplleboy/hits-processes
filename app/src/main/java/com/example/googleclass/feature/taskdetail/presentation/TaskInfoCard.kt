@@ -13,10 +13,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,11 +33,16 @@ import com.example.googleclass.R
 import com.example.googleclass.common.presentation.theme.ErrorRed
 import com.example.googleclass.common.presentation.theme.MediumGray
 import com.example.googleclass.common.presentation.theme.PrimaryBlue
+import com.example.googleclass.common.presentation.theme.SecondaryText
+import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
+import com.example.googleclass.feature.criteria.domain.model.usesPassFailScale
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
 
 @Composable
 internal fun TaskInfoCard(
     task: TaskDetail,
+    criteria: List<EvaluationCriterion> = emptyList(),
+    onEditCriteria: (() -> Unit)? = null,
     onDownloadFile: (fileId: String) -> Unit = {},
 ) {
     val isTask = task.postType == "TASK"
@@ -44,6 +52,7 @@ internal fun TaskInfoCard(
         "USEFUL_MATERIAL" -> stringResource(R.string.post_type_useful_material)
         else -> stringResource(R.string.task_label)
     }
+
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -150,7 +159,95 @@ internal fun TaskInfoCard(
                     style = MaterialTheme.typography.labelMedium,
                     color = MediumGray,
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                CriteriaSummaryBlock(
+                    criteria = criteria,
+                    onEditCriteria = onEditCriteria,
+                )
             }
         }
     }
 }
+
+@Composable
+private fun CriteriaSummaryBlock(
+    criteria: List<EvaluationCriterion>,
+    onEditCriteria: (() -> Unit)?,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = PrimaryBlue.copy(alpha = 0.08f),
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.criteria_summary_title, criteria.size),
+                style = MaterialTheme.typography.titleMedium,
+                color = PrimaryBlue,
+                fontWeight = FontWeight.SemiBold,
+            )
+
+            if (criteria.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.criteria_summary_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = SecondaryText,
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    criteria.forEach { criterion ->
+                        Text(
+                            text = "• ${criterion.toSummaryItem()}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    onEditCriteria?.let {
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = it,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Edit,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = stringResource(R.string.criteria_edit_button))
+        }
+    }
+}
+
+private fun EvaluationCriterion.toSummaryItem(): String {
+    return buildString {
+        append(name)
+        append(' ')
+        append(
+            if (usesPassFailScale) {
+                "(+/-)"
+            } else {
+                "(${formatDecimal(minScore)}-${formatDecimal(maxScore)})"
+            },
+        )
+        multiplier?.let {
+            append(" x")
+            append(formatDecimal(it))
+        }
+    }
+}
+
+private fun formatDecimal(value: Float): String =
+    if (value == value.toInt().toFloat()) value.toInt().toString() else value.toString()

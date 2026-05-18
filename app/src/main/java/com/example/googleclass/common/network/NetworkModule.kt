@@ -10,6 +10,7 @@ import com.example.googleclass.feature.authorization.domain.SessionExpiredNotifi
 import com.example.googleclass.feature.course.data.remote.CourseDetailApi
 import com.example.googleclass.feature.courses.data.remote.CoursesApi
 import com.example.googleclass.feature.courses.data.remote.TaskAnswerApi
+import com.example.googleclass.feature.criteria.data.api.CriteriaApi
 import com.example.googleclass.feature.post.data.api.PostApi
 import com.example.googleclass.feature.taskdetail.data.api.CommentApi
 import com.example.googleclass.feature.taskdetail.data.api.FileApi
@@ -126,5 +127,9 @@ val networkModule = module {
 
     single<TaskAnswerApi> {
         get<Retrofit>(named("authenticatedRetrofit")).create(TaskAnswerApi::class.java)
+    }
+
+    single<CriteriaApi> {
+        get<Retrofit>(named("authenticatedRetrofit")).create(CriteriaApi::class.java)
     }
 }

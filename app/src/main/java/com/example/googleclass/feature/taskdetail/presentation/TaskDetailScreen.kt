@@ -52,6 +52,7 @@ fun TaskDetailScreen(
     userRole: UserRole,
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (courseId: String, postId: String) -> Unit = { _, _ -> },
+    onNavigateToCriteria: (courseId: String, postId: String) -> Unit = { _, _ -> },
     onNavigateToCourseFeed: (courseId: String) -> Unit = {},
     onNavigateToStudentChat: (taskAnswerId: String, studentName: String, studentUserId: String, currentUserId: String) -> Unit = { _, _, _, _ -> },
 ) {
@@ -74,6 +75,10 @@ fun TaskDetailScreen(
 
                 is TaskDetailUiEffect.NavigateToEdit -> {
                     onNavigateToEdit(effect.courseId, effect.postId)
+                }
+
+                is TaskDetailUiEffect.NavigateToCriteria -> {
+                    onNavigateToCriteria(effect.courseId, effect.postId)
                 }
 
                 is TaskDetailUiEffect.NavigateToCourseFeed -> {
@@ -229,6 +234,7 @@ private fun StudentViewContent(
     ) {
         TaskInfoCard(
             task = state.task,
+            criteria = state.criteria,
             onDownloadFile = { fileId -> onEvent(TaskDetailUiEvent.DownloadFile(fileId)) },
         )
 
@@ -280,6 +286,8 @@ private fun TeacherViewContent(
     ) {
         TaskInfoCard(
             task = state.task,
+            criteria = state.criteria,
+            onEditCriteria = { onEvent(TaskDetailUiEvent.EditCriteria) },
             onDownloadFile = { fileId -> onEvent(TaskDetailUiEvent.DownloadFile(fileId)) },
         )
 
