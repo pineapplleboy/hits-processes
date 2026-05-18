@@ -35,6 +35,7 @@ internal fun TeacherCommentsSection(
     commentInput: String,
     evaluateDialog: EvaluateDialogState?,
     showTabs: Boolean = true,
+    canEvaluateDirectly: Boolean = true,
     onEvent: (TaskDetailUiEvent) -> Unit,
 ) {
     Card(
@@ -97,6 +98,7 @@ internal fun TeacherCommentsSection(
                     StudentsList(
                         students = students,
                         maxScore = maxScore,
+                        canEvaluateDirectly = canEvaluateDirectly,
                         onEvent = onEvent,
                     )
                 }

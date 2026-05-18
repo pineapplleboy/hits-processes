@@ -26,6 +26,9 @@ sealed class ScreenRoute(val route: String) {
     }
     data object Profile : ScreenRoute("profile")
     data object ArchivedCourses : ScreenRoute("archived_courses")
+    data object Marks : ScreenRoute("marks/{courseId}") {
+        fun createRoute(courseId: String) = "marks/$courseId"
+    }
 }
 
 private fun String.encodeForRoute(): String =

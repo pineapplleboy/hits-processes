@@ -614,4 +614,5 @@ private fun PostDto.toTaskDetail(): TaskDetail = TaskDetail(
     maxScore = maxScore.roundToInt(),
     files = files.map { TaskFile(id = it.id, fileName = it.fileName) },
     postType = postType.name,
+    taskMarkEvaluationType = taskMarkEvaluationType,
 )

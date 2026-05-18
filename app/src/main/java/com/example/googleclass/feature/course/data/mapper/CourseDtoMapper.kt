@@ -21,6 +21,7 @@ fun CourseDto.toDomain(participants: List<CourseParticipant> = emptyList()): Cou
         courseMarkEvaluationType = courseMarkEvaluationType?.let {
             runCatching { TaskMarkEvaluationType.valueOf(it) }.getOrNull()
         },
+        score = score
     )
 
 fun UserDto.toDomain(): User = User(

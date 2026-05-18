@@ -1,6 +1,8 @@
 package com.example.googleclass.feature.course.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -57,6 +62,7 @@ import com.example.googleclass.feature.course.domain.model.PublicationType
 import com.example.googleclass.feature.course.domain.model.Submission
 import com.example.googleclass.feature.course.domain.model.User
 import com.example.googleclass.feature.course.domain.model.UserRole
+import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import java.text.SimpleDateFormat
@@ -70,6 +76,7 @@ fun CourseScreenRoute(
     onPostClick: (String) -> Unit,
     onAssignmentClick: (taskId: String, userRole: UserRole) -> Unit,
     onCreatePublicationClick: () -> Unit,
+    onMarksClick: () -> Unit = {},
 ) {
     val viewModel: CourseScreenViewModel = koinViewModel(parameters = { parametersOf(courseId) })
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -146,6 +153,7 @@ fun CourseScreenRoute(
                 onToggleArchiveClick = { viewModel.toggleArchive() },
                 onPromoteClick = { userId, role -> viewModel.onPromoteClick(userId, role) },
                 onDemoteClick = { userId, role -> viewModel.onDemoteClick(userId, role) },
+                onMarksClick = onMarksClick,
             )
         }
     }
@@ -171,6 +179,7 @@ fun CourseScreen(
     onToggleArchiveClick: () -> Unit,
     onPromoteClick: (String, UserRole) -> Unit,
     onDemoteClick: (String, UserRole) -> Unit,
+    onMarksClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -186,6 +195,14 @@ fun CourseScreen(
                 title = course.name,
                 onNavigateBack = onNavigateBack,
                 actions = {
+                    if (isTeacher) {
+                        IconButton(onClick = onMarksClick) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_school),
+                                contentDescription = stringResource(R.string.marks_title),
+                            )
+                        }
+                    }
                     if (isMainTeacher) {
                         IconButton(onClick = onEditCourseClick) {
                             Icon(
@@ -206,7 +223,7 @@ fun CourseScreen(
             )
         }
     ) { paddingValues ->
-        androidx.compose.foundation.layout.Box(
+        Box(
             modifier = modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -259,7 +276,7 @@ fun CourseScreen(
             }
 
             if (isTeacher && selectedTab == 0) {
-                androidx.compose.foundation.layout.Box(
+                Box(
                     modifier = Modifier
                         .fillMaxSize(),
                     contentAlignment = Alignment.BottomEnd
@@ -331,16 +348,39 @@ private fun CourseInfoBlock(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (!course.description.isNullOrBlank()) {
-                Text(
-                    text = stringResource(R.string.course_description_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = course.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Box(modifier = Modifier){
+                    Column {
+                        Text(
+                            text = stringResource(R.string.course_description_label),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = course.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    if (!isTeacher && course.score != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.course_score_label),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(end = 8.dp),
+                            )
+                            CourseScoreBadge(
+                                score = course.score,
+                                isPassFail = course.courseMarkEvaluationType == TaskMarkEvaluationType.PASS_FAIL,
+                            )
+                        }
+                    }
+                }
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -407,17 +447,17 @@ private fun PublicationCard(
     ) {
         CardHeaderWithIcon(
             icon = {
-                    Icon(
-                        painter = painterResource(
-                            when (publication.type) {
-                                PublicationType.ANNOUNCEMENT -> R.drawable.ic_notifications
-                                PublicationType.ASSIGNMENT -> R.drawable.ic_assignment
-                                PublicationType.MATERIAL -> R.drawable.ic_description
-                            }
-                        ),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                    )
+                Icon(
+                    painter = painterResource(
+                        when (publication.type) {
+                            PublicationType.ANNOUNCEMENT -> R.drawable.ic_notifications
+                            PublicationType.ASSIGNMENT -> R.drawable.ic_assignment
+                            PublicationType.MATERIAL -> R.drawable.ic_description
+                        }
+                    ),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                )
             },
             title = publication.title,
             subtitle = "$authorName · ${dateFormat.format(publication.createdAt)}",
@@ -661,6 +701,48 @@ private fun ParticipantsTab(
 }
 
 
+@Composable
+private fun CourseScoreBadge(
+    score: Float,
+    isPassFail: Boolean,
+) {
+    if (isPassFail) {
+        val passed = score.toInt() == 1
+        val backgroundColor = if (passed) Color(0xFF4CAF50) else Color(0xFFF44336)
+        val text = if (passed) {
+            stringResource(R.string.marks_passed)
+        } else {
+            stringResource(R.string.marks_not_passed)
+        }
+
+        Box(
+            modifier = Modifier
+                .padding(end = 4.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(backgroundColor)
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White,
+            )
+        }
+    } else {
+        val scoreColor = when {
+            score < 3f -> Color(0xFFF44336)
+            score < 4f -> Color(0xFFFF9800)
+            else -> Color(0xFF4CAF50)
+        }
+        Text(
+            text = if (score % 1f == 0f) score.toInt().toString() else score.toString(),
+            style = MaterialTheme.typography.titleMedium,
+            color = scoreColor,
+            modifier = Modifier.padding(end = 4.dp),
+        )
+    }
+}
+
 @Preview(showBackground = true, name = "Экран курса (преподаватель)")
 @Composable
 private fun CourseScreenPreview() {
@@ -728,6 +810,7 @@ private fun CourseScreenPreview() {
             onLeaveCourseClick = { },
             onPromoteClick = { _, _ -> },
             onDemoteClick = { _, _ -> },
+            onMarksClick = {},
         )
     }
 }
