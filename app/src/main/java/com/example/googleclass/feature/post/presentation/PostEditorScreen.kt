@@ -68,7 +68,7 @@ import org.koin.core.parameter.parametersOf
 fun PostEditorScreen(
     mode: PostEditorMode,
     onNavigateBack: () -> Unit,
-    onNavigateToCriteria: () -> Unit = {},
+    onNavigateToCriteria: (courseId: String, postId: String) -> Unit = { _, _ -> },
     onNavigateToCourseFeed: (courseId: String) -> Unit = {},
 ) {
     val viewModel: PostEditorScreenViewModel = koinViewModel(
@@ -120,7 +120,7 @@ fun PostEditorScreen(
 private fun PostEditorContent(
     state: PostEditorScreenState,
     onEvent: (PostEditorUiEvent) -> Unit,
-    onNavigateToCriteria: () -> Unit = {},
+    onNavigateToCriteria: (courseId: String, postId: String) -> Unit = { _, _ -> },
     onPickFromDocuments: () -> Unit = {},
     onPickFromGallery: () -> Unit = {},
 ) {
@@ -158,7 +158,7 @@ private fun PostEditorContent(
 private fun PostEditorForm(
     state: PostEditorScreenState.Content,
     onEvent: (PostEditorUiEvent) -> Unit,
-    onNavigateToCriteria: () -> Unit,
+    onNavigateToCriteria: (courseId: String, postId: String) -> Unit,
     onPickFromDocuments: () -> Unit,
     onPickFromGallery: () -> Unit,
     modifier: Modifier = Modifier,
@@ -283,12 +283,32 @@ private fun PostEditorForm(
                 onValueChange = { onEvent(PostEditorUiEvent.DeadlineChanged(it)) },
             )
 
-            OutlinedButton(
-                onClick = onNavigateToCriteria,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(text = stringResource(R.string.criteria_open_button))
+            when (val mode = state.mode) {
+                is PostEditorMode.Edit -> {
+                    OutlinedButton(
+                        onClick = { onNavigateToCriteria(mode.courseId, mode.postId) },
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(text = stringResource(R.string.criteria_open_button))
+                    }
+                }
+
+                is PostEditorMode.Create -> {
+                    OutlinedButton(
+                        onClick = {},
+                        enabled = false,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(text = stringResource(R.string.criteria_open_button))
+                    }
+                    Text(
+                        text = stringResource(R.string.criteria_open_after_create_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
             }
         }
 

@@ -102,6 +102,9 @@ fun AppNavGraph(
                 onNavigateToEdit = { cId, pId ->
                     navController.navigate(ScreenRoute.PostEditor.createRoute(cId, pId))
                 },
+                onNavigateToCriteria = { cId, pId ->
+                    navController.navigate(ScreenRoute.Criteria.createRoute(cId, pId))
+                },
                 onNavigateToCourseFeed = { cId ->
                     navController.navigate(ScreenRoute.Course.createRoute(cId)) {
                         popUpTo(ScreenRoute.Courses.route) { inclusive = false }
@@ -166,8 +169,8 @@ fun AppNavGraph(
             PostEditorScreen(
                 mode = mode,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToCriteria = {
-                    navController.navigate(ScreenRoute.Criteria.route)
+                onNavigateToCriteria = { cId, pId ->
+                    navController.navigate(ScreenRoute.Criteria.createRoute(cId, pId))
                 },
                 onNavigateToCourseFeed = { cId ->
                     val route = ScreenRoute.Course.createRoute(cId)
@@ -180,8 +183,18 @@ fun AppNavGraph(
                 },
             )
         }
-        composable(ScreenRoute.Criteria.route) {
+        composable(
+            route = ScreenRoute.Criteria.route,
+            arguments = listOf(
+                navArgument("courseId") { defaultValue = "" },
+                navArgument("postId") { defaultValue = "" },
+            ),
+        ) { backStackEntry ->
+            val courseId = backStackEntry.arguments?.getString("courseId") ?: ""
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
             CriteriaScreen(
+                courseId = courseId,
+                postId = postId,
                 onNavigateBack = { navController.popBackStack() },
             )
         }

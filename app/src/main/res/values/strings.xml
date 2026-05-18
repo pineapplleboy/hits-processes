@@ -169,6 +169,36 @@
     <string name="criteria_edit">Изменить</string>
     <string name="criteria_delete">Удалить критерий</string>
     <string name="criteria_pass_fail">+/-</string>
+    <string name="criteria_max_points_format">Максимум: %d баллов</string>
+    <string name="criteria_open_after_create_hint">Критерии можно настроить после сохранения задания.</string>
+    <string name="criteria_add_first">Добавить первый критерий</string>
+    <string name="criteria_empty_title">Пока нет критериев</string>
+    <string name="criteria_empty_message">Добавьте критерии оценивания, чтобы преподавателю было проще проверять работу, а студенту — понимать ожидания.</string>
+    <string name="criteria_editor_create_title">Новый критерий</string>
+    <string name="criteria_editor_edit_title">Редактирование критерия</string>
+    <string name="criteria_editor_subtitle">Укажите параметры критерия оценивания</string>
+    <string name="criteria_editor_create_action">Добавить критерий</string>
+    <string name="criteria_editor_save_action">Сохранить критерий</string>
+    <string name="criteria_name_label">Название критерия</string>
+    <string name="criteria_name_placeholder">Например: Функциональность</string>
+    <string name="criteria_pass_fail_label">Тип "+/-"</string>
+    <string name="criteria_pass_fail_score_helper">Вместо баллов: выполнено / не выполнено</string>
+    <string name="criteria_pass_fail_min_score_helper">Для режима "+/-" используется шкала от 0 до 1.</string>
+    <string name="criteria_min_score_label">Минимальный балл</string>
+    <string name="criteria_multiplier_label">Коэффициент влияния</string>
+    <string name="criteria_multiplier_placeholder">Например: 0.5</string>
+    <string name="criteria_multiplier_helper">Вес критерия при расчёте итоговой оценки. Поле необязательно.</string>
+    <string name="criteria_delete_dialog_title">Удалить критерий?</string>
+    <string name="criteria_delete_dialog_message">Критерий "%1$s" будет удалён без возможности восстановления.</string>
+    <string name="criteria_delete_dialog_confirm">Удалить</string>
+    <string name="criteria_scores_empty">Критерии для этой работы пока не настроены.</string>
+    <string name="criteria_scores_teacher_title">Оценивание по критериям</string>
+    <string name="criteria_scores_self_assessment_title">Самооценка по критериям</string>
+    <string name="criteria_score_range_format">%1$s-%2$s баллов</string>
+    <string name="criteria_score_input_label">Оценка</string>
+    <string name="criteria_summary_title">Критерии оценивания (%d)</string>
+    <string name="criteria_summary_empty">Критерии для этого задания пока не добавлены.</string>
+    <string name="criteria_edit_button">Редактировать критерии</string>
 
     <!-- Task evaluation strategy -->
     <string name="task_evaluation_type_label">Стратегия оценивания</string>

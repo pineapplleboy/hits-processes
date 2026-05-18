@@ -1,6 +1,7 @@
 package com.example.googleclass.feature.taskdetail.presentation
 
 import android.net.Uri
+import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
 import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
@@ -24,6 +25,7 @@ sealed interface TaskDetailScreenState {
         val selectedTab: StudentTab,
         val isAuthor: Boolean = false,
         val courseId: String = "",
+        val criteria: List<EvaluationCriterion> = emptyList(),
     ) : TaskDetailScreenState
 
     data class TeacherView(
@@ -37,6 +39,7 @@ sealed interface TaskDetailScreenState {
         val canEdit: Boolean = false,
         val evaluateDialog: EvaluateDialogState? = null,
         val currentUserId: String = "",
+        val criteria: List<EvaluationCriterion> = emptyList(),
     ) : TaskDetailScreenState
 }
 
@@ -73,6 +76,7 @@ sealed interface TaskDetailUiEvent {
     data object UnsubmitWork : TaskDetailUiEvent
     data object SendComment : TaskDetailUiEvent
     data object EditPost : TaskDetailUiEvent
+    data object EditCriteria : TaskDetailUiEvent
     data object DeletePost : TaskDetailUiEvent
 
     data class FileAttached(val uri: Uri, val displayName: String) : TaskDetailUiEvent
@@ -95,6 +99,10 @@ sealed interface TaskDetailUiEvent {
 sealed interface TaskDetailUiEffect {
     data object NavigateBack : TaskDetailUiEffect
     data class NavigateToEdit(
+        val courseId: String,
+        val postId: String,
+    ) : TaskDetailUiEffect
+    data class NavigateToCriteria(
         val courseId: String,
         val postId: String,
     ) : TaskDetailUiEffect

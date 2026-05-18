@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.googleclass.common.network.UserApi
+import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
+import com.example.googleclass.feature.criteria.domain.usecase.GetMarkCriteriaUseCase
 import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.post.data.model.PostDto
 import com.example.googleclass.feature.post.data.model.PostType
@@ -50,6 +52,7 @@ class TaskDetailScreenViewModel(
     private val fileRepository: FileRepository,
     private val contentResolver: ContentResolver,
     private val userApi: UserApi,
+    private val getMarkCriteriaUseCase: GetMarkCriteriaUseCase,
 ) : ViewModel() {
 
     private val _uiState: MutableStateFlow<TaskDetailScreenState> =
@@ -74,6 +77,9 @@ class TaskDetailScreenViewModel(
             is TaskDetailUiEvent.CommentInputChanged -> handleCommentInput(event.text)
             is TaskDetailUiEvent.StudentTabSelected -> handleStudentTab(event.tab)
             is TaskDetailUiEvent.TeacherTabSelected -> handleTeacherTab(event.tab)
+            is TaskDetailUiEvent.EditCriteria -> sendEffect(
+                TaskDetailUiEffect.NavigateToCriteria(courseId = courseId, postId = postId)
+            )
             is TaskDetailUiEvent.OpenStudentChat -> {
                 val state = _uiState.value
                 val currentUserId = (state as? TaskDetailScreenState.TeacherView)?.currentUserId ?: ""
@@ -130,6 +136,7 @@ class TaskDetailScreenViewModel(
                         )
                     }
                     val isTaskPost = post.postType == PostType.TASK
+                    val criteria = loadCriteriaIfNeeded(isTaskPost)
 
                     when (userRole) {
                         UserRole.STUDENT -> {
@@ -170,6 +177,7 @@ class TaskDetailScreenViewModel(
                                     selectedTab = StudentTab.PUBLIC_COMMENTS,
                                     isAuthor = isAuthor,
                                     courseId = courseId,
+                                    criteria = criteria,
                                 )
                                 return@onSuccess
                             }
@@ -194,6 +202,7 @@ class TaskDetailScreenViewModel(
                                 selectedTab = StudentTab.PUBLIC_COMMENTS,
                                 isAuthor = isAuthor,
                                 courseId = courseId,
+                                criteria = criteria,
                             )
                             loadPrivateComments(tid)
                         }
@@ -208,6 +217,7 @@ class TaskDetailScreenViewModel(
                                 courseId = courseId,
                                 canEdit = isAuthor || userRole == UserRole.TEACHER || userRole == UserRole.MAIN_TEACHER,
                                 currentUserId = currentUserId ?: "",
+                                criteria = criteria,
                             )
                             if (isTaskPost) loadTaskStudents(post.maxScore.roundToInt())
                         }
@@ -229,6 +239,13 @@ class TaskDetailScreenViewModel(
                     sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка удаления поста"))
                 }
         }
+    }
+
+    private suspend fun loadCriteriaIfNeeded(isTaskPost: Boolean): List<EvaluationCriterion> {
+        if (!isTaskPost) return emptyList()
+
+        return getMarkCriteriaUseCase(courseId, postId)
+            .getOrElse { emptyList() }
     }
 
     private fun handleStudentTab(tab: StudentTab) {
