@@ -65,6 +65,7 @@ import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -701,6 +702,12 @@ private fun ParticipantsTab(
 }
 
 
+private fun formatCourseScore(score: Float): String =
+    NumberFormat.getNumberInstance(Locale.getDefault()).apply {
+        minimumFractionDigits = 0
+        maximumFractionDigits = 1
+    }.format(score)
+
 @Composable
 private fun CourseScoreBadge(
     score: Float,
@@ -735,7 +742,7 @@ private fun CourseScoreBadge(
             else -> Color(0xFF4CAF50)
         }
         Text(
-            text = if (score % 1f == 0f) score.toInt().toString() else score.toString(),
+            text = formatCourseScore(score),
             style = MaterialTheme.typography.titleMedium,
             color = scoreColor,
             modifier = Modifier.padding(end = 4.dp),
