@@ -2,6 +2,7 @@ package com.example.googleclass.feature.taskdetail
 
 import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.criteria.domain.usecase.GetMarkCriteriaUseCase
+import com.example.googleclass.feature.criteria.domain.usecase.GetTaskAnswerCriteriaScoresUseCase
 import com.example.googleclass.feature.courses.data.remote.TaskAnswerApi
 import com.example.googleclass.feature.taskdetail.data.repository.CommentRepositoryImpl
 import com.example.googleclass.feature.taskdetail.data.repository.FileRepositoryImpl
@@ -30,6 +31,7 @@ val taskDetailModule = module {
             contentResolver = androidContext().contentResolver,
             userApi = get(),
             getMarkCriteriaUseCase = get<GetMarkCriteriaUseCase>(),
+            getTaskAnswerCriteriaScoresUseCase = get<GetTaskAnswerCriteriaScoresUseCase>(),
         )
     }
 }

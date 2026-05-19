@@ -8,9 +8,17 @@ data class StudentSubmissionInfo(
     val maxScore: Int,
     val status: String,
     val files: List<StudentSubmissionFileInfo> = emptyList(),
+    val criteriaScores: List<StudentCriteriaScoreInfo> = emptyList(),
+    val hasCriteriaEvaluation: Boolean = false,
 )
 
 data class StudentSubmissionFileInfo(
     val id: String,
     val fileName: String,
+)
+
+data class StudentCriteriaScoreInfo(
+    val name: String,
+    val score: Float,
+    val maxScore: Float,
 )

@@ -60,6 +60,7 @@ import com.example.googleclass.common.presentation.theme.PrimaryBlue
 import com.example.googleclass.feature.post.data.model.PostCreateDto
 import com.example.googleclass.feature.post.data.model.PostType
 import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
+import com.example.googleclass.feature.post.data.model.supportsCriteria
 import com.example.googleclass.feature.taskdetail.presentation.rememberFilePicker
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -283,31 +284,33 @@ private fun PostEditorForm(
                 onValueChange = { onEvent(PostEditorUiEvent.DeadlineChanged(it)) },
             )
 
-            when (val mode = state.mode) {
-                is PostEditorMode.Edit -> {
-                    OutlinedButton(
-                        onClick = { onNavigateToCriteria(mode.courseId, mode.postId) },
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(text = stringResource(R.string.criteria_open_button))
+            if (state.taskMarkEvaluationType.supportsCriteria()) {
+                when (val mode = state.mode) {
+                    is PostEditorMode.Edit -> {
+                        OutlinedButton(
+                            onClick = { onNavigateToCriteria(mode.courseId, mode.postId) },
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(text = stringResource(R.string.criteria_open_button))
+                        }
                     }
-                }
 
-                is PostEditorMode.Create -> {
-                    OutlinedButton(
-                        onClick = {},
-                        enabled = false,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(text = stringResource(R.string.criteria_open_button))
+                    is PostEditorMode.Create -> {
+                        OutlinedButton(
+                            onClick = {},
+                            enabled = false,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(text = stringResource(R.string.criteria_open_button))
+                        }
+                        Text(
+                            text = stringResource(R.string.criteria_open_after_create_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline,
+                        )
                     }
-                    Text(
-                        text = stringResource(R.string.criteria_open_after_create_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline,
-                    )
                 }
             }
         }

@@ -57,12 +57,15 @@ class CriteriaViewModel(
                     maxScore = if (event.enabled) "1" else maxScore,
                 )
             }
+
             is CriteriaUiEvent.MinScoreChanged -> updateEditor {
                 copy(minScore = sanitizeDecimalInput(event.value))
             }
+
             is CriteriaUiEvent.MaxScoreChanged -> updateEditor {
                 copy(maxScore = sanitizeDecimalInput(event.value))
             }
+
             is CriteriaUiEvent.MultiplierChanged -> updateEditor {
                 copy(multiplier = sanitizeDecimalInput(event.value))
             }
@@ -79,18 +82,23 @@ class CriteriaViewModel(
 
         viewModelScope.launch {
             val settingsResult = getCriteriaSettingsUseCase(courseId, postId)
-            val criteriaResult = getMarkCriteriaUseCase(courseId, postId)
-
-            val allowsMultiplier = settingsResult
-                .map { it.allowsMultiplier }
-                .getOrElse {
+            val settings = settingsResult.getOrElse {
                 sendEffect(
                     CriteriaUiEffect.ShowMessage(
                         it.message ?: "Не удалось загрузить настройки критериев",
                     ),
                 )
-                currentState?.allowsMultiplier ?: false
+                null
             }
+
+            if (settings != null && !settings.criteriaEnabled) {
+                sendEffect(CriteriaUiEffect.ShowMessage("Для этого типа задания критерии недоступны"))
+                sendEffect(CriteriaUiEffect.NavigateBack)
+                return@launch
+            }
+
+            val criteriaResult = getMarkCriteriaUseCase(courseId, postId)
+            val allowsMultiplier = settings?.allowsMultiplier ?: currentState?.allowsMultiplier ?: false
 
             criteriaResult
                 .onSuccess { criteria ->
@@ -297,16 +305,20 @@ class CriteriaViewModel(
         editor.name.isBlank() -> "Введите название критерия"
         !editor.isPassFail && editor.minScore.toNormalizedFloatOrNull() == null ->
             "Введите корректный минимальный балл"
+
         !editor.isPassFail && editor.maxScore.toNormalizedFloatOrNull() == null ->
             "Введите корректный максимальный балл"
+
         !editor.isPassFail &&
             (editor.maxScore.toNormalizedFloatOrNull() ?: 0f) <=
             (editor.minScore.toNormalizedFloatOrNull() ?: 0f) ->
             "Максимальный балл должен быть больше минимального"
+
         editor.allowsMultiplier &&
             editor.multiplier.isNotBlank() &&
             editor.multiplier.toNormalizedFloatOrNull() == null ->
             "Введите корректный коэффициент"
+
         else -> "Проверьте параметры критерия"
     }
 

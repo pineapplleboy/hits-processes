@@ -36,6 +36,7 @@ import com.example.googleclass.common.presentation.theme.PrimaryBlue
 import com.example.googleclass.common.presentation.theme.SecondaryText
 import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
 import com.example.googleclass.feature.criteria.domain.model.usesPassFailScale
+import com.example.googleclass.feature.post.data.model.supportsCriteria
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
 
 @Composable
@@ -160,12 +161,14 @@ internal fun TaskInfoCard(
                     color = MediumGray,
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                if (task.taskMarkEvaluationType.supportsCriteria()) {
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                CriteriaSummaryBlock(
-                    criteria = criteria,
-                    onEditCriteria = onEditCriteria,
-                )
+                    CriteriaSummaryBlock(
+                        criteria = criteria,
+                        onEditCriteria = onEditCriteria,
+                    )
+                }
             }
         }
     }

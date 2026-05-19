@@ -78,6 +78,7 @@ sealed interface TaskDetailUiEvent {
     data object EditPost : TaskDetailUiEvent
     data object EditCriteria : TaskDetailUiEvent
     data object DeletePost : TaskDetailUiEvent
+    data object Refresh : TaskDetailUiEvent
 
     data class FileAttached(val uri: Uri, val displayName: String) : TaskDetailUiEvent
     data class FileRemoved(val fileId: String) : TaskDetailUiEvent
@@ -91,6 +92,7 @@ sealed interface TaskDetailUiEvent {
     ) : TaskDetailUiEvent
     data class DownloadFile(val fileId: String) : TaskDetailUiEvent
     data class EvaluateStudent(val taskAnswerId: String, val studentName: String, val maxScore: Int) : TaskDetailUiEvent
+    data class OpenCriteriaEvaluation(val taskAnswerId: String) : TaskDetailUiEvent
     data class SetEvaluateScore(val score: Int) : TaskDetailUiEvent
     data object SubmitEvaluate : TaskDetailUiEvent
     data object DismissEvaluateDialog : TaskDetailUiEvent
@@ -112,6 +114,11 @@ sealed interface TaskDetailUiEffect {
         val studentName: String,
         val studentUserId: String,
         val currentUserId: String,
+    ) : TaskDetailUiEffect
+    data class NavigateToCriteriaEvaluation(
+        val courseId: String,
+        val postId: String,
+        val taskAnswerId: String,
     ) : TaskDetailUiEffect
     data class ShowError(val message: String) : TaskDetailUiEffect
     data class StartFileUpload(val uris: List<Uri>) : TaskDetailUiEffect

@@ -217,7 +217,6 @@
     <string name="task_eval_function_label">Функция оценивания</string>
     <string name="task_eval_function_sum">Сумма</string>
     <string name="task_eval_function_multiply">Произведение</string>
-    <string name="criteria_max_points_format">Мак��имум: %d баллов</string>
 
     <!-- Marks -->
     <string name="marks_title">Оценки</string>
@@ -227,4 +226,27 @@
     <string name="marks_not_passed">Не сдано</string>
     <string name="marks_loading_error">Ошибка загрузки: %d</string>
     <string name="marks_unknown_error">Неизвестная ошибка</string>
+    <string name="criteria_evaluation_screen_title">Оценивание работы</string>
+    <string name="criteria_evaluation_section_title">КРИТЕРИИ ОЦЕНИВАНИЯ</string>
+    <string name="criteria_evaluation_total_label">Итоговая оценка</string>
+    <string name="criteria_evaluation_out_of_format">из %1$s баллов</string>
+    <string name="criteria_evaluation_save_format">Сохранить оценку (%1$s баллов)</string>
+    <string name="criteria_evaluation_files_title">Прикрепленные файлы</string>
+    <string name="criteria_evaluation_no_files">Студент не прикрепил файлы к ответу</string>
+    <string name="criteria_evaluation_comments_title">Комментарии к работе:</string>
+    <string name="criteria_evaluation_range_chip">%1$s-%2$s</string>
+    <string name="criteria_evaluation_max_suffix">/ %1$s</string>
+    <string name="criteria_evaluation_multiplier_format">Коэффициент: x%1$s</string>
+    <string name="criteria_evaluation_start_button">Оценить по критериям</string>
+    <string name="criteria_evaluation_edit_button">Изменить оценку по критериям</string>
+    <string name="criteria_evaluation_chat_button">Открыть личный чат со студентом</string>
+    <string name="criteria_evaluation_summary_title">Оценки по критериям:</string>
+    <string name="criteria_evaluation_summary_item">%1$s: %2$s/%3$s</string>
+    <string name="criteria_evaluation_status_submitted">СДАЛ</string>
+    <string name="criteria_evaluation_status_late">ПОЗДНО</string>
+    <string name="criteria_evaluation_status_not_submitted">НЕ СДАЛ</string>
+    <string name="criteria_evaluation_status_new">НОВОЕ</string>
+    <string name="criteria_evaluation_status_unknown">НЕИЗВЕСТНО</string>
+    <string name="criteria_evaluation_passed">Зачёт</string>
+    <string name="criteria_evaluation_not_passed">Незачёт</string>
 </resources>
