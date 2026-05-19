@@ -557,6 +557,8 @@ class TaskDetailScreenViewModel(
             taskAnswerRepository.getAllPostTaskAnswers(postId)
                 .onSuccess { taskAnswers ->
                     val state = _uiState.value as? TaskDetailScreenState.TeacherView ?: return@onSuccess
+                    val isPassFailTeacherDecision =
+                        state.task.taskMarkEvaluationType == TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL
                     val students = coroutineScope {
                         taskAnswers
                             .filter { ta -> SUBMITTED_STATUSES.contains(ta.status.uppercase()) }
@@ -573,7 +575,7 @@ class TaskDetailScreenViewModel(
                                         studentName = ta.userName ?: "Студент",
                                         taskAnswerId = ta.id,
                                         score = ta.score,
-                                        maxScore = ta.maxScore ?: maxScore,
+                                        maxScore = if (isPassFailTeacherDecision) 1 else (ta.maxScore ?: maxScore),
                                         status = ta.status,
                                         files = ta.files.map {
                                             StudentSubmissionFileInfo(
@@ -599,11 +601,18 @@ class TaskDetailScreenViewModel(
     private fun handleEvaluateStudent(event: TaskDetailUiEvent.EvaluateStudent) {
         val state = _uiState.value
         if (state is TaskDetailScreenState.TeacherView) {
+            val effectiveMaxScore = if (
+                state.task.taskMarkEvaluationType == TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL
+            ) {
+                1
+            } else {
+                event.maxScore
+            }
             _uiState.value = state.copy(
                 evaluateDialog = EvaluateDialogState(
                     taskAnswerId = event.taskAnswerId,
                     studentName = event.studentName,
-                    maxScore = event.maxScore,
+                    maxScore = effectiveMaxScore,
                     score = 0,
                 ),
             )
