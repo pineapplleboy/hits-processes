@@ -25,13 +25,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.googleclass.R
 import com.example.googleclass.common.presentation.component.LoadingState
@@ -50,17 +57,22 @@ fun TaskDetailScreen(
     courseId: String,
     postId: String,
     userRole: UserRole,
+    refreshSignal: Boolean = false,
+    onRefreshSignalConsumed: () -> Unit = {},
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (courseId: String, postId: String) -> Unit = { _, _ -> },
     onNavigateToCriteria: (courseId: String, postId: String) -> Unit = { _, _ -> },
     onNavigateToCourseFeed: (courseId: String) -> Unit = {},
     onNavigateToStudentChat: (taskAnswerId: String, studentName: String, studentUserId: String, currentUserId: String) -> Unit = { _, _, _, _ -> },
+    onNavigateToCriteriaEvaluation: (courseId: String, postId: String, taskAnswerId: String) -> Unit = { _, _, _ -> },
 ) {
     val viewModel: TaskDetailScreenViewModel = koinViewModel(
         parameters = { parametersOf(courseId, postId, userRole) }
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var hasSeenFirstResume by remember { mutableStateOf(false) }
 
     val filePicker = rememberFilePicker(
         onFilePicked = { uri, displayName ->
@@ -95,6 +107,14 @@ fun TaskDetailScreen(
                     )
                 }
 
+                is TaskDetailUiEffect.NavigateToCriteriaEvaluation -> {
+                    onNavigateToCriteriaEvaluation(
+                        effect.courseId,
+                        effect.postId,
+                        effect.taskAnswerId,
+                    )
+                }
+
                 is TaskDetailUiEffect.ShowError -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }
@@ -121,6 +141,29 @@ fun TaskDetailScreen(
                     showToast(context, R.string.download_started)
                 }
             }
+        }
+    }
+
+    LaunchedEffect(refreshSignal) {
+        if (refreshSignal) {
+            viewModel.onEvent(TaskDetailUiEvent.Refresh)
+            onRefreshSignalConsumed()
+        }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                if (hasSeenFirstResume) {
+                    viewModel.onEvent(TaskDetailUiEvent.Refresh)
+                } else {
+                    hasSeenFirstResume = true
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
@@ -299,6 +342,7 @@ private fun TeacherViewContent(
             commentInput = state.commentInput,
             evaluateDialog = state.evaluateDialog,
             showTabs = state.task.postType == "TASK",
+            canEvaluateByCriteria = state.criteria.isNotEmpty(),
             canEvaluateDirectly = state.task.taskMarkEvaluationType in listOf(
                 com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType.TEACHER_DECISION,
                 com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL,

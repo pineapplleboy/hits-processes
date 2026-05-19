@@ -7,11 +7,15 @@ import androidx.lifecycle.viewModelScope
 import com.example.googleclass.common.network.UserApi
 import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
 import com.example.googleclass.feature.criteria.domain.usecase.GetMarkCriteriaUseCase
+import com.example.googleclass.feature.criteria.domain.usecase.GetTaskAnswerCriteriaScoresUseCase
 import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.post.data.model.PostDto
 import com.example.googleclass.feature.post.data.model.PostType
+import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
+import com.example.googleclass.feature.post.data.model.supportsCriteria
 import com.example.googleclass.feature.post.domain.repository.PostRepository
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
+import com.example.googleclass.feature.taskdetail.domain.model.StudentCriteriaScoreInfo
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionFileInfo
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
@@ -24,6 +28,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -53,6 +60,7 @@ class TaskDetailScreenViewModel(
     private val contentResolver: ContentResolver,
     private val userApi: UserApi,
     private val getMarkCriteriaUseCase: GetMarkCriteriaUseCase,
+    private val getTaskAnswerCriteriaScoresUseCase: GetTaskAnswerCriteriaScoresUseCase,
 ) : ViewModel() {
 
     private val _uiState: MutableStateFlow<TaskDetailScreenState> =
@@ -99,7 +107,15 @@ class TaskDetailScreenViewModel(
                 TaskDetailUiEffect.NavigateToEdit(courseId = courseId, postId = postId)
             )
             is TaskDetailUiEvent.DeletePost -> handleDeletePost()
+            is TaskDetailUiEvent.Refresh -> handleRefresh()
             is TaskDetailUiEvent.EvaluateStudent -> handleEvaluateStudent(event)
+            is TaskDetailUiEvent.OpenCriteriaEvaluation -> sendEffect(
+                TaskDetailUiEffect.NavigateToCriteriaEvaluation(
+                    courseId = courseId,
+                    postId = postId,
+                    taskAnswerId = event.taskAnswerId,
+                )
+            )
             is TaskDetailUiEvent.SetEvaluateScore -> handleSetEvaluateScore(event.score)
             is TaskDetailUiEvent.SubmitEvaluate -> handleSubmitEvaluate()
             is TaskDetailUiEvent.DismissEvaluateDialog -> handleDismissEvaluateDialog()
@@ -136,7 +152,10 @@ class TaskDetailScreenViewModel(
                         )
                     }
                     val isTaskPost = post.postType == PostType.TASK
-                    val criteria = loadCriteriaIfNeeded(isTaskPost)
+                    val criteria = loadCriteriaIfNeeded(
+                        isTaskPost = isTaskPost,
+                        taskMarkEvaluationType = post.taskMarkEvaluationType,
+                    )
 
                     when (userRole) {
                         UserRole.STUDENT -> {
@@ -219,7 +238,12 @@ class TaskDetailScreenViewModel(
                                 currentUserId = currentUserId ?: "",
                                 criteria = criteria,
                             )
-                            if (isTaskPost) loadTaskStudents(post.maxScore.roundToInt())
+                            if (isTaskPost) {
+                                loadTaskStudents(
+                                    maxScore = post.maxScore.roundToInt(),
+                                    shouldLoadCriteriaScores = criteria.isNotEmpty(),
+                                )
+                            }
                         }
                     }
                 }
@@ -241,8 +265,11 @@ class TaskDetailScreenViewModel(
         }
     }
 
-    private suspend fun loadCriteriaIfNeeded(isTaskPost: Boolean): List<EvaluationCriterion> {
-        if (!isTaskPost) return emptyList()
+    private suspend fun loadCriteriaIfNeeded(
+        isTaskPost: Boolean,
+        taskMarkEvaluationType: TaskMarkEvaluationType?,
+    ): List<EvaluationCriterion> {
+        if (!isTaskPost || !taskMarkEvaluationType.supportsCriteria()) return emptyList()
 
         return getMarkCriteriaUseCase(courseId, postId)
             .getOrElse { emptyList() }
@@ -259,6 +286,57 @@ class TaskDetailScreenViewModel(
         val state = _uiState.value
         if (state is TaskDetailScreenState.TeacherView) {
             _uiState.value = state.copy(selectedTab = tab)
+        }
+    }
+
+    private fun handleRefresh() {
+        when (val state = _uiState.value) {
+            is TaskDetailScreenState.StudentView -> {
+                state.taskAnswerId?.let(::refreshStudentTaskAnswer)
+                state.taskAnswerId?.let(::loadPrivateComments)
+            }
+
+            is TaskDetailScreenState.TeacherView -> {
+                refreshTeacherView(state)
+            }
+
+            TaskDetailScreenState.Loading -> Unit
+        }
+    }
+
+    private fun refreshTeacherView(state: TaskDetailScreenState.TeacherView) {
+        viewModelScope.launch {
+            postRepository.getPost(courseId, postId)
+                .onSuccess { post ->
+                    val comments = post.comments.map { comment ->
+                        Comment(
+                            id = comment.id,
+                            authorName = "${comment.author.firstName.orEmpty()} ${comment.author.lastName.orEmpty()}".trim(),
+                            text = comment.text,
+                            createdAt = formatIsoDate(comment.createdAt),
+                        )
+                    }
+                    val criteria = loadCriteriaIfNeeded(
+                        isTaskPost = post.postType == PostType.TASK,
+                        taskMarkEvaluationType = post.taskMarkEvaluationType,
+                    )
+
+                    _uiState.value = state.copy(
+                        task = post.toTaskDetail(),
+                        publicComments = comments,
+                        criteria = criteria,
+                    )
+
+                    if (post.postType == PostType.TASK) {
+                        loadTaskStudents(
+                            maxScore = post.maxScore.roundToInt(),
+                            shouldLoadCriteriaScores = criteria.isNotEmpty(),
+                        )
+                    }
+                }
+                .onFailure {
+                    sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка обновления задания"))
+                }
         }
     }
 
@@ -471,24 +549,45 @@ class TaskDetailScreenViewModel(
         }
     }
 
-    private fun loadTaskStudents(maxScore: Int) {
+    private fun loadTaskStudents(
+        maxScore: Int,
+        shouldLoadCriteriaScores: Boolean,
+    ) {
         viewModelScope.launch {
             taskAnswerRepository.getAllPostTaskAnswers(postId)
                 .onSuccess { taskAnswers ->
                     val state = _uiState.value as? TaskDetailScreenState.TeacherView ?: return@onSuccess
-                    val students = taskAnswers
-                        .filter { ta -> SUBMITTED_STATUSES.contains(ta.status.uppercase()) }
-                        .map { ta ->
-                            StudentSubmissionInfo(
-                                studentId = ta.userId ?: "",
-                                studentName = ta.userName ?: "Студент",
-                                taskAnswerId = ta.id,
-                                score = ta.score,
-                                maxScore = ta.maxScore ?: maxScore,
-                                status = ta.status,
-                                files = ta.files.map { StudentSubmissionFileInfo(it.id, it.fileName ?: "Файл") },
-                            )
-                        }
+                    val students = coroutineScope {
+                        taskAnswers
+                            .filter { ta -> SUBMITTED_STATUSES.contains(ta.status.uppercase()) }
+                            .map { ta ->
+                                async {
+                                    val criteriaScores = if (shouldLoadCriteriaScores) {
+                                        loadCriteriaScoreSummary(ta.id)
+                                    } else {
+                                        emptyList()
+                                    }
+
+                                    StudentSubmissionInfo(
+                                        studentId = ta.userId ?: "",
+                                        studentName = ta.userName ?: "Студент",
+                                        taskAnswerId = ta.id,
+                                        score = ta.score,
+                                        maxScore = ta.maxScore ?: maxScore,
+                                        status = ta.status,
+                                        files = ta.files.map {
+                                            StudentSubmissionFileInfo(
+                                                id = it.id,
+                                                fileName = it.fileName ?: "Файл",
+                                            )
+                                        },
+                                        criteriaScores = criteriaScores,
+                                        hasCriteriaEvaluation = criteriaScores.isNotEmpty(),
+                                    )
+                                }
+                            }
+                            .awaitAll()
+                    }
                     _uiState.value = state.copy(students = students)
                 }
                 .onFailure {
@@ -525,10 +624,13 @@ class TaskDetailScreenViewModel(
         if (state is TaskDetailScreenState.TeacherView) {
             val dialog = state.evaluateDialog ?: return
             viewModelScope.launch {
-                taskAnswerRepository.evaluateTask(dialog.taskAnswerId, dialog.score)
+                taskAnswerRepository.evaluateTask(dialog.taskAnswerId, dialog.score.toFloat())
                     .onSuccess {
                         _uiState.value = state.copy(evaluateDialog = null)
-                        loadTaskStudents(state.task.maxScore)
+                        loadTaskStudents(
+                            maxScore = state.task.maxScore,
+                            shouldLoadCriteriaScores = state.criteria.isNotEmpty(),
+                        )
                     }
                     .onFailure {
                         sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка выставления оценки"))
@@ -554,6 +656,19 @@ class TaskDetailScreenViewModel(
             _uiState.value = state.copy(evaluateDialog = null)
         }
     }
+
+    private suspend fun loadCriteriaScoreSummary(
+        taskAnswerId: String,
+    ): List<StudentCriteriaScoreInfo> = getTaskAnswerCriteriaScoresUseCase(taskAnswerId)
+        .getOrNull()
+        ?.map { criterion ->
+            StudentCriteriaScoreInfo(
+                name = criterion.name,
+                score = criterion.score,
+                maxScore = criterion.maxScore,
+            )
+        }
+        .orEmpty()
 
     private fun sendEffect(effect: TaskDetailUiEffect) {
         viewModelScope.launch {

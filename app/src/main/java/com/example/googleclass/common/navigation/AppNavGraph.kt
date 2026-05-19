@@ -1,6 +1,8 @@
 package com.example.googleclass.common.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,6 +15,7 @@ import com.example.googleclass.feature.course.domain.model.CourseParticipant
 import com.example.googleclass.feature.course.domain.model.User
 import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.course.presentation.CourseScreenRoute
+import com.example.googleclass.feature.criteria.presentation.CriteriaEvaluationScreen
 import com.example.googleclass.feature.criteria.presentation.CriteriaScreen
 import com.example.googleclass.feature.courses.presentation.CoursesScreen
 import com.example.googleclass.feature.post.presentation.PostEditorMode
@@ -23,6 +26,8 @@ import com.example.googleclass.feature.profile.presentation.ProfileScreen
 import com.example.googleclass.feature.taskdetail.studentchat.presentation.StudentChatScreen
 import com.example.googleclass.feature.taskdetail.presentation.TaskDetailScreen
 import androidx.navigation.NavType
+
+private const val CRITERIA_EVALUATION_UPDATED_KEY = "criteria_evaluation_updated"
 
 @Composable
 fun AppNavGraph(
@@ -93,11 +98,18 @@ fun AppNavGraph(
             val postId = backStackEntry.arguments?.getString("postId") ?: ""
             val userRoleName = backStackEntry.arguments?.getString("userRole") ?: UserRole.STUDENT.name
             val userRole = runCatching { UserRole.valueOf(userRoleName) }.getOrElse { UserRole.STUDENT }
+            val criteriaEvaluationUpdated by backStackEntry.savedStateHandle
+                .getStateFlow(CRITERIA_EVALUATION_UPDATED_KEY, false)
+                .collectAsState()
 
             TaskDetailScreen(
                 courseId = courseId,
                 postId = postId,
                 userRole = userRole,
+                refreshSignal = criteriaEvaluationUpdated,
+                onRefreshSignalConsumed = {
+                    backStackEntry.savedStateHandle[CRITERIA_EVALUATION_UPDATED_KEY] = false
+                },
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEdit = { cId, pId ->
                     navController.navigate(ScreenRoute.PostEditor.createRoute(cId, pId))
@@ -114,6 +126,11 @@ fun AppNavGraph(
                 onNavigateToStudentChat = { taskAnswerId, studentName, studentUserId, currentUserId ->
                     navController.navigate(
                         ScreenRoute.StudentChat.createRoute(taskAnswerId, studentName, studentUserId, currentUserId)
+                    )
+                },
+                onNavigateToCriteriaEvaluation = { cId, pId, taskAnswerId ->
+                    navController.navigate(
+                        ScreenRoute.CriteriaEvaluation.createRoute(cId, pId, taskAnswerId)
                     )
                 },
             )
@@ -196,6 +213,29 @@ fun AppNavGraph(
                 courseId = courseId,
                 postId = postId,
                 onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable(
+            route = ScreenRoute.CriteriaEvaluation.route,
+            arguments = listOf(
+                navArgument("courseId") { defaultValue = "" },
+                navArgument("postId") { defaultValue = "" },
+                navArgument("taskAnswerId") { defaultValue = "" },
+            ),
+        ) { backStackEntry ->
+            val courseId = backStackEntry.arguments?.getString("courseId") ?: ""
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            val taskAnswerId = backStackEntry.arguments?.getString("taskAnswerId") ?: ""
+            CriteriaEvaluationScreen(
+                courseId = courseId,
+                postId = postId,
+                taskAnswerId = taskAnswerId,
+                onNavigateBack = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set(CRITERIA_EVALUATION_UPDATED_KEY, true)
+                    navController.popBackStack()
+                },
             )
         }
         composable(ScreenRoute.Profile.route) {

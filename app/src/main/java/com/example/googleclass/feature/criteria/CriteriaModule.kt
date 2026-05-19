@@ -11,6 +11,7 @@ import com.example.googleclass.feature.criteria.domain.usecase.GetTaskAnswerCrit
 import com.example.googleclass.feature.criteria.domain.usecase.PutCriteriaScoreUseCase
 import com.example.googleclass.feature.criteria.domain.usecase.PutSelfAssessmentCriteriaScoreUseCase
 import com.example.googleclass.feature.criteria.domain.usecase.UpdateMarkCriteriaUseCase
+import com.example.googleclass.feature.criteria.presentation.CriteriaEvaluationViewModel
 import com.example.googleclass.feature.criteria.presentation.CriteriaScoresViewModel
 import com.example.googleclass.feature.criteria.presentation.CriteriaViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -47,6 +48,20 @@ val criteriaModule = module {
             getTaskAnswerCriteriaScoresUseCase = get(),
             putCriteriaScoreUseCase = get(),
             putSelfAssessmentCriteriaScoreUseCase = get(),
+        )
+    }
+
+    viewModel { (courseId: String, postId: String, taskAnswerId: String) ->
+        CriteriaEvaluationViewModel(
+            courseId = courseId,
+            postId = postId,
+            taskAnswerId = taskAnswerId,
+            postRepository = get(),
+            taskAnswerRepository = get(),
+            commentRepository = get(),
+            getMarkCriteriaUseCase = get(),
+            getTaskAnswerCriteriaScoresUseCase = get(),
+            putCriteriaScoreUseCase = get(),
         )
     }
 }

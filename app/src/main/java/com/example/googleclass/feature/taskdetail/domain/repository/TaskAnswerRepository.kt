@@ -11,7 +11,7 @@ interface TaskAnswerRepository {
 
     suspend fun getAllPostTaskAnswers(postId: String): Result<List<TaskAnswer>>
 
-    suspend fun evaluateTask(taskAnswerId: String, score: Int): Result<Unit>
+    suspend fun evaluateTask(taskAnswerId: String, score: Float): Result<Unit>
 
     suspend fun submitTask(taskAnswerId: String): Result<Unit>
 

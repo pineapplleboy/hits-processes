@@ -30,8 +30,8 @@ class TaskAnswerRepositoryImpl(
         converter = { dtos -> dtos.map { it.toTaskAnswer() } },
     )
 
-    override suspend fun evaluateTask(taskAnswerId: String, score: Int): Result<Unit> = safeApiCallUnit(
-        apiCall = { taskAnswerApi.evaluateTask(taskAnswerId, TaskRateRequestDto(rate = score.toFloat())) },
+    override suspend fun evaluateTask(taskAnswerId: String, score: Float): Result<Unit> = safeApiCallUnit(
+        apiCall = { taskAnswerApi.evaluateTask(taskAnswerId, TaskRateRequestDto(rate = score)) },
     )
 
     override suspend fun submitTask(taskAnswerId: String): Result<Unit> = safeApiCallUnit(
