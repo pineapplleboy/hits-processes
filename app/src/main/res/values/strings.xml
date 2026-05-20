@@ -249,4 +249,9 @@
     <string name="criteria_evaluation_status_unknown">НЕИЗВЕСТНО</string>
     <string name="criteria_evaluation_passed">Зачёт</string>
     <string name="criteria_evaluation_not_passed">Незачёт</string>
+
+    <!-- Self-assessment -->
+    <string name="self_assessment_button">Самооценка по критериям</string>
+    <string name="self_assessment_sheet_title">Самооценка</string>
+    <string name="self_assessment_sheet_subtitle">Оцените свою работу по каждому критерию</string>
 </resources>

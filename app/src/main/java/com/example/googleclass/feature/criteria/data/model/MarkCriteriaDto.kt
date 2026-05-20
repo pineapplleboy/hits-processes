@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MarkCriteriaDto(
     val id: String,
-    val evaluationFunction: EvaluationFunctionDto,
+    val evaluationFunction: EvaluationFunctionDto = EvaluationFunctionDto.SUM,
     val name: String,
     val multiplier: Float? = null,
     val minScore: Float,

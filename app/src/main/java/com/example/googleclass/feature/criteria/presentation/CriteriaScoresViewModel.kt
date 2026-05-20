@@ -60,7 +60,7 @@ class CriteriaScoresViewModel(
                         scores = scores.map { criterion ->
                             CriteriaScoreFieldState(
                                 criterion = criterion,
-                                input = formatDecimal(criterion.score),
+                                input = criterion.score?.let(::formatDecimal).orEmpty(),
                                 isSaving = false,
                             )
                         },

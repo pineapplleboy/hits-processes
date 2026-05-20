@@ -27,6 +27,7 @@ sealed interface TaskDetailScreenState {
         val isAuthor: Boolean = false,
         val courseId: String = "",
         val criteria: List<EvaluationCriterion> = emptyList(),
+        val showSelfAssessmentSheet: Boolean = false,
     ) : TaskDetailScreenState
 
     data class TeacherView(
@@ -98,6 +99,8 @@ sealed interface TaskDetailUiEvent {
     data class SetEvaluateScore(val score: Int) : TaskDetailUiEvent
     data object SubmitEvaluate : TaskDetailUiEvent
     data object DismissEvaluateDialog : TaskDetailUiEvent
+    data object OpenSelfAssessment : TaskDetailUiEvent
+    data object DismissSelfAssessment : TaskDetailUiEvent
 }
 
 sealed interface TaskDetailUiEffect {

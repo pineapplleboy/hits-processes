@@ -264,7 +264,7 @@ private fun CriteriaScoreSummaryCard(
                     text = stringResource(
                         R.string.criteria_evaluation_summary_item,
                         criterion.name,
-                        formatScore(criterion.score),
+                        criterion.score?.let(::formatScore) ?: "–",
                         formatScore(criterion.maxScore),
                     ),
                     style = MaterialTheme.typography.bodySmall,

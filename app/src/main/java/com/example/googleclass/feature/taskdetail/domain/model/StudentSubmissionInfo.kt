@@ -19,6 +19,6 @@ data class StudentSubmissionFileInfo(
 
 data class StudentCriteriaScoreInfo(
     val name: String,
-    val score: Float,
+    val score: Float?,
     val maxScore: Float,
 )
