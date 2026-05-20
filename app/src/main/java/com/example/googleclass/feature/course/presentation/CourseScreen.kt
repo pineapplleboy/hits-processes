@@ -14,6 +14,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -85,7 +89,7 @@ fun CourseScreenRoute(
 
     // Обновляем данные при каждом заходе на экран
     LaunchedEffect(courseId) {
-        viewModel.refresh()
+        viewModel.refresh(showLoading = true)
     }
 
     when (val state = uiState) {
@@ -125,6 +129,7 @@ fun CourseScreenRoute(
                 currentUser = state.currentUser,
                 isTeacher = state.isTeacher,
                 isMainTeacher = state.isMainTeacher,
+                isRefreshing = state.isRefreshing,
                 publications = state.publications,
                 submissions = emptyList(),
                 users = state.users,
@@ -154,12 +159,14 @@ fun CourseScreenRoute(
                 onToggleArchiveClick = { viewModel.toggleArchive() },
                 onPromoteClick = { userId, role -> viewModel.onPromoteClick(userId, role) },
                 onDemoteClick = { userId, role -> viewModel.onDemoteClick(userId, role) },
+                onRefresh = { viewModel.refresh() },
                 onMarksClick = onMarksClick,
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun CourseScreen(
     courseId: String,
@@ -167,6 +174,7 @@ fun CourseScreen(
     currentUser: User,
     isTeacher: Boolean,
     isMainTeacher: Boolean,
+    isRefreshing: Boolean,
     publications: List<Publication>,
     submissions: List<Submission>,
     users: Map<String, User>,
@@ -180,10 +188,15 @@ fun CourseScreen(
     onToggleArchiveClick: () -> Unit,
     onPromoteClick: (String, UserRole) -> Unit,
     onDemoteClick: (String, UserRole) -> Unit,
+    onRefresh: () -> Unit,
     onMarksClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(0) }
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = onRefresh,
+    )
     val tabs = listOf(
         stringResource(R.string.tab_stream),
         stringResource(R.string.tab_participants)
@@ -228,6 +241,7 @@ fun CourseScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .pullRefresh(pullRefreshState)
         ) {
             Column(
                 modifier = Modifier
@@ -276,16 +290,24 @@ fun CourseScreen(
                 Spacer(modifier = Modifier.height(80.dp))
             }
 
+            PullRefreshIndicator(
+                refreshing = isRefreshing,
+                state = pullRefreshState,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 12.dp),
+                backgroundColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary,
+            )
+
             if (isTeacher && selectedTab == 0) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.BottomEnd
                 ) {
                     CreateFAB(
                         onClick = onCreatePublication,
-                        modifier = Modifier
-                            .padding(16.dp)
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
             }
@@ -772,6 +794,7 @@ private fun CourseScreenPreview() {
             currentUser = User("u1", "Иван Петров", "teacher@example.com"),
             isTeacher = true,
             isMainTeacher = true,
+            isRefreshing = false,
             publications = listOf(
                 Publication(
                     id = "p1",
@@ -817,6 +840,7 @@ private fun CourseScreenPreview() {
             onLeaveCourseClick = { },
             onPromoteClick = { _, _ -> },
             onDemoteClick = { _, _ -> },
+            onRefresh = { },
             onMarksClick = {},
         )
     }

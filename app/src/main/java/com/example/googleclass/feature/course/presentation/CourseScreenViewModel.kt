@@ -33,6 +33,7 @@ sealed interface CourseScreenState {
         val userRole: UserRole,
         val publications: List<Publication>,
         val users: Map<String, User>,
+        val isRefreshing: Boolean,
     ) : CourseScreenState
 }
 
@@ -48,12 +49,15 @@ class CourseScreenViewModel(
         MutableStateFlow(CourseScreenState.Loading)
     val uiState: StateFlow<CourseScreenState> = _uiState.asStateFlow()
 
-    init {
-        refresh()
-    }
+    fun refresh(showLoading: Boolean = false) {
+        val currentState = _uiState.value as? CourseScreenState.Content
+        if (currentState?.isRefreshing == true) return
 
-    fun refresh() {
-        _uiState.value = CourseScreenState.Loading
+        if (showLoading || currentState == null) {
+            _uiState.value = CourseScreenState.Loading
+        } else {
+            _uiState.value = currentState.copy(isRefreshing = true)
+        }
         viewModelScope.launch {
             try {
                 val profileResponse = userApi.getMyProfile()
@@ -98,6 +102,7 @@ class CourseScreenViewModel(
                     userRole = role,
                     publications = data.publications,
                     users = data.users,
+                    isRefreshing = false,
                 )
             } catch (e: Exception) {
                 _uiState.value = CourseScreenState.Error(e.message ?: "Неизвестная ошибка")
