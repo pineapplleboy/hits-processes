@@ -119,6 +119,8 @@ class TaskDetailScreenViewModel(
             is TaskDetailUiEvent.SetEvaluateScore -> handleSetEvaluateScore(event.score)
             is TaskDetailUiEvent.SubmitEvaluate -> handleSubmitEvaluate()
             is TaskDetailUiEvent.DismissEvaluateDialog -> handleDismissEvaluateDialog()
+            is TaskDetailUiEvent.OpenSelfAssessment -> handleOpenSelfAssessment()
+            is TaskDetailUiEvent.DismissSelfAssessment -> handleDismissSelfAssessment()
         }
     }
 
@@ -654,6 +656,20 @@ class TaskDetailScreenViewModel(
         val state = _uiState.value
         if (state is TaskDetailScreenState.TeacherView) {
             _uiState.value = state.copy(evaluateDialog = null)
+        }
+    }
+
+    private fun handleOpenSelfAssessment() {
+        val state = _uiState.value
+        if (state is TaskDetailScreenState.StudentView) {
+            _uiState.value = state.copy(showSelfAssessmentSheet = true)
+        }
+    }
+
+    private fun handleDismissSelfAssessment() {
+        val state = _uiState.value
+        if (state is TaskDetailScreenState.StudentView) {
+            _uiState.value = state.copy(showSelfAssessmentSheet = false)
         }
     }
 

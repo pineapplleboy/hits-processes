@@ -9,19 +9,24 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -32,8 +37,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -43,7 +50,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.googleclass.R
 import com.example.googleclass.common.presentation.component.LoadingState
 import com.example.googleclass.common.presentation.theme.GoogleClassTheme
+import com.example.googleclass.common.presentation.theme.PrimaryBlue
 import com.example.googleclass.feature.course.domain.model.UserRole
+import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
@@ -268,6 +277,18 @@ private fun StudentViewContent(
     onPickFromGallery: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isSelfAssessmentTask = state.task.taskMarkEvaluationType == TaskMarkEvaluationType.SELF_ASSESSMENT
+    val canSelfAssess = isSelfAssessmentTask && state.taskAnswerId != null && state.submission != null
+
+    if (state.showSelfAssessmentSheet && state.taskAnswerId != null) {
+        SelfAssessmentBottomSheet(
+            courseId = state.courseId,
+            postId = state.task.id,
+            taskAnswerId = state.taskAnswerId,
+            onDismiss = { onEvent(TaskDetailUiEvent.DismissSelfAssessment) },
+        )
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -296,6 +317,26 @@ private fun StudentViewContent(
                     onPickFromDocuments = onPickFromDocuments,
                     onPickFromGallery = onPickFromGallery,
                     onEvent = onEvent,
+                )
+            }
+        }
+
+        if (canSelfAssess) {
+            Button(
+                onClick = { onEvent(TaskDetailUiEvent.OpenSelfAssessment) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryBlue,
+                    contentColor = Color.White,
+                ),
+            ) {
+                Text(
+                    text = stringResource(R.string.self_assessment_button),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
                 )
             }
         }

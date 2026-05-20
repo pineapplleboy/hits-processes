@@ -238,7 +238,7 @@ class CriteriaEvaluationViewModel(
                     minScore = criterion.minScore,
                     maxScore = criterion.maxScore,
                     multiplier = criterion.multiplier,
-                    input = formatScore(criterion.score),
+                    input = criterion.score?.let(::formatScore).orEmpty(),
                 )
             }
         }
