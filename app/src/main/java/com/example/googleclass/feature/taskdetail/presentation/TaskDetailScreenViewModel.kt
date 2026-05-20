@@ -13,6 +13,7 @@ import com.example.googleclass.feature.post.data.model.PostDto
 import com.example.googleclass.feature.post.data.model.PostType
 import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 import com.example.googleclass.feature.post.data.model.supportsCriteria
+import com.example.googleclass.feature.post.data.model.usesBinaryTaskScore
 import com.example.googleclass.feature.post.domain.repository.PostRepository
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
 import com.example.googleclass.feature.taskdetail.domain.model.StudentCriteriaScoreInfo
@@ -74,6 +75,11 @@ class TaskDetailScreenViewModel(
         loadPost()
     }
 
+    private fun effectiveTaskMaxScore(
+        taskMarkEvaluationType: TaskMarkEvaluationType?,
+        rawMaxScore: Int,
+    ): Int = if (taskMarkEvaluationType.usesBinaryTaskScore()) 1 else rawMaxScore
+
     fun onEvent(event: TaskDetailUiEvent) {
         when (event) {
             is TaskDetailUiEvent.NavigateBack -> sendEffect(TaskDetailUiEffect.NavigateBack)
@@ -126,7 +132,7 @@ class TaskDetailScreenViewModel(
         viewModelScope.launch {
             _uiState.value = TaskDetailScreenState.Loading
             try {
-                loadPostInternal()
+                loadPostInternal(navigateBackOnFailure = true)
             } catch (e: Exception) {
                 sendEffect(TaskDetailUiEffect.ShowError(e.message ?: "Ошибка сети. Проверьте подключение."))
                 sendEffect(TaskDetailUiEffect.NavigateBack)
@@ -134,7 +140,9 @@ class TaskDetailScreenViewModel(
         }
     }
 
-    private suspend fun loadPostInternal() {
+    private suspend fun loadPostInternal(
+        navigateBackOnFailure: Boolean,
+    ) {
             val profileResult = runCatching { userApi.getMyProfile() }
             val currentUserId = profileResult.getOrNull()
                 ?.takeIf { it.isSuccessful }?.body()?.id
@@ -170,7 +178,10 @@ class TaskDetailScreenViewModel(
                                     files = taskAnswerFromPost.files.map { TaskAnswerFileInfo(it.id, it.fileName ?: "Файл") },
                                     score = taskAnswerFromPost.score?.roundToInt(),
                                     submittedAt = taskAnswerFromPost.submittedAt,
-                                    maxScore = taskAnswerFromPost.maxScore?.roundToInt() ?: post.maxScore.roundToInt(),
+                                    maxScore = effectiveTaskMaxScore(
+                                        post.taskMarkEvaluationType,
+                                        taskAnswerFromPost.maxScore?.roundToInt() ?: task.maxScore,
+                                    ),
                                 )
                                 taskAnswerFromApi != null -> TaskAnswerState(
                                     id = taskAnswerFromApi.id,
@@ -178,13 +189,17 @@ class TaskDetailScreenViewModel(
                                     files = taskAnswerFromApi.files.map { TaskAnswerFileInfo(it.id, it.fileName ?: "Файл") },
                                     score = taskAnswerFromApi.score,
                                     submittedAt = taskAnswerFromApi.submittedAt,
-                                    maxScore = taskAnswerFromApi.maxScore ?: post.maxScore.roundToInt(),
+                                    maxScore = effectiveTaskMaxScore(
+                                        post.taskMarkEvaluationType,
+                                        taskAnswerFromApi.maxScore ?: task.maxScore,
+                                    ),
                                 )
                                 else -> null
                             } ?: run {
                                 _uiState.value = TaskDetailScreenState.StudentView(
-                                    task = post.toTaskDetail(),
+                                    task = task,
                                     submission = null,
+                                    isRefreshing = false,
                                     taskAnswerId = null,
                                     taskAnswerStatus = "",
                                     taskAnswerFiles = emptyList(),
@@ -212,6 +227,7 @@ class TaskDetailScreenViewModel(
                             _uiState.value = TaskDetailScreenState.StudentView(
                                 task = task,
                                 submission = submission,
+                                isRefreshing = false,
                                 taskAnswerId = tid,
                                 taskAnswerStatus = mapBackendStatusToDisplayText(status),
                                 taskAnswerFiles = files,
@@ -230,6 +246,7 @@ class TaskDetailScreenViewModel(
                                 task = task,
                                 publicComments = comments,
                                 students = emptyList(),
+                                isRefreshing = false,
                                 commentInput = "",
                                 selectedTab = TeacherTab.PUBLIC_COMMENTS,
                                 isAuthor = isAuthor,
@@ -240,7 +257,7 @@ class TaskDetailScreenViewModel(
                             )
                             if (isTaskPost) {
                                 loadTaskStudents(
-                                    maxScore = post.maxScore.roundToInt(),
+                                    maxScore = task.maxScore,
                                     shouldLoadCriteriaScores = criteria.isNotEmpty(),
                                 )
                             }
@@ -249,7 +266,10 @@ class TaskDetailScreenViewModel(
                 }
                 .onFailure {
                     sendEffect(TaskDetailUiEffect.ShowError(it.message ?: "Ошибка загрузки поста"))
-                    sendEffect(TaskDetailUiEffect.NavigateBack)
+                    setRefreshing(false)
+                    if (navigateBackOnFailure) {
+                        sendEffect(TaskDetailUiEffect.NavigateBack)
+                    }
                 }
     }
 
@@ -275,6 +295,14 @@ class TaskDetailScreenViewModel(
             .getOrElse { emptyList() }
     }
 
+    private fun setRefreshing(isRefreshing: Boolean) {
+        when (val state = _uiState.value) {
+            is TaskDetailScreenState.StudentView -> _uiState.value = state.copy(isRefreshing = isRefreshing)
+            is TaskDetailScreenState.TeacherView -> _uiState.value = state.copy(isRefreshing = isRefreshing)
+            TaskDetailScreenState.Loading -> Unit
+        }
+    }
+
     private fun handleStudentTab(tab: StudentTab) {
         val state = _uiState.value
         if (state is TaskDetailScreenState.StudentView) {
@@ -290,14 +318,22 @@ class TaskDetailScreenViewModel(
     }
 
     private fun handleRefresh() {
-        when (val state = _uiState.value) {
-            is TaskDetailScreenState.StudentView -> {
-                state.taskAnswerId?.let(::refreshStudentTaskAnswer)
-                state.taskAnswerId?.let(::loadPrivateComments)
-            }
-
+        when (_uiState.value) {
+            is TaskDetailScreenState.StudentView,
             is TaskDetailScreenState.TeacherView -> {
-                refreshTeacherView(state)
+                setRefreshing(true)
+                viewModelScope.launch {
+                    try {
+                        loadPostInternal(navigateBackOnFailure = false)
+                    } catch (e: Exception) {
+                        setRefreshing(false)
+                        sendEffect(
+                            TaskDetailUiEffect.ShowError(
+                                e.message ?: "РћС€РёР±РєР° РѕР±РЅРѕРІР»РµРЅРёСЏ Р·Р°РґР°РЅРёСЏ",
+                            ),
+                        )
+                    }
+                }
             }
 
             TaskDetailScreenState.Loading -> Unit
@@ -536,12 +572,16 @@ class TaskDetailScreenViewModel(
                             submittedAt = ta.submittedAt?.let { formatIsoDate(it) } ?: "",
                             files = ta.files.map { it.fileName ?: "Файл" },
                             score = ta.score,
-                            maxScore = ta.maxScore ?: state.task.maxScore,
+                            maxScore = effectiveTaskMaxScore(
+                                state.task.taskMarkEvaluationType,
+                                ta.maxScore ?: state.task.maxScore,
+                            ),
                             isNewGrade = false,
                         )
                     } else null
                     _uiState.value = state.copy(
                         submission = submission,
+                        isRefreshing = false,
                         taskAnswerStatus = mapBackendStatusToDisplayText(ta.status),
                         taskAnswerFiles = ta.files.map { TaskAnswerFileInfo(it.id, it.fileName ?: "Файл") },
                     )
@@ -557,8 +597,7 @@ class TaskDetailScreenViewModel(
             taskAnswerRepository.getAllPostTaskAnswers(postId)
                 .onSuccess { taskAnswers ->
                     val state = _uiState.value as? TaskDetailScreenState.TeacherView ?: return@onSuccess
-                    val isPassFailTeacherDecision =
-                        state.task.taskMarkEvaluationType == TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL
+                    val usesBinaryScore = state.task.taskMarkEvaluationType.usesBinaryTaskScore()
                     val students = coroutineScope {
                         taskAnswers
                             .filter { ta -> SUBMITTED_STATUSES.contains(ta.status.uppercase()) }
@@ -575,7 +614,7 @@ class TaskDetailScreenViewModel(
                                         studentName = ta.userName ?: "Студент",
                                         taskAnswerId = ta.id,
                                         score = ta.score,
-                                        maxScore = if (isPassFailTeacherDecision) 1 else (ta.maxScore ?: maxScore),
+                                        maxScore = if (usesBinaryScore) 1 else (ta.maxScore ?: maxScore),
                                         status = ta.status,
                                         files = ta.files.map {
                                             StudentSubmissionFileInfo(
@@ -601,9 +640,7 @@ class TaskDetailScreenViewModel(
     private fun handleEvaluateStudent(event: TaskDetailUiEvent.EvaluateStudent) {
         val state = _uiState.value
         if (state is TaskDetailScreenState.TeacherView) {
-            val effectiveMaxScore = if (
-                state.task.taskMarkEvaluationType == TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL
-            ) {
+            val effectiveMaxScore = if (state.task.taskMarkEvaluationType.usesBinaryTaskScore()) {
                 1
             } else {
                 event.maxScore
@@ -735,7 +772,7 @@ private fun PostDto.toTaskDetail(): TaskDetail = TaskDetail(
     createdAt = TaskDetailScreenViewModel.formatIsoDate(createdAt),
     description = text,
     deadline = deadline?.let { TaskDetailScreenViewModel.formatIsoDate(it) } ?: "Без дедлайна",
-    maxScore = maxScore.roundToInt(),
+    maxScore = if (taskMarkEvaluationType.usesBinaryTaskScore()) 1 else maxScore.roundToInt(),
     files = files.map { TaskFile(id = it.id, fileName = it.fileName) },
     postType = postType.name,
     taskMarkEvaluationType = taskMarkEvaluationType,

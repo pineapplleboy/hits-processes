@@ -119,7 +119,7 @@ internal fun SubmissionCard(
                             color = MediumGray,
                         )
                         Spacer(modifier = Modifier.height(6.dp))
-                        if (submission.score != null && submission.score > 0) {
+                        if (submission.score != null) {
                             GradeBadge(
                                 score = submission.score,
                                 maxScore = submission.maxScore,

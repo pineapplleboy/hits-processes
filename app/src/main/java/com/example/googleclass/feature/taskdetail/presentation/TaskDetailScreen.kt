@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -183,7 +188,7 @@ fun showToast(context: Context, @StringRes text: Int) {
     ).show()
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 private fun TaskDetailContent(
     state: TaskDetailScreenState,
@@ -201,6 +206,15 @@ private fun TaskDetailContent(
         is TaskDetailScreenState.StudentView -> state.isAuthor
         else -> false
     }
+    val isRefreshing = when (state) {
+        is TaskDetailScreenState.StudentView -> state.isRefreshing
+        is TaskDetailScreenState.TeacherView -> state.isRefreshing
+        TaskDetailScreenState.Loading -> false
+    }
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = { onEvent(TaskDetailUiEvent.Refresh) },
+    )
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -240,22 +254,39 @@ private fun TaskDetailContent(
             )
         },
     ) { padding ->
-        when (state) {
-            is TaskDetailScreenState.Loading -> LoadingState()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .pullRefresh(pullRefreshState),
+        ) {
+            when (state) {
+                is TaskDetailScreenState.Loading -> LoadingState()
 
-            is TaskDetailScreenState.StudentView -> StudentViewContent(
-                state = state,
-                onEvent = onEvent,
-                onPickFromDocuments = onPickFromDocuments,
-                onPickFromGallery = onPickFromGallery,
-                modifier = Modifier.padding(padding),
-            )
+                is TaskDetailScreenState.StudentView -> StudentViewContent(
+                    state = state,
+                    onEvent = onEvent,
+                    onPickFromDocuments = onPickFromDocuments,
+                    onPickFromGallery = onPickFromGallery,
+                )
 
-            is TaskDetailScreenState.TeacherView -> TeacherViewContent(
-                state = state,
-                onEvent = onEvent,
-                modifier = Modifier.padding(padding),
-            )
+                is TaskDetailScreenState.TeacherView -> TeacherViewContent(
+                    state = state,
+                    onEvent = onEvent,
+                )
+            }
+
+            if (state != TaskDetailScreenState.Loading) {
+                PullRefreshIndicator(
+                    refreshing = isRefreshing,
+                    state = pullRefreshState,
+                    modifier = Modifier
+                        .align(androidx.compose.ui.Alignment.TopCenter)
+                        .padding(top = 12.dp),
+                    backgroundColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
     }
 }

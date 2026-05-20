@@ -15,6 +15,7 @@ sealed interface TaskDetailScreenState {
     data class StudentView(
         val task: TaskDetail,
         val submission: Submission?,
+        val isRefreshing: Boolean = false,
         val taskAnswerId: String? = null,
         val taskAnswerStatus: String = "",
         val taskAnswerFiles: List<TaskAnswerFileInfo> = emptyList(),
@@ -32,6 +33,7 @@ sealed interface TaskDetailScreenState {
         val task: TaskDetail,
         val publicComments: List<Comment>,
         val students: List<StudentSubmissionInfo>,
+        val isRefreshing: Boolean = false,
         val commentInput: String,
         val selectedTab: TeacherTab,
         val isAuthor: Boolean = false,

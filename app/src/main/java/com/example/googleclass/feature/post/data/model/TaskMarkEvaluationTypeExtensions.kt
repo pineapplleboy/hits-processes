@@ -15,3 +15,9 @@ fun TaskMarkEvaluationType?.supportsCriteriaMultiplier(): Boolean = when (this) 
     TaskMarkEvaluationType.COEFFICIENTS_MEAN_VALUE -> true
     else -> false
 }
+
+fun TaskMarkEvaluationType?.usesBinaryTaskScore(): Boolean = when (this) {
+    TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL,
+    TaskMarkEvaluationType.PASS_FAIL -> true
+    else -> false
+}
