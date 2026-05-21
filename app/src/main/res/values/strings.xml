@@ -89,6 +89,8 @@
     <string name="files_label">Файлы:</string>
     <string name="grade_label">Оценка:</string>
     <string name="not_graded">Ожидает оценки</string>
+    <string name="evaluation_status_evaluated">Оценено</string>
+    <string name="evaluation_status_not_evaluated">Не оценено</string>
     <string name="out_of">из</string>
     <string name="new_grade">новая</string>
     <string name="points_suffix">баллов</string>
@@ -181,6 +183,10 @@
     <string name="criteria_editor_save_action">Сохранить критерий</string>
     <string name="criteria_name_label">Название критерия</string>
     <string name="criteria_name_placeholder">Например: Функциональность</string>
+    <string name="criteria_description_label">Описание критерия</string>
+    <string name="criteria_description_placeholder">Например: что именно нужно проверить или как оценивается выполнение</string>
+    <string name="criteria_description_open">Открыть описание критерия</string>
+    <string name="criteria_evaluation_function_label">Тип оценивания критерия</string>
     <string name="criteria_pass_fail_label">Тип "+/-"</string>
     <string name="criteria_pass_fail_score_helper">Вместо баллов: выполнено / не выполнено</string>
     <string name="criteria_pass_fail_min_score_helper">Для режима "+/-" используется шкала от 0 до 1.</string>

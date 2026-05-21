@@ -33,6 +33,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -94,6 +97,8 @@ private fun CriteriaEvaluationContent(
     state: CriteriaEvaluationUiState.Content,
     onEvent: (CriteriaEvaluationUiEvent) -> Unit,
 ) {
+    var descriptionDialogState by remember { mutableStateOf<Pair<String, String>?>(null) }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -175,6 +180,11 @@ private fun CriteriaEvaluationContent(
                 CriteriaEvaluationCard(
                     index = index + 1,
                     criterion = criterion,
+                    onDescriptionClick = {
+                        criterion.description.takeMeaningfulDescription()?.let { description ->
+                            descriptionDialogState = criterion.name to description
+                        }
+                    },
                     onScoreChanged = { value ->
                         onEvent(
                             CriteriaEvaluationUiEvent.ScoreChanged(
@@ -186,6 +196,14 @@ private fun CriteriaEvaluationContent(
                 )
             }
         }
+    }
+
+    descriptionDialogState?.let { (criterionName, description) ->
+        CriterionDescriptionDialog(
+            criterionName = criterionName,
+            description = description,
+            onDismiss = { descriptionDialogState = null },
+        )
     }
 }
 
@@ -318,6 +336,7 @@ private fun SubmissionInfoCard(
 private fun CriteriaEvaluationCard(
     index: Int,
     criterion: CriteriaEvaluationFieldState,
+    onDescriptionClick: () -> Unit,
     onScoreChanged: (String) -> Unit,
 ) {
     Surface(
@@ -355,11 +374,20 @@ private fun CriteriaEvaluationCard(
                         )
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = criterion.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                text = criterion.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (criterion.description.takeMeaningfulDescription() != null) {
+                                CriterionDescriptionButton(onClick = onDescriptionClick)
+                            }
+                        }
                         criterion.multiplier?.let {
                             Text(
                                 text = stringResource(

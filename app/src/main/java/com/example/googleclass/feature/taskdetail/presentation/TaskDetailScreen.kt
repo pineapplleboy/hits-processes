@@ -338,7 +338,7 @@ private fun StudentViewContent(
                 SubmissionCard(
                         submission = state.submission!!,
                         statusText = state.taskAnswerStatus,
-                        showUnsubmit = state.submission!!.score == null || state.submission!!.score == 0,
+                        showUnsubmit = !isEvaluatedStatus(state.submission!!.evaluationStatus),
                         onUnsubmit = { onEvent(TaskDetailUiEvent.UnsubmitWork) },
                 )
             } else {
@@ -449,6 +449,7 @@ private fun StudentSubmittedPreview() {
                     score = 95,
                     maxScore = 100,
                     isNewGrade = true,
+                    evaluationStatus = "EVALUATED",
                 ),
                 taskAnswerId = "ta-1",
                 taskAnswerFiles = emptyList(),

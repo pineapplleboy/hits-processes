@@ -25,6 +25,7 @@ sealed interface CriteriaEvaluationUiState {
 data class CriteriaEvaluationFieldState(
     val markCriteriaId: String,
     val name: String,
+    val description: String?,
     val minScore: Float,
     val maxScore: Float,
     val multiplier: Float?,

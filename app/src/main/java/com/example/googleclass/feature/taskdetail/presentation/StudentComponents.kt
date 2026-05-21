@@ -97,6 +97,8 @@ internal fun StudentItem(
     onOpenChat: () -> Unit,
     onEvaluate: () -> Unit,
 ) {
+    val isEvaluated = isEvaluatedStatus(student.evaluationStatus)
+
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -119,7 +121,13 @@ internal fun StudentItem(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
-                StatusBadge(status = student.status)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    StatusBadge(status = student.status)
+                    EvaluationStatusBadge(evaluationStatus = student.evaluationStatus)
+                }
             }
 
             if (student.files.isNotEmpty()) {
@@ -161,17 +169,14 @@ internal fun StudentItem(
             }
 
             Text(
-                text = if (student.score != null) {
+                text = if (isEvaluated && student.score != null) {
                     stringResource(
                         R.string.score_format,
                         student.score,
                         student.maxScore.takeIf { it > 0 } ?: maxScore,
                     )
                 } else {
-                    stringResource(
-                        R.string.score_format_no_grade,
-                        student.maxScore.takeIf { it > 0 } ?: maxScore,
-                    )
+                    stringResource(R.string.not_graded)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MediumGray,
@@ -310,6 +315,37 @@ internal fun StatusBadge(status: String) {
         )
     }
 }
+
+@Composable
+internal fun EvaluationStatusBadge(evaluationStatus: String) {
+    val isEvaluated = isEvaluatedStatus(evaluationStatus)
+    val text = stringResource(
+        if (isEvaluated) {
+            R.string.evaluation_status_evaluated
+        } else {
+            R.string.evaluation_status_not_evaluated
+        },
+    )
+    val backgroundColor = if (isEvaluated) Success else MediumGray
+
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(backgroundColor)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+        )
+    }
+}
+
+internal fun isEvaluatedStatus(evaluationStatus: String): Boolean =
+    evaluationStatus.equals("EVALUATED", ignoreCase = true)
 
 private fun formatScore(value: Float): String =
     if (value == value.toInt().toFloat()) value.toInt().toString() else value.toString()

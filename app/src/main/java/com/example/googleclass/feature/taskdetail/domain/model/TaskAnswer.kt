@@ -5,6 +5,7 @@ data class TaskAnswer(
     val score: Int? = null,
     val submittedAt: String? = null,
     val status: String = "NOT_COMPLETED",
+    val evaluationStatus: String = "NOT_EVALUATED",
     val files: List<TaskAnswerFile> = emptyList(),
     val maxScore: Int? = null,
     val postName: String? = null,

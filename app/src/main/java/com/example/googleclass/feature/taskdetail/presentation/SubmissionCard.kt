@@ -51,6 +51,7 @@ internal fun SubmissionCard(
     onUnsubmit: () -> Unit = {},
 ) {
     val badgeColor = statusToBadgeColor(statusText)
+    val isEvaluated = isEvaluatedStatus(submission.evaluationStatus)
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -99,6 +100,9 @@ internal fun SubmissionCard(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
+            EvaluationStatusBadge(evaluationStatus = submission.evaluationStatus)
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             Box(
                 modifier = Modifier
@@ -119,7 +123,7 @@ internal fun SubmissionCard(
                             color = MediumGray,
                         )
                         Spacer(modifier = Modifier.height(6.dp))
-                        if (submission.score != null) {
+                        if (isEvaluated && submission.score != null) {
                             GradeBadge(
                                 score = submission.score,
                                 maxScore = submission.maxScore,

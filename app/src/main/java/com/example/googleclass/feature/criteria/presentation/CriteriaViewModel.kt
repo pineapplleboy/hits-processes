@@ -50,6 +50,10 @@ class CriteriaViewModel(
             is CriteriaUiEvent.EditCriterion -> openEditEditor(event.criterionId)
             is CriteriaUiEvent.RequestDeleteCriterion -> requestDelete(event.criterionId)
             is CriteriaUiEvent.NameChanged -> updateEditor { copy(name = event.value) }
+            is CriteriaUiEvent.DescriptionChanged -> updateEditor { copy(description = event.value) }
+            is CriteriaUiEvent.EvaluationFunctionChanged -> updateEditor {
+                copy(evaluationFunction = event.value)
+            }
             is CriteriaUiEvent.PassFailChanged -> updateEditor {
                 copy(
                     isPassFail = event.enabled,
@@ -198,8 +202,8 @@ class CriteriaViewModel(
                             val createdCriterion = EvaluationCriterion(
                                 id = createdId,
                                 name = draft.name,
-                                evaluationFunction = state.criteria.firstOrNull()?.evaluationFunction
-                                    ?: EvaluationFunction.SUM,
+                                description = draft.description,
+                                evaluationFunction = draft.evaluationFunction,
                                 multiplier = draft.multiplier,
                                 minScore = draft.minScore,
                                 maxScore = draft.maxScore,
@@ -233,6 +237,8 @@ class CriteriaViewModel(
                                         if (criterion.id == criterionId) {
                                             criterion.copy(
                                                 name = draft.name,
+                                                description = draft.description,
+                                                evaluationFunction = draft.evaluationFunction,
                                                 minScore = draft.minScore,
                                                 maxScore = draft.maxScore,
                                                 multiplier = draft.multiplier,
@@ -295,6 +301,8 @@ class CriteriaViewModel(
 
         return MarkCriteriaDraft(
             name = trimmedName,
+            description = description.trim().takeIf { it.isNotBlank() },
+            evaluationFunction = evaluationFunction,
             minScore = min,
             maxScore = max,
             multiplier = parsedMultiplier,
@@ -327,6 +335,8 @@ class CriteriaViewModel(
             mode = CriterionEditorMode.EDIT,
             criterionId = id,
             name = name,
+            description = description.orEmpty(),
+            evaluationFunction = evaluationFunction,
             isPassFail = usesPassFailScale,
             minScore = formatDecimal(minScore),
             maxScore = formatDecimal(maxScore),

@@ -17,6 +17,7 @@ fun TaskAnswerDto.toTaskAnswer(): TaskAnswer = TaskAnswer(
     score = score?.roundToInt(),
     submittedAt = submittedAt,
     status = status,
+    evaluationStatus = evaluationStatus,
     files = files.map { it.toTaskAnswerFile() },
     maxScore = maxScore?.roundToInt(),
     postName = postName,

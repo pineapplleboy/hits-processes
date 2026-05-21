@@ -22,6 +22,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -36,6 +40,9 @@ import com.example.googleclass.common.presentation.theme.PrimaryBlue
 import com.example.googleclass.common.presentation.theme.SecondaryText
 import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
 import com.example.googleclass.feature.criteria.domain.model.usesPassFailScale
+import com.example.googleclass.feature.criteria.presentation.CriterionDescriptionButton
+import com.example.googleclass.feature.criteria.presentation.CriterionDescriptionDialog
+import com.example.googleclass.feature.criteria.presentation.takeMeaningfulDescription
 import com.example.googleclass.feature.post.data.model.supportsCriteria
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
 
@@ -47,6 +54,7 @@ internal fun TaskInfoCard(
     onDownloadFile: (fileId: String) -> Unit = {},
 ) {
     val isTask = task.postType == "TASK"
+    var descriptionDialogState by remember { mutableStateOf<EvaluationCriterion?>(null) }
     val typeLabel = when (task.postType) {
         "TASK" -> stringResource(R.string.post_type_task)
         "ANNOUNCEMENT" -> stringResource(R.string.post_type_announcement)
@@ -166,17 +174,29 @@ internal fun TaskInfoCard(
 
                     CriteriaSummaryBlock(
                         criteria = criteria,
+                        onDescriptionClick = { descriptionDialogState = it },
                         onEditCriteria = onEditCriteria,
                     )
                 }
             }
         }
     }
+
+    descriptionDialogState
+        ?.takeIf { it.description.takeMeaningfulDescription() != null }
+        ?.let { criterion ->
+            CriterionDescriptionDialog(
+                criterionName = criterion.name,
+                description = criterion.description.takeMeaningfulDescription().orEmpty(),
+                onDismiss = { descriptionDialogState = null },
+            )
+        }
 }
 
 @Composable
 private fun CriteriaSummaryBlock(
     criteria: List<EvaluationCriterion>,
+    onDescriptionClick: (EvaluationCriterion) -> Unit,
     onEditCriteria: (() -> Unit)?,
 ) {
     Surface(
@@ -204,11 +224,22 @@ private fun CriteriaSummaryBlock(
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     criteria.forEach { criterion ->
-                        Text(
-                            text = "• ${criterion.toSummaryItem()}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "\u2022 ${criterion.toSummaryItem()}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (criterion.description.takeMeaningfulDescription() != null) {
+                                CriterionDescriptionButton(
+                                    onClick = { onDescriptionClick(criterion) },
+                                )
+                            }
+                        }
                     }
                 }
             }

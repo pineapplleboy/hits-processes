@@ -224,6 +224,7 @@ class CriteriaEvaluationViewModel(
                 CriteriaEvaluationFieldState(
                     markCriteriaId = criterion.id,
                     name = criterion.name,
+                    description = criterion.description ?: scoresById[criterion.id]?.description,
                     minScore = criterion.minScore,
                     maxScore = criterion.maxScore,
                     multiplier = criterion.multiplier,
@@ -235,6 +236,7 @@ class CriteriaEvaluationViewModel(
                 CriteriaEvaluationFieldState(
                     markCriteriaId = criterion.markCriteriaId,
                     name = criterion.name,
+                    description = criterion.description,
                     minScore = criterion.minScore,
                     maxScore = criterion.maxScore,
                     multiplier = criterion.multiplier,
