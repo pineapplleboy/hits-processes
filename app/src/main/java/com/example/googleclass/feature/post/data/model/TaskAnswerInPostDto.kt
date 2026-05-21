@@ -8,6 +8,7 @@ data class TaskAnswerInPostDto(
     val score: Float? = null,
     val submittedAt: String? = null,
     val status: String = "NEW",
+    val evaluationStatus: String = "NOT_EVALUATED",
     val files: List<AttachmentDto> = emptyList(),
     val maxScore: Float? = null,
     val postName: String? = null,

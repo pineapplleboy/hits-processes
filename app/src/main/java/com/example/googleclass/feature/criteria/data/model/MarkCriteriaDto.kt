@@ -7,6 +7,7 @@ data class MarkCriteriaDto(
     val id: String,
     val evaluationFunction: EvaluationFunctionDto = EvaluationFunctionDto.SUM,
     val name: String,
+    val description: String? = null,
     val multiplier: Float? = null,
     val minScore: Float,
     val maxScore: Float,

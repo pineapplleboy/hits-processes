@@ -14,6 +14,7 @@ import com.example.googleclass.feature.criteria.domain.model.TaskAnswerCriteriaS
 fun MarkCriteriaDto.toDomain(): EvaluationCriterion = EvaluationCriterion(
     id = id,
     name = name,
+    description = description,
     evaluationFunction = evaluationFunction.toDomain(),
     multiplier = multiplier,
     minScore = minScore,
@@ -24,6 +25,7 @@ fun MarkCriteriaDto.toDomain(): EvaluationCriterion = EvaluationCriterion(
 fun TaskAnswerCriteriaScoreDto.toDomain(): TaskAnswerCriteriaScore = TaskAnswerCriteriaScore(
     markCriteriaId = markCriteriaId,
     name = name,
+    description = description,
     score = score,
     minScore = minScore,
     maxScore = maxScore,
@@ -32,6 +34,8 @@ fun TaskAnswerCriteriaScoreDto.toDomain(): TaskAnswerCriteriaScore = TaskAnswerC
 
 fun MarkCriteriaDraft.toDto(): MarkCriteriaWriteRequestDto = MarkCriteriaWriteRequestDto(
     name = name,
+    description = description,
+    evaluationFunction = evaluationFunction.toDto(),
     minScore = minScore,
     maxScore = maxScore,
     multiplier = multiplier,
@@ -45,4 +49,9 @@ fun CriteriaScoreDraft.toDto(): CriteriaScoreRequestDto = CriteriaScoreRequestDt
 private fun EvaluationFunctionDto.toDomain(): EvaluationFunction = when (this) {
     EvaluationFunctionDto.SUM -> EvaluationFunction.SUM
     EvaluationFunctionDto.MULTIPLY -> EvaluationFunction.MULTIPLY
+}
+
+private fun EvaluationFunction.toDto(): EvaluationFunctionDto = when (this) {
+    EvaluationFunction.SUM -> EvaluationFunctionDto.SUM
+    EvaluationFunction.MULTIPLY -> EvaluationFunctionDto.MULTIPLY
 }

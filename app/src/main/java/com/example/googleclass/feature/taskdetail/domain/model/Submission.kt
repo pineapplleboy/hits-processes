@@ -6,4 +6,5 @@ data class Submission(
     val score: Int?,
     val maxScore: Int,
     val isNewGrade: Boolean,
+    val evaluationStatus: String = "NOT_EVALUATED",
 )

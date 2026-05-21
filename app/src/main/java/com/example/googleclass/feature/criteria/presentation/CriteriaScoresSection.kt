@@ -23,6 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,6 +54,7 @@ fun CriteriaScoresSection(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val uiEffect by viewModel.uiEffect.collectAsStateWithLifecycle(CriteriaScoresUiEffect.None)
     val context = LocalContext.current
+    var descriptionDialogState by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     LaunchedEffect(uiEffect) {
         when (val effect = uiEffect) {
@@ -91,6 +95,11 @@ fun CriteriaScoresSection(
                     state.scores.forEach { scoreState ->
                         CriteriaScoreCard(
                             state = scoreState,
+                            onDescriptionClick = {
+                                scoreState.criterion.description.takeMeaningfulDescription()?.let { description ->
+                                    descriptionDialogState = scoreState.criterion.name to description
+                                }
+                            },
                             onScoreChanged = { value ->
                                 viewModel.onEvent(
                                     CriteriaScoresUiEvent.ScoreChanged(
@@ -110,11 +119,20 @@ fun CriteriaScoresSection(
             }
         }
     }
+
+    descriptionDialogState?.let { (criterionName, description) ->
+        CriterionDescriptionDialog(
+            criterionName = criterionName,
+            description = description,
+            onDismiss = { descriptionDialogState = null },
+        )
+    }
 }
 
 @Composable
 private fun CriteriaScoreCard(
     state: CriteriaScoreFieldState,
+    onDescriptionClick: () -> Unit,
     onScoreChanged: (String) -> Unit,
     onSaveClick: () -> Unit,
 ) {
@@ -128,11 +146,21 @@ private fun CriteriaScoreCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = state.criterion.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = state.criterion.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f),
+                )
+                if (state.criterion.description.takeMeaningfulDescription() != null) {
+                    CriterionDescriptionButton(onClick = onDescriptionClick)
+                }
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

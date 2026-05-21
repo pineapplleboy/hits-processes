@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class TaskAnswerCriteriaScoreDto(
     val markCriteriaId: String,
     val name: String,
+    val description: String? = null,
     val score: Float? = null,
     val minScore: Float,
     val maxScore: Float,

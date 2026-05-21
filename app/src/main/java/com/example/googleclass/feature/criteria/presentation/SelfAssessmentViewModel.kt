@@ -75,6 +75,7 @@ class SelfAssessmentViewModel(
                 SelfAssessmentFieldState(
                     markCriteriaId = criterion.id,
                     name = criterion.name,
+                    description = criterion.description ?: existingScore?.description,
                     minScore = criterion.minScore,
                     maxScore = criterion.maxScore,
                     multiplier = criterion.multiplier,
@@ -87,6 +88,7 @@ class SelfAssessmentViewModel(
                 SelfAssessmentFieldState(
                     markCriteriaId = score.markCriteriaId,
                     name = score.name,
+                    description = score.description,
                     minScore = score.minScore,
                     maxScore = score.maxScore,
                     multiplier = score.multiplier,
@@ -186,6 +188,7 @@ sealed interface SelfAssessmentUiState {
 data class SelfAssessmentFieldState(
     val markCriteriaId: String,
     val name: String,
+    val description: String?,
     val minScore: Float,
     val maxScore: Float,
     val multiplier: Float?,

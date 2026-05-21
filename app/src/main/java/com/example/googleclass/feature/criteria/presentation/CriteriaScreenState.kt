@@ -1,6 +1,7 @@
 package com.example.googleclass.feature.criteria.presentation
 
 import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
+import com.example.googleclass.feature.criteria.domain.model.EvaluationFunction
 
 sealed interface CriteriaUiState {
     data object Loading : CriteriaUiState
@@ -18,6 +19,8 @@ data class CriterionEditorState(
     val mode: CriterionEditorMode,
     val criterionId: String? = null,
     val name: String = "",
+    val description: String = "",
+    val evaluationFunction: EvaluationFunction = EvaluationFunction.SUM,
     val isPassFail: Boolean = false,
     val minScore: String = "0",
     val maxScore: String = "",
@@ -42,6 +45,8 @@ sealed interface CriteriaUiEvent {
     data class EditCriterion(val criterionId: String) : CriteriaUiEvent
     data class RequestDeleteCriterion(val criterionId: String) : CriteriaUiEvent
     data class NameChanged(val value: String) : CriteriaUiEvent
+    data class DescriptionChanged(val value: String) : CriteriaUiEvent
+    data class EvaluationFunctionChanged(val value: EvaluationFunction) : CriteriaUiEvent
     data class PassFailChanged(val enabled: Boolean) : CriteriaUiEvent
     data class MinScoreChanged(val value: String) : CriteriaUiEvent
     data class MaxScoreChanged(val value: String) : CriteriaUiEvent

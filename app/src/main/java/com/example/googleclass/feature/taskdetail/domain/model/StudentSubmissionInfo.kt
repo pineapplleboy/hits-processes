@@ -7,6 +7,7 @@ data class StudentSubmissionInfo(
     val score: Int?,
     val maxScore: Int,
     val status: String,
+    val evaluationStatus: String = "NOT_EVALUATED",
     val files: List<StudentSubmissionFileInfo> = emptyList(),
     val criteriaScores: List<StudentCriteriaScoreInfo> = emptyList(),
     val hasCriteriaEvaluation: Boolean = false,

@@ -29,6 +29,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,11 +45,14 @@ import com.example.googleclass.R
 import com.example.googleclass.common.presentation.component.LoadingState
 import com.example.googleclass.common.presentation.theme.PrimaryBlue
 import com.example.googleclass.common.presentation.theme.SecondaryText
+import com.example.googleclass.feature.criteria.presentation.CriterionDescriptionButton
+import com.example.googleclass.feature.criteria.presentation.CriterionDescriptionDialog
 import com.example.googleclass.feature.criteria.presentation.SelfAssessmentFieldState
 import com.example.googleclass.feature.criteria.presentation.SelfAssessmentUiEffect
 import com.example.googleclass.feature.criteria.presentation.SelfAssessmentUiEvent
 import com.example.googleclass.feature.criteria.presentation.SelfAssessmentUiState
 import com.example.googleclass.feature.criteria.presentation.SelfAssessmentViewModel
+import com.example.googleclass.feature.criteria.presentation.takeMeaningfulDescription
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
@@ -65,6 +71,7 @@ internal fun SelfAssessmentBottomSheet(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
+    var descriptionDialogState by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
@@ -118,6 +125,11 @@ internal fun SelfAssessmentBottomSheet(
                             state.fields.forEach { field ->
                                 SelfAssessmentCriterionCard(
                                     field = field,
+                                    onDescriptionClick = {
+                                        field.description.takeMeaningfulDescription()?.let { description ->
+                                            descriptionDialogState = field.name to description
+                                        }
+                                    },
                                     onScoreChanged = { value ->
                                         viewModel.onEvent(
                                             SelfAssessmentUiEvent.ScoreChanged(
@@ -141,11 +153,20 @@ internal fun SelfAssessmentBottomSheet(
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+
+    descriptionDialogState?.let { (criterionName, description) ->
+        CriterionDescriptionDialog(
+            criterionName = criterionName,
+            description = description,
+            onDismiss = { descriptionDialogState = null },
+        )
+    }
 }
 
 @Composable
 private fun SelfAssessmentCriterionCard(
     field: SelfAssessmentFieldState,
+    onDescriptionClick: () -> Unit,
     onScoreChanged: (String) -> Unit,
     onSaveClick: () -> Unit,
 ) {
@@ -159,11 +180,21 @@ private fun SelfAssessmentCriterionCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = field.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = field.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f),
+                )
+                if (field.description.takeMeaningfulDescription() != null) {
+                    CriterionDescriptionButton(onClick = onDescriptionClick)
+                }
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

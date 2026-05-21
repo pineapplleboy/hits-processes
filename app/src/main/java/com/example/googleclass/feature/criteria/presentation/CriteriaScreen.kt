@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +33,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +50,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +70,7 @@ import com.example.googleclass.common.presentation.components.ClassroomTopAppBar
 import com.example.googleclass.common.presentation.theme.PrimaryBlue
 import com.example.googleclass.common.presentation.theme.SecondaryText
 import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
+import com.example.googleclass.feature.criteria.domain.model.EvaluationFunction
 import com.example.googleclass.feature.criteria.domain.model.usesPassFailScale
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -103,6 +111,7 @@ private fun CriteriaContent(
     onEvent: (CriteriaUiEvent) -> Unit,
 ) {
     val contentState = state as? CriteriaUiState.Content
+    var descriptionPreview by remember { mutableStateOf<EvaluationCriterion?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -134,6 +143,7 @@ private fun CriteriaContent(
                 CriteriaList(
                     state = state,
                     onEvent = onEvent,
+                    onDescriptionClick = { descriptionPreview = it },
                     modifier = Modifier.padding(padding),
                 )
 
@@ -151,6 +161,16 @@ private fun CriteriaContent(
                         onConfirm = { onEvent(CriteriaUiEvent.ConfirmDelete) },
                     )
                 }
+
+                descriptionPreview
+                    ?.takeIf { it.description.takeMeaningfulDescription() != null }
+                    ?.let { criterion ->
+                        CriterionDescriptionDialog(
+                            criterionName = criterion.name,
+                            description = criterion.description.takeMeaningfulDescription().orEmpty(),
+                            onDismiss = { descriptionPreview = null },
+                        )
+                    }
             }
         }
     }
@@ -160,6 +180,7 @@ private fun CriteriaContent(
 private fun CriteriaList(
     state: CriteriaUiState.Content,
     onEvent: (CriteriaUiEvent) -> Unit,
+    onDescriptionClick: (EvaluationCriterion) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state.criteria.isEmpty() && !state.isRefreshing) {
@@ -217,6 +238,7 @@ private fun CriteriaList(
             CriterionCard(
                 index = index + 1,
                 criterion = criterion,
+                onDescriptionClick = { onDescriptionClick(criterion) },
                 onEditClick = { onEvent(CriteriaUiEvent.EditCriterion(criterion.id)) },
                 onDeleteClick = { onEvent(CriteriaUiEvent.RequestDeleteCriterion(criterion.id)) },
             )
@@ -228,6 +250,7 @@ private fun CriteriaList(
 private fun CriterionCard(
     index: Int,
     criterion: EvaluationCriterion,
+    onDescriptionClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
 ) {
@@ -262,13 +285,22 @@ private fun CriterionCard(
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = criterion.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = criterion.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (criterion.description.takeMeaningfulDescription() != null) {
+                            CriterionDescriptionButton(onClick = onDescriptionClick)
+                        }
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = criterion.toSummaryLine(),
@@ -357,6 +389,26 @@ private fun CriterionEditorSheet(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                 ),
+            )
+
+            OutlinedTextField(
+                value = state.description,
+                onValueChange = { onEvent(CriteriaUiEvent.DescriptionChanged(it)) },
+                label = { Text(stringResource(R.string.criteria_description_label)) },
+                placeholder = { Text(stringResource(R.string.criteria_description_placeholder)) },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3,
+                maxLines = 5,
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                ),
+            )
+
+            CriterionEvaluationFunctionSelector(
+                selectedFunction = state.evaluationFunction,
+                onFunctionSelected = { onEvent(CriteriaUiEvent.EvaluationFunctionChanged(it)) },
             )
 
             Surface(
@@ -489,6 +541,48 @@ private fun CriterionEditorSheet(
                         ),
                     )
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CriterionEvaluationFunctionSelector(
+    selectedFunction: EvaluationFunction,
+    onFunctionSelected: (EvaluationFunction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.criteria_evaluation_function_label),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            EvaluationFunction.entries.forEach { function ->
+                FilterChip(
+                    selected = function == selectedFunction,
+                    onClick = { onFunctionSelected(function) },
+                    label = {
+                        Text(
+                            text = when (function) {
+                                EvaluationFunction.SUM -> stringResource(R.string.task_eval_function_sum)
+                                EvaluationFunction.MULTIPLY -> stringResource(R.string.task_eval_function_multiply)
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                )
             }
         }
     }

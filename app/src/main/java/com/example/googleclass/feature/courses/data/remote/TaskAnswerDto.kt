@@ -11,6 +11,7 @@ data class TaskAnswerDto(
     val score: Float? = null,
     val submittedAt: String? = null,
     val status: String = "NOT_COMPLETED",
+    val evaluationStatus: String = "NOT_EVALUATED",
     val files: List<FileDto> = emptyList(),
     val maxScore: Float? = null,
     val postName: String? = null,

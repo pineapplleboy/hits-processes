@@ -44,6 +44,7 @@ private val SUBMITTED_STATUSES = setOf("SUBMITTED", "COMPLETED", "COMPLETED_AFTE
 private data class TaskAnswerState(
     val id: String,
     val status: String,
+    val evaluationStatus: String,
     val files: List<TaskAnswerFileInfo>,
     val score: Int?,
     val submittedAt: String?,
@@ -173,10 +174,11 @@ class TaskDetailScreenViewModel(
                             val taskAnswerFromApi = if (isTaskPost && taskAnswerFromPost == null) {
                                 taskAnswerRepository.getUserPostTaskAnswer(postId).getOrNull()
                             } else null
-                            val (tid, status, files, score, submittedAt, maxScore) = when {
+                            val (tid, status, evaluationStatus, files, score, submittedAt, maxScore) = when {
                                 taskAnswerFromPost != null -> TaskAnswerState(
                                     id = taskAnswerFromPost.id,
                                     status = taskAnswerFromPost.status,
+                                    evaluationStatus = taskAnswerFromPost.evaluationStatus,
                                     files = taskAnswerFromPost.files.map { TaskAnswerFileInfo(it.id, it.fileName ?: "Файл") },
                                     score = taskAnswerFromPost.score?.roundToInt(),
                                     submittedAt = taskAnswerFromPost.submittedAt,
@@ -188,6 +190,7 @@ class TaskDetailScreenViewModel(
                                 taskAnswerFromApi != null -> TaskAnswerState(
                                     id = taskAnswerFromApi.id,
                                     status = taskAnswerFromApi.status,
+                                    evaluationStatus = taskAnswerFromApi.evaluationStatus,
                                     files = taskAnswerFromApi.files.map { TaskAnswerFileInfo(it.id, it.fileName ?: "Файл") },
                                     score = taskAnswerFromApi.score,
                                     submittedAt = taskAnswerFromApi.submittedAt,
@@ -224,6 +227,7 @@ class TaskDetailScreenViewModel(
                                     score = score,
                                     maxScore = maxScore,
                                     isNewGrade = false,
+                                    evaluationStatus = evaluationStatus,
                                 )
                             } else null
                             _uiState.value = TaskDetailScreenState.StudentView(
@@ -579,6 +583,7 @@ class TaskDetailScreenViewModel(
                                 ta.maxScore ?: state.task.maxScore,
                             ),
                             isNewGrade = false,
+                            evaluationStatus = ta.evaluationStatus,
                         )
                     } else null
                     _uiState.value = state.copy(
@@ -618,6 +623,7 @@ class TaskDetailScreenViewModel(
                                         score = ta.score,
                                         maxScore = if (usesBinaryScore) 1 else (ta.maxScore ?: maxScore),
                                         status = ta.status,
+                                        evaluationStatus = ta.evaluationStatus,
                                         files = ta.files.map {
                                             StudentSubmissionFileInfo(
                                                 id = it.id,
