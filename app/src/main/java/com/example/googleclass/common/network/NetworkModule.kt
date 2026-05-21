@@ -54,6 +54,7 @@ val networkModule = module {
             ignoreUnknownKeys = true
             coerceInputValues = true
             encodeDefaults = true
+            allowSpecialFloatingPointValues = true
         }
         Retrofit.Builder()
             .baseUrl(BASE_URL)
@@ -93,6 +94,7 @@ val networkModule = module {
             ignoreUnknownKeys = true
             coerceInputValues = true
             encodeDefaults = true
+            allowSpecialFloatingPointValues = true
         }
         Retrofit.Builder()
             .baseUrl(BASE_URL)

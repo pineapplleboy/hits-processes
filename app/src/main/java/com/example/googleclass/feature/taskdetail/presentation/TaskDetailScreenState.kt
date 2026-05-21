@@ -4,6 +4,7 @@ import android.net.Uri
 import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
 import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
+import com.example.googleclass.feature.taskdetail.domain.model.StudentCriteriaScoreInfo
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
 import com.example.googleclass.feature.taskdetail.domain.model.Submission
 import com.example.googleclass.feature.taskdetail.domain.model.TaskDetail
@@ -27,6 +28,7 @@ sealed interface TaskDetailScreenState {
         val isAuthor: Boolean = false,
         val courseId: String = "",
         val criteria: List<EvaluationCriterion> = emptyList(),
+        val criteriaScores: List<StudentCriteriaScoreInfo> = emptyList(),
         val showSelfAssessmentSheet: Boolean = false,
     ) : TaskDetailScreenState
 

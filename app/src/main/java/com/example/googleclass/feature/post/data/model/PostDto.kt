@@ -1,5 +1,6 @@
 package com.example.googleclass.feature.post.data.model
 
+import com.example.googleclass.common.network.NanSafeFloatSerializer
 import com.example.googleclass.common.network.dto.UserDto
 import kotlinx.serialization.Serializable
 
@@ -13,9 +14,13 @@ data class PostDto(
     val taskMarkEvaluationType: TaskMarkEvaluationType? = null,
     val createdAt: String,
     val deadline: String? = null,
-    val maxScore: Float = 0f,
+    @Serializable(with = NanSafeFloatSerializer::class)
+    val maxScore: Float? = null,
+    @Serializable(with = NanSafeFloatSerializer::class)
     val minScore: Float? = null,
+    @Serializable(with = NanSafeFloatSerializer::class)
     val multiplier: Float? = null,
+    @Serializable(with = NanSafeFloatSerializer::class)
     val passThreshold: Float? = null,
     val evaluationFunction: PostCreateDto.EvaluationFunction? = null,
     val comments: List<PostCommentDto> = emptyList(),

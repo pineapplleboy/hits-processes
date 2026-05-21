@@ -122,7 +122,7 @@ class PostEditorScreenViewModel(
                                 taskMarkEvaluationType = post.taskMarkEvaluationType
                                     ?: TaskMarkEvaluationType.TEACHER_DECISION,
                                 courseMarkEvaluationType = courseEvalType,
-                                maxScore = if (post.maxScore > 0) post.maxScore.roundToInt().toString() else "",
+                                maxScore = if ((post.maxScore ?: 0f) > 0) post.maxScore?.roundToInt()?.toString() ?: "" else "",
                                 minScore = post.minScore?.toString() ?: "",
                                 multiplier = post.multiplier?.toString() ?: "1",
                                 passThreshold = post.passThreshold?.toString() ?: "",

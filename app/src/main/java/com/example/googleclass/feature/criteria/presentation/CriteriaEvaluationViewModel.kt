@@ -108,7 +108,7 @@ class CriteriaEvaluationViewModel(
             _uiState.value = CriteriaEvaluationUiState.Content(
                 taskTitle = post.toTaskTitle(),
                 studentName = taskAnswer.userName.orEmpty().ifBlank { "Студент" },
-                taskMaxScore = post.maxScore,
+                taskMaxScore = post.maxScore ?: 0f,
                 taskAnswerId = taskAnswerId,
                 evaluationType = post.taskMarkEvaluationType,
                 passThreshold = post.passThreshold,
@@ -118,7 +118,7 @@ class CriteriaEvaluationViewModel(
                 calculatedScore = calculateScore(
                     criteria = fields,
                     evaluationType = post.taskMarkEvaluationType,
-                    taskMaxScore = post.maxScore,
+                    taskMaxScore = post.maxScore ?: 0f,
                 ),
                 isSaving = false,
             )

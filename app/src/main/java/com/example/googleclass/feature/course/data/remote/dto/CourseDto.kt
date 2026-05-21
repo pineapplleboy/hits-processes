@@ -1,5 +1,6 @@
 package com.example.googleclass.feature.course.data.remote.dto
 
+import com.example.googleclass.common.network.NanSafeFloatSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -13,6 +14,8 @@ data class CourseDto(
     @SerialName("createdAt") val createdAt: String? = null,
     @SerialName("currentUserCourseRole") val currentUserCourseRole: String? = null,
     @SerialName("courseMarkEvaluationType") val courseMarkEvaluationType: String? = null,
+    @Serializable(with = NanSafeFloatSerializer::class)
     @SerialName("passThreshold") val passThreshold: Float? = null,
+    @Serializable(with = NanSafeFloatSerializer::class)
     @SerialName("score") val score: Float? = null
 )

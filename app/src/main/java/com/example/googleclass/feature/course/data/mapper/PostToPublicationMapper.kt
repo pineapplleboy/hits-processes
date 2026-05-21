@@ -19,7 +19,7 @@ fun PostDto.toPublication(): Publication {
     val createdAtDate = createdAt.parseOrNull() ?: Date(0)
     val deadlineDate = deadline
         ?.takeIf { it.isNotBlank() }?.parseOrNull()
-    val maxScoreValue = if (maxScore <= 0f) null else maxScore.roundToInt()
+    val maxScoreValue = maxScore?.takeIf { it > 0f }?.roundToInt()
     val files = this.files.map { it.fileName?.takeIf { n -> n.isNotBlank() } ?: "Файл" }
     val commentsList = comments.map { it.toComment() }
     val assignmentStatus = taskAnswer?.let { answer ->

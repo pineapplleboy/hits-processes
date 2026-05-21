@@ -246,6 +246,9 @@ class TaskDetailScreenViewModel(
                                 criteria = criteria,
                             )
                             loadPrivateComments(tid)
+                            if (criteria.isNotEmpty()) {
+                                loadStudentCriteriaScores(tid)
+                            }
                         }
                         UserRole.TEACHER, UserRole.MAIN_TEACHER -> {
                             _uiState.value = TaskDetailScreenState.TeacherView(
@@ -371,7 +374,7 @@ class TaskDetailScreenViewModel(
 
                     if (post.postType == PostType.TASK) {
                         loadTaskStudents(
-                            maxScore = post.maxScore.roundToInt(),
+                            maxScore = (post.maxScore ?: 0f).roundToInt(),
                             shouldLoadCriteriaScores = criteria.isNotEmpty(),
                         )
                     }
@@ -738,6 +741,16 @@ class TaskDetailScreenViewModel(
         }
         .orEmpty()
 
+    private fun loadStudentCriteriaScores(taskAnswerId: String) {
+        viewModelScope.launch {
+            val scores = loadCriteriaScoreSummary(taskAnswerId)
+            val state = _uiState.value
+            if (state is TaskDetailScreenState.StudentView) {
+                _uiState.value = state.copy(criteriaScores = scores)
+            }
+        }
+    }
+
     private fun sendEffect(effect: TaskDetailUiEffect) {
         viewModelScope.launch {
             _uiEffect.tryEmit(effect)
@@ -794,7 +807,7 @@ private fun PostDto.toTaskDetail(): TaskDetail = TaskDetail(
     createdAt = TaskDetailScreenViewModel.formatIsoDate(createdAt),
     description = text,
     deadline = deadline?.let { TaskDetailScreenViewModel.formatIsoDate(it) } ?: "Без дедлайна",
-    maxScore = if (taskMarkEvaluationType.usesBinaryTaskScore()) 1 else maxScore.roundToInt(),
+    maxScore = if (taskMarkEvaluationType.usesBinaryTaskScore()) 1 else (maxScore ?: 0f).roundToInt(),
     files = files.map { TaskFile(id = it.id, fileName = it.fileName) },
     postType = postType.name,
     taskMarkEvaluationType = taskMarkEvaluationType,

@@ -352,6 +352,10 @@ private fun StudentViewContent(
             }
         }
 
+        if (state.criteriaScores.isNotEmpty()) {
+            CriteriaScoreSummaryCard(criteriaScores = state.criteriaScores)
+        }
+
         if (canSelfAssess) {
             Button(
                 onClick = { onEvent(TaskDetailUiEvent.OpenSelfAssessment) },

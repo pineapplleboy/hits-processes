@@ -246,7 +246,7 @@ internal fun StudentItem(
 }
 
 @Composable
-private fun CriteriaScoreSummaryCard(
+internal fun CriteriaScoreSummaryCard(
     criteriaScores: List<StudentCriteriaScoreInfo>,
 ) {
     Surface(
