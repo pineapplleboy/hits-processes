@@ -10,6 +10,7 @@ import com.example.googleclass.common.network.networkModule
 import com.example.googleclass.feature.course.courseDetailModule
 import com.example.googleclass.feature.criteria.criteriaModule
 import com.example.googleclass.feature.courses.coursesModule
+import com.example.googleclass.feature.peerreview.peerReviewModule
 import com.example.googleclass.feature.post.postModule
 import com.example.googleclass.feature.profile.profileModule
 import com.example.googleclass.feature.taskdetail.studentchat.studentChatModule
@@ -34,6 +35,7 @@ class App : Application() {
                 coursesModule,
                 courseDetailModule,
                 criteriaModule,
+                peerReviewModule,
                 postModule,
                 profileModule,
             )
