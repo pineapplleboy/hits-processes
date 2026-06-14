@@ -12,4 +12,9 @@ data class PostUpdateDto(
     val multiplier: Float? = null,
     val passThreshold: Float? = null,
     val evaluationFunction: PostCreateDto.EvaluationFunction? = null,
+    val appraiserDeadline: String? = null,
+    val studentAppraisingNumber: Int? = null,
+    val taskAnswerAppraisingType: TaskAnswerAppraisingType? = null,
+    val canSeeAppraiser: Boolean? = null,
+    val canSeeAppraised: Boolean? = null,
 )

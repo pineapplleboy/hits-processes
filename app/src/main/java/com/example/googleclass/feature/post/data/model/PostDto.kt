@@ -25,4 +25,9 @@ data class PostDto(
     val evaluationFunction: PostCreateDto.EvaluationFunction? = null,
     val comments: List<PostCommentDto> = emptyList(),
     val taskAnswer: TaskAnswerInPostDto? = null,
+    val appraiserDeadline: String? = null,
+    val studentAppraisingNumber: Int? = null,
+    val taskAnswerAppraisingType: TaskAnswerAppraisingType? = null,
+    val canSeeAppraiser: Boolean? = null,
+    val canSeeAppraised: Boolean? = null,
 )

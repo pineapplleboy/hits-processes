@@ -9,6 +9,7 @@ import com.example.googleclass.feature.post.data.model.AttachmentDto
 import com.example.googleclass.feature.post.data.model.PostCreateDto
 import com.example.googleclass.feature.post.data.model.PostType
 import com.example.googleclass.feature.post.data.model.PostUpdateDto
+import com.example.googleclass.feature.post.data.model.TaskAnswerAppraisingType
 import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 import com.example.googleclass.feature.post.domain.repository.PostRepository
 import com.example.googleclass.feature.post.presentation.needsEvaluationFunction
@@ -74,6 +75,29 @@ class PostEditorScreenViewModel(
             is PostEditorUiEvent.FileRemoved -> handleFileRemoved(event.uri)
             is PostEditorUiEvent.ExistingAttachmentRemoved -> handleExistingAttachmentRemoved(event.attachmentId)
             is PostEditorUiEvent.DeadlineChanged -> updateContent { copy(deadline = event.deadline) }
+            is PostEditorUiEvent.PeerReviewToggled -> updateContent {
+                val nextDeadline = if (event.enabled && appraiserDeadline.isBlank()) {
+                    formatDeadlineForDisplay(System.currentTimeMillis())
+                } else {
+                    appraiserDeadline
+                }
+                copy(peerReviewEnabled = event.enabled, appraiserDeadline = nextDeadline)
+            }
+            is PostEditorUiEvent.StudentAppraisingNumberChanged -> updateContent {
+                copy(studentAppraisingNumber = event.value.filter { it.isDigit() })
+            }
+            is PostEditorUiEvent.AppraiserDeadlineChanged -> updateContent {
+                copy(appraiserDeadline = event.deadline)
+            }
+            is PostEditorUiEvent.TaskAnswerAppraisingTypeSelected -> updateContent {
+                copy(taskAnswerAppraisingType = event.type)
+            }
+            is PostEditorUiEvent.CanSeeAppraiserToggled -> updateContent {
+                copy(canSeeAppraiser = event.value)
+            }
+            is PostEditorUiEvent.CanSeeAppraisedToggled -> updateContent {
+                copy(canSeeAppraised = event.value)
+            }
         }
     }
 
@@ -106,6 +130,12 @@ class PostEditorScreenViewModel(
                         existingAttachments = emptyList(),
                         isSaving = false,
                         isPostTypeEditable = true,
+                        peerReviewEnabled = false,
+                        studentAppraisingNumber = "",
+                        appraiserDeadline = defaultDeadline,
+                        taskAnswerAppraisingType = TaskAnswerAppraisingType.CHAIN,
+                        canSeeAppraiser = false,
+                        canSeeAppraised = false,
                     )
                 }
 
@@ -135,6 +165,16 @@ class PostEditorScreenViewModel(
                                 },
                                 isSaving = false,
                                 isPostTypeEditable = false,
+                                peerReviewEnabled = (post.studentAppraisingNumber ?: 0) > 0,
+                                studentAppraisingNumber = post.studentAppraisingNumber
+                                    ?.takeIf { it > 0 }?.toString() ?: "",
+                                appraiserDeadline = post.appraiserDeadline?.takeIf { it.isNotBlank() }
+                                    ?.let { parseIsoToDisplay(it) }
+                                    ?: formatDeadlineForDisplay(System.currentTimeMillis()),
+                                taskAnswerAppraisingType = post.taskAnswerAppraisingType
+                                    ?: TaskAnswerAppraisingType.CHAIN,
+                                canSeeAppraiser = post.canSeeAppraiser ?: false,
+                                canSeeAppraised = post.canSeeAppraised ?: false,
                             )
                         }
                         .onFailure {
@@ -237,6 +277,20 @@ class PostEditorScreenViewModel(
             }
 
             val isTask = state.selectedPostType == PostType.TASK
+            val peerReviewActive = isTask && state.peerReviewEnabled
+            val appraiserDeadlineIso = if (peerReviewActive) {
+                parseDisplayToIso(state.appraiserDeadline)
+            } else {
+                null
+            }
+            val appraisingNumber = if (peerReviewActive) {
+                state.studentAppraisingNumber.toIntOrNull()
+            } else {
+                null
+            }
+            val appraisingType = if (peerReviewActive) state.taskAnswerAppraisingType else null
+            val canSeeAppraiser = if (peerReviewActive) state.canSeeAppraiser else null
+            val canSeeAppraised = if (peerReviewActive) state.canSeeAppraised else null
 
             val saveResult = when (mode) {
                 is PostEditorMode.Create -> {
@@ -262,6 +316,11 @@ class PostEditorScreenViewModel(
                             passThreshold = if (isTask && evalType.needsPassThreshold()) state.passThreshold.toFloatOrNull() else null,
                             evaluationFunction = if (isTask && courseEvalType.needsEvaluationFunction()) state.evaluationFunction else null,
                             deadline = deadlineIso,
+                            appraiserDeadline = appraiserDeadlineIso,
+                            studentAppraisingNumber = appraisingNumber,
+                            taskAnswerAppraisingType = appraisingType,
+                            canSeeAppraiser = canSeeAppraiser,
+                            canSeeAppraised = canSeeAppraised,
                         ),
                     ).map { }
                 }
@@ -281,6 +340,11 @@ class PostEditorScreenViewModel(
                             multiplier = if (isTask && editCourseEvalType.needsMultiplier()) state.multiplier.toFloatOrNull() else null,
                             passThreshold = if (isTask && editEvalType.needsPassThreshold()) state.passThreshold.toFloatOrNull() else null,
                             evaluationFunction = if (isTask && editCourseEvalType.needsEvaluationFunction()) state.evaluationFunction else null,
+                            appraiserDeadline = appraiserDeadlineIso,
+                            studentAppraisingNumber = appraisingNumber,
+                            taskAnswerAppraisingType = appraisingType,
+                            canSeeAppraiser = canSeeAppraiser,
+                            canSeeAppraised = canSeeAppraised,
                         ),
                     )
                 }

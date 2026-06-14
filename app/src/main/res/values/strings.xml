@@ -260,4 +260,15 @@
     <string name="self_assessment_button">Самооценка по критериям</string>
     <string name="self_assessment_sheet_title">Самооценка</string>
     <string name="self_assessment_sheet_subtitle">Оцените свою работу по каждому критерию</string>
+
+    <!-- Peer review: post editor config -->
+    <string name="peer_review_title">Взаимное оценивание</string>
+    <string name="peer_review_subtitle">Студенты оценивают работы друг друга</string>
+    <string name="peer_review_count_hint">Сколько работ оценивает каждый студент</string>
+    <string name="appraiser_deadline_hint">Срок оценивания (дд.мм.гггг чч:мм)</string>
+    <string name="peer_review_distribution_label">Распределение работ</string>
+    <string name="peer_review_type_chain">По цепочке</string>
+    <string name="peer_review_type_any">Свободный выбор</string>
+    <string name="peer_review_can_see_appraiser">Студент видит, кто его оценил</string>
+    <string name="peer_review_can_see_appraised">Оценщик видит автора работы</string>
 </resources>

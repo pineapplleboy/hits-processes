@@ -17,13 +17,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +45,7 @@ import com.example.googleclass.R
 import com.example.googleclass.common.presentation.theme.MediumGray
 import com.example.googleclass.feature.post.data.model.PostCreateDto
 import com.example.googleclass.feature.post.data.model.PostType
+import com.example.googleclass.feature.post.data.model.TaskAnswerAppraisingType
 import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -430,4 +436,112 @@ fun TaskMarkEvaluationType.needsPassThreshold(): Boolean = when (this) {
 fun TaskMarkEvaluationType?.needsEvaluationFunction(): Boolean = when (this) {
     TaskMarkEvaluationType.COEFFICIENTS_SUM -> true
     else -> false
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun PeerReviewSection(
+    state: PostEditorScreenState.Content,
+    onEvent: (PostEditorUiEvent) -> Unit,
+    appraiserDeadlinePicker: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.peer_review_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = stringResource(R.string.peer_review_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MediumGray,
+                )
+            }
+            Switch(
+                checked = state.peerReviewEnabled,
+                onCheckedChange = { onEvent(PostEditorUiEvent.PeerReviewToggled(it)) },
+            )
+        }
+
+        if (state.peerReviewEnabled) {
+            OutlinedTextField(
+                value = state.studentAppraisingNumber,
+                onValueChange = { onEvent(PostEditorUiEvent.StudentAppraisingNumberChanged(it)) },
+                label = { Text(stringResource(R.string.peer_review_count_hint)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                ),
+            )
+
+            appraiserDeadlinePicker()
+
+            Text(
+                text = stringResource(R.string.peer_review_distribution_label),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TaskAnswerAppraisingType.entries.forEach { type ->
+                    FilterChip(
+                        selected = type == state.taskAnswerAppraisingType,
+                        onClick = { onEvent(PostEditorUiEvent.TaskAnswerAppraisingTypeSelected(type)) },
+                        label = {
+                            Text(
+                                text = when (type) {
+                                    TaskAnswerAppraisingType.CHAIN -> stringResource(R.string.peer_review_type_chain)
+                                    TaskAnswerAppraisingType.ANY -> stringResource(R.string.peer_review_type_any)
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                    )
+                }
+            }
+
+            PeerReviewToggleRow(
+                title = stringResource(R.string.peer_review_can_see_appraiser),
+                checked = state.canSeeAppraiser,
+                onCheckedChange = { onEvent(PostEditorUiEvent.CanSeeAppraiserToggled(it)) },
+            )
+            PeerReviewToggleRow(
+                title = stringResource(R.string.peer_review_can_see_appraised),
+                checked = state.canSeeAppraised,
+                onCheckedChange = { onEvent(PostEditorUiEvent.CanSeeAppraisedToggled(it)) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PeerReviewToggleRow(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
+        )
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
 }
