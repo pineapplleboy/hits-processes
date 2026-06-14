@@ -103,6 +103,7 @@ sealed interface TaskDetailUiEvent {
     data object DismissEvaluateDialog : TaskDetailUiEvent
     data object OpenSelfAssessment : TaskDetailUiEvent
     data object DismissSelfAssessment : TaskDetailUiEvent
+    data object OpenPeerReview : TaskDetailUiEvent
 }
 
 sealed interface TaskDetailUiEffect {
@@ -126,6 +127,10 @@ sealed interface TaskDetailUiEffect {
         val courseId: String,
         val postId: String,
         val taskAnswerId: String,
+    ) : TaskDetailUiEffect
+    data class NavigateToPeerReview(
+        val courseId: String,
+        val postId: String,
     ) : TaskDetailUiEffect
     data class ShowError(val message: String) : TaskDetailUiEffect
     data class StartFileUpload(val uris: List<Uri>) : TaskDetailUiEffect

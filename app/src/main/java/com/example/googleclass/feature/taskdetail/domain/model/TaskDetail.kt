@@ -14,6 +14,7 @@ data class TaskDetail(
     val files: List<TaskFile> = emptyList(),
     val postType: String = "",
     val taskMarkEvaluationType: TaskMarkEvaluationType? = null,
+    val peerReviewEnabled: Boolean = false,
 )
 
 data class TaskFile(

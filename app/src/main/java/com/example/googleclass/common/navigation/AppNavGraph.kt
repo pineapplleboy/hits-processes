@@ -17,6 +17,7 @@ import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.course.presentation.CourseScreenRoute
 import com.example.googleclass.feature.criteria.presentation.CriteriaEvaluationScreen
 import com.example.googleclass.feature.criteria.presentation.CriteriaScreen
+import com.example.googleclass.feature.peerreview.presentation.list.PeerReviewListScreen
 import com.example.googleclass.feature.courses.presentation.CoursesScreen
 import com.example.googleclass.feature.post.presentation.PostEditorMode
 import com.example.googleclass.feature.post.presentation.PostEditorScreen
@@ -133,6 +134,9 @@ fun AppNavGraph(
                         ScreenRoute.CriteriaEvaluation.createRoute(cId, pId, taskAnswerId)
                     )
                 },
+                onNavigateToPeerReview = { cId, pId ->
+                    navController.navigate(ScreenRoute.PeerReviewList.createRoute(cId, pId))
+                },
             )
         }
         composable(
@@ -236,6 +240,22 @@ fun AppNavGraph(
                         ?.set(CRITERIA_EVALUATION_UPDATED_KEY, true)
                     navController.popBackStack()
                 },
+            )
+        }
+        composable(
+            route = ScreenRoute.PeerReviewList.route,
+            arguments = listOf(
+                navArgument("courseId") { defaultValue = "" },
+                navArgument("postId") { defaultValue = "" },
+            ),
+        ) { backStackEntry ->
+            val courseId = backStackEntry.arguments?.getString("courseId") ?: ""
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            PeerReviewListScreen(
+                courseId = courseId,
+                postId = postId,
+                onNavigateBack = { navController.popBackStack() },
+                onOpenEvaluation = { },
             )
         }
         composable(ScreenRoute.Profile.route) {

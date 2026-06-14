@@ -79,6 +79,7 @@ fun TaskDetailScreen(
     onNavigateToCourseFeed: (courseId: String) -> Unit = {},
     onNavigateToStudentChat: (taskAnswerId: String, studentName: String, studentUserId: String, currentUserId: String) -> Unit = { _, _, _, _ -> },
     onNavigateToCriteriaEvaluation: (courseId: String, postId: String, taskAnswerId: String) -> Unit = { _, _, _ -> },
+    onNavigateToPeerReview: (courseId: String, postId: String) -> Unit = { _, _ -> },
 ) {
     val viewModel: TaskDetailScreenViewModel = koinViewModel(
         parameters = { parametersOf(courseId, postId, userRole) }
@@ -127,6 +128,10 @@ fun TaskDetailScreen(
                         effect.postId,
                         effect.taskAnswerId,
                     )
+                }
+
+                is TaskDetailUiEffect.NavigateToPeerReview -> {
+                    onNavigateToPeerReview(effect.courseId, effect.postId)
                 }
 
                 is TaskDetailUiEffect.ShowError -> {
@@ -370,6 +375,26 @@ private fun StudentViewContent(
             ) {
                 Text(
                     text = stringResource(R.string.self_assessment_button),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+
+        if (state.task.postType == "TASK" && state.task.peerReviewEnabled) {
+            Button(
+                onClick = { onEvent(TaskDetailUiEvent.OpenPeerReview) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryBlue,
+                    contentColor = Color.White,
+                ),
+            ) {
+                Text(
+                    text = stringResource(R.string.peer_review_open_button),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )

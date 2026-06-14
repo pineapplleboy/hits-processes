@@ -271,4 +271,23 @@
     <string name="peer_review_type_any">Свободный выбор</string>
     <string name="peer_review_can_see_appraiser">Студент видит, кто его оценил</string>
     <string name="peer_review_can_see_appraised">Оценщик видит автора работы</string>
+
+    <!-- Peer review: works to appraise -->
+    <string name="peer_review_open_button">Оценить работы</string>
+    <string name="peer_review_list_title">Оценивание работ</string>
+    <string name="peer_review_assigned_section">Назначенные работы</string>
+    <string name="peer_review_available_section">Доступные работы</string>
+    <string name="peer_review_take">Взять на оценку</string>
+    <string name="peer_review_evaluated">Оценено</string>
+    <string name="peer_review_not_evaluated">Ожидает оценки</string>
+    <string name="peer_review_empty">Нет работ для оценивания</string>
+    <string name="peer_review_anonymous_student">Студент</string>
+    <string name="peer_reason_task_deadline">Дедлайн сдачи ещё не наступил</string>
+    <string name="peer_reason_appraiser_deadline">Срок оценивания истёк</string>
+    <string name="peer_reason_not_submitted">Работа не сдана</string>
+    <string name="peer_reason_own">Это ваша работа</string>
+    <string name="peer_reason_already_selected">Уже выбрана для оценки</string>
+    <string name="peer_reason_limit">Достигнут лимит оцениваний</string>
+    <string name="peer_reason_reciprocal">Взаимное оценивание недоступно</string>
+    <string name="peer_reason_unknown">Недоступно для оценки</string>
 </resources>

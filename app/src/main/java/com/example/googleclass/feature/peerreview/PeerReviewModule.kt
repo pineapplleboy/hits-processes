@@ -13,6 +13,8 @@ import com.example.googleclass.feature.peerreview.domain.usecase.OverrideApprais
 import com.example.googleclass.feature.peerreview.domain.usecase.SelectWorkToAppraiseUseCase
 import com.example.googleclass.feature.peerreview.domain.usecase.SubmitAppraiserCriteriaScoresUseCase
 import com.example.googleclass.feature.peerreview.domain.usecase.SubmitAppraiserScoreUseCase
+import com.example.googleclass.feature.peerreview.presentation.list.PeerReviewListViewModel
+import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val peerReviewModule = module {
@@ -28,4 +30,14 @@ val peerReviewModule = module {
     factory { GetAllAppraisersUseCase(get()) }
     factory { OverrideAppraiserUseCase(get()) }
     factory { GetAppraisersTopUseCase(get()) }
+
+    viewModel { (courseId: String, postId: String) ->
+        PeerReviewListViewModel(
+            courseId = courseId,
+            postId = postId,
+            getTasksToAppraiseUseCase = get(),
+            getAvailableWorksUseCase = get(),
+            selectWorkToAppraiseUseCase = get(),
+        )
+    }
 }
