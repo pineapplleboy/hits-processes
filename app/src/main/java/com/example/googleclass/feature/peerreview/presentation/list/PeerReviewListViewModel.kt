@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.googleclass.feature.peerreview.domain.usecase.GetAvailableWorksUseCase
 import com.example.googleclass.feature.peerreview.domain.usecase.GetTasksToAppraiseUseCase
 import com.example.googleclass.feature.peerreview.domain.usecase.SelectWorkToAppraiseUseCase
+import com.example.googleclass.feature.post.data.model.TaskAnswerAppraisingType
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 class PeerReviewListViewModel(
     private val courseId: String,
     private val postId: String,
+    private val appraisingType: TaskAnswerAppraisingType?,
     private val getTasksToAppraiseUseCase: GetTasksToAppraiseUseCase,
     private val getAvailableWorksUseCase: GetAvailableWorksUseCase,
     private val selectWorkToAppraiseUseCase: SelectWorkToAppraiseUseCase,
@@ -35,9 +37,9 @@ class PeerReviewListViewModel(
         when (event) {
             PeerReviewListUiEvent.NavigateBack -> _uiEffect.tryEmit(PeerReviewListUiEffect.NavigateBack)
             PeerReviewListUiEvent.Refresh -> load(showLoading = false)
-            is PeerReviewListUiEvent.SelectWork -> selectWork(event.taskAnswerId)
             is PeerReviewListUiEvent.OpenEvaluation ->
                 _uiEffect.tryEmit(PeerReviewListUiEffect.NavigateToEvaluation(event.evaluationId))
+            is PeerReviewListUiEvent.OpenWork -> openWork(event.taskAnswerId)
         }
     }
 
@@ -51,54 +53,103 @@ class PeerReviewListViewModel(
                 }
             }
 
-            val assignedDeferred = async { getTasksToAppraiseUseCase(postId) }
-            val availableDeferred = async { getAvailableWorksUseCase(postId) }
+            when (appraisingType) {
+                // По цепочке: работы назначаются автоматически — берём только /to-appraise.
+                TaskAnswerAppraisingType.CHAIN -> {
+                    getTasksToAppraiseUseCase(postId)
+                        .onSuccess { assigned ->
+                            _uiState.value = PeerReviewListUiState.Content(
+                                assigned = assigned,
+                                available = emptyList(),
+                                isRefreshing = false,
+                            )
+                        }
+                        .onFailure { showError(it) }
+                }
 
-            val assignedResult = assignedDeferred.await()
-            val availableResult = availableDeferred.await()
+                // Свободный выбор: студент сам берёт работы — берём /available-to-appraise.
+                TaskAnswerAppraisingType.ANY -> {
+                    getAvailableWorksUseCase(postId)
+                        .onSuccess { available ->
+                            _uiState.value = PeerReviewListUiState.Content(
+                                assigned = emptyList(),
+                                available = available,
+                                isRefreshing = false,
+                            )
+                        }
+                        .onFailure { showError(it) }
+                }
 
-            // Доступные работы есть только для свободного выбора; для режима «по цепочке»
-            // эндпоинт может вернуть ошибку — в этом случае показываем только назначенные.
-            val assigned = assignedResult.getOrNull()
-            if (assigned == null && availableResult.isFailure) {
-                _uiState.value = PeerReviewListUiState.Error(
-                    assignedResult.exceptionOrNull()?.message
-                        ?: "Не удалось загрузить работы для оценивания",
-                )
-                return@launch
+                // Тип неизвестен — пробуем оба источника.
+                null -> {
+                    val assignedDeferred = async { getTasksToAppraiseUseCase(postId) }
+                    val availableDeferred = async { getAvailableWorksUseCase(postId) }
+                    val assignedResult = assignedDeferred.await()
+                    val availableResult = availableDeferred.await()
+                    val assigned = assignedResult.getOrNull()
+                    if (assigned == null && availableResult.isFailure) {
+                        showError(assignedResult.exceptionOrNull())
+                        return@launch
+                    }
+                    _uiState.value = PeerReviewListUiState.Content(
+                        assigned = assigned.orEmpty(),
+                        available = availableResult.getOrNull().orEmpty(),
+                        isRefreshing = false,
+                    )
+                }
             }
-
-            _uiState.value = PeerReviewListUiState.Content(
-                assigned = assigned.orEmpty(),
-                available = availableResult.getOrNull().orEmpty(),
-                isRefreshing = false,
-                selectingTaskAnswerId = null,
-            )
         }
     }
 
-    private fun selectWork(taskAnswerId: String) {
+    /**
+     * Открывает работу для оценивания в режиме ANY: при необходимости берёт её на
+     * оценку, затем находит id оценивания через /to-appraise и переходит на экран оценки.
+     */
+    private fun openWork(taskAnswerId: String) {
         val state = _uiState.value as? PeerReviewListUiState.Content ?: return
-        if (state.selectingTaskAnswerId != null) return
-        _uiState.value = state.copy(selectingTaskAnswerId = taskAnswerId)
+        if (state.openingTaskAnswerId != null) return
+        val work = state.available.firstOrNull { it.taskAnswerId == taskAnswerId }
+        _uiState.value = state.copy(openingTaskAnswerId = taskAnswerId)
 
         viewModelScope.launch {
-            selectWorkToAppraiseUseCase(taskAnswerId)
-                .onSuccess {
-                    _uiEffect.tryEmit(PeerReviewListUiEffect.ShowMessage("Работа взята на оценку"))
-                    load(showLoading = false)
-                }
-                .onFailure {
-                    val current = _uiState.value as? PeerReviewListUiState.Content
-                    if (current != null) {
-                        _uiState.value = current.copy(selectingTaskAnswerId = null)
-                    }
+            if (work?.canAppraise == true) {
+                val selectResult = selectWorkToAppraiseUseCase(taskAnswerId)
+                if (selectResult.isFailure) {
+                    finishOpening()
                     _uiEffect.tryEmit(
                         PeerReviewListUiEffect.ShowMessage(
-                            it.message ?: "Не удалось взять работу на оценку",
+                            selectResult.exceptionOrNull()?.message
+                                ?: "Не удалось взять работу на оценку",
                         ),
                     )
+                    return@launch
                 }
+            }
+
+            val evaluationId = getTasksToAppraiseUseCase(postId).getOrNull()
+                ?.firstOrNull { it.taskAnswerId == taskAnswerId }
+                ?.id
+
+            finishOpening()
+            if (evaluationId != null) {
+                _uiEffect.tryEmit(PeerReviewListUiEffect.NavigateToEvaluation(evaluationId))
+            } else {
+                _uiEffect.tryEmit(
+                    PeerReviewListUiEffect.ShowMessage("Не удалось открыть работу для оценки"),
+                )
+            }
         }
+    }
+
+    private fun finishOpening() {
+        (_uiState.value as? PeerReviewListUiState.Content)?.let {
+            _uiState.value = it.copy(openingTaskAnswerId = null)
+        }
+    }
+
+    private fun showError(throwable: Throwable?) {
+        _uiState.value = PeerReviewListUiState.Error(
+            throwable?.message ?: "Не удалось загрузить работы для оценивания",
+        )
     }
 }

@@ -141,8 +141,8 @@ fun AppNavGraph(
                         ScreenRoute.CriteriaEvaluation.createRoute(cId, pId, taskAnswerId)
                     )
                 },
-                onNavigateToPeerReview = { cId, pId ->
-                    navController.navigate(ScreenRoute.PeerReviewList.createRoute(cId, pId))
+                onNavigateToPeerReview = { cId, pId, appraisingType ->
+                    navController.navigate(ScreenRoute.PeerReviewList.createRoute(cId, pId, appraisingType))
                 },
                 onNavigateToAppraisals = { _, _, taskAnswerId ->
                     navController.navigate(ScreenRoute.Appraisals.createRoute(taskAnswerId))
@@ -257,16 +257,23 @@ fun AppNavGraph(
             arguments = listOf(
                 navArgument("courseId") { defaultValue = "" },
                 navArgument("postId") { defaultValue = "" },
+                navArgument("appraisingType") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
             ),
         ) { backStackEntry ->
             val courseId = backStackEntry.arguments?.getString("courseId") ?: ""
             val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            val appraisingType = backStackEntry.arguments?.getString("appraisingType")
             val peerEvaluationUpdated by backStackEntry.savedStateHandle
                 .getStateFlow(PEER_EVALUATION_UPDATED_KEY, false)
                 .collectAsState()
             PeerReviewListScreen(
                 courseId = courseId,
                 postId = postId,
+                appraisingType = appraisingType,
                 onNavigateBack = { navController.popBackStack() },
                 onOpenEvaluation = { evaluationId ->
                     navController.navigate(

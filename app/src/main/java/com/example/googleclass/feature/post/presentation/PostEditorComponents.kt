@@ -470,20 +470,6 @@ internal fun PeerReviewSection(
         }
 
         if (state.peerReviewEnabled) {
-            OutlinedTextField(
-                value = state.studentAppraisingNumber,
-                onValueChange = { onEvent(PostEditorUiEvent.StudentAppraisingNumberChanged(it)) },
-                label = { Text(stringResource(R.string.peer_review_count_hint)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                ),
-            )
-
             appraiserDeadlinePicker()
 
             Text(
@@ -511,6 +497,24 @@ internal fun PeerReviewSection(
                         ),
                     )
                 }
+            }
+
+            // Количество работ задаётся только для свободного выбора (ANY);
+            // в режиме «по цепочке» (CHAIN) распределение происходит автоматически.
+            if (state.taskAnswerAppraisingType == TaskAnswerAppraisingType.ANY) {
+                OutlinedTextField(
+                    value = state.studentAppraisingNumber,
+                    onValueChange = { onEvent(PostEditorUiEvent.StudentAppraisingNumberChanged(it)) },
+                    label = { Text(stringResource(R.string.peer_review_count_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
+                )
             }
 
             PeerReviewToggleRow(

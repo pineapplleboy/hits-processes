@@ -79,7 +79,7 @@ fun TaskDetailScreen(
     onNavigateToCourseFeed: (courseId: String) -> Unit = {},
     onNavigateToStudentChat: (taskAnswerId: String, studentName: String, studentUserId: String, currentUserId: String) -> Unit = { _, _, _, _ -> },
     onNavigateToCriteriaEvaluation: (courseId: String, postId: String, taskAnswerId: String) -> Unit = { _, _, _ -> },
-    onNavigateToPeerReview: (courseId: String, postId: String) -> Unit = { _, _ -> },
+    onNavigateToPeerReview: (courseId: String, postId: String, appraisingType: String?) -> Unit = { _, _, _ -> },
     onNavigateToAppraisals: (courseId: String, postId: String, taskAnswerId: String) -> Unit = { _, _, _ -> },
 ) {
     val viewModel: TaskDetailScreenViewModel = koinViewModel(
@@ -132,7 +132,7 @@ fun TaskDetailScreen(
                 }
 
                 is TaskDetailUiEffect.NavigateToPeerReview -> {
-                    onNavigateToPeerReview(effect.courseId, effect.postId)
+                    onNavigateToPeerReview(effect.courseId, effect.postId, effect.appraisingType)
                 }
 
                 is TaskDetailUiEffect.NavigateToAppraisals -> {

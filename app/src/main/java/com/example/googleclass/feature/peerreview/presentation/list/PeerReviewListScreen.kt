@@ -17,7 +17,6 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -41,6 +40,7 @@ import com.example.googleclass.common.presentation.components.InfoCard
 import com.example.googleclass.feature.peerreview.domain.model.AvailableWork
 import com.example.googleclass.feature.peerreview.domain.model.PeerEvaluation
 import com.example.googleclass.feature.peerreview.domain.model.UnavailableReason
+import com.example.googleclass.feature.post.data.model.TaskAnswerAppraisingType
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -48,13 +48,17 @@ import org.koin.core.parameter.parametersOf
 fun PeerReviewListScreen(
     courseId: String,
     postId: String,
+    appraisingType: String?,
     onNavigateBack: () -> Unit,
     onOpenEvaluation: (evaluationId: String) -> Unit,
     refreshSignal: Boolean = false,
     onRefreshSignalConsumed: () -> Unit = {},
 ) {
+    val type = appraisingType?.let {
+        runCatching { TaskAnswerAppraisingType.valueOf(it) }.getOrNull()
+    }
     val viewModel: PeerReviewListViewModel = koinViewModel(
-        parameters = { parametersOf(courseId, postId) },
+        parameters = { parametersOf(courseId, postId, type) },
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -145,9 +149,9 @@ private fun PeerReviewListContent(
                                 items(state.available, key = { it.taskAnswerId }) { work ->
                                     AvailableWorkCard(
                                         work = work,
-                                        isSelecting = state.selectingTaskAnswerId == work.taskAnswerId,
-                                        onSelect = {
-                                            onEvent(PeerReviewListUiEvent.SelectWork(work.taskAnswerId))
+                                        isOpening = state.openingTaskAnswerId == work.taskAnswerId,
+                                        onClick = {
+                                            onEvent(PeerReviewListUiEvent.OpenWork(work.taskAnswerId))
                                         },
                                     )
                                 }
@@ -216,10 +220,13 @@ private fun AssignedWorkCard(
 @Composable
 private fun AvailableWorkCard(
     work: AvailableWork,
-    isSelecting: Boolean,
-    onSelect: () -> Unit,
+    isOpening: Boolean,
+    onClick: () -> Unit,
 ) {
-    InfoCard {
+    // Открыть можно как свободную работу, так и уже взятую ранее (чтобы продолжить оценку).
+    val clickable = work.canAppraise || work.unavailableReason == UnavailableReason.ALREADY_SELECTED
+
+    val cardContent: @Composable () -> Unit = {
         Text(
             text = work.studentName ?: stringResource(R.string.peer_review_anonymous_student),
             style = MaterialTheme.typography.titleSmall,
@@ -232,25 +239,20 @@ private fun AvailableWorkCard(
                 Spacer(modifier = Modifier.height(4.dp))
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        if (work.canAppraise) {
-            Button(
-                onClick = onSelect,
-                enabled = !isSelecting,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                if (isSelecting) {
+        when {
+            isOpening -> {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(18.dp),
                         strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = MaterialTheme.colorScheme.primary,
                     )
-                } else {
-                    Text(stringResource(R.string.peer_review_take))
                 }
             }
-        } else {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+
+            !clickable -> {
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = work.unavailableReason.toMessage(),
                     style = MaterialTheme.typography.bodySmall,
@@ -258,6 +260,12 @@ private fun AvailableWorkCard(
                 )
             }
         }
+    }
+
+    if (clickable) {
+        InfoCard(onClick = { if (!isOpening) onClick() }) { cardContent() }
+    } else {
+        InfoCard { cardContent() }
     }
 }
 

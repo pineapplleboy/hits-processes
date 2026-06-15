@@ -137,9 +137,17 @@ class TaskDetailScreenViewModel(
             is TaskDetailUiEvent.DismissEvaluateDialog -> handleDismissEvaluateDialog()
             is TaskDetailUiEvent.OpenSelfAssessment -> handleOpenSelfAssessment()
             is TaskDetailUiEvent.DismissSelfAssessment -> handleDismissSelfAssessment()
-            is TaskDetailUiEvent.OpenPeerReview -> sendEffect(
-                TaskDetailUiEffect.NavigateToPeerReview(courseId = courseId, postId = postId)
-            )
+            is TaskDetailUiEvent.OpenPeerReview -> {
+                val appraisingType = (_uiState.value as? TaskDetailScreenState.StudentView)
+                    ?.task?.appraisingType?.name
+                sendEffect(
+                    TaskDetailUiEffect.NavigateToPeerReview(
+                        courseId = courseId,
+                        postId = postId,
+                        appraisingType = appraisingType,
+                    )
+                )
+            }
         }
     }
 
@@ -836,5 +844,6 @@ private fun PostDto.toTaskDetail(): TaskDetail = TaskDetail(
     files = files.map { TaskFile(id = it.id, fileName = it.fileName) },
     postType = postType.name,
     taskMarkEvaluationType = taskMarkEvaluationType,
-    peerReviewEnabled = (studentAppraisingNumber ?: 0) > 0,
+    peerReviewEnabled = taskAnswerAppraisingType != null,
+    appraisingType = taskAnswerAppraisingType,
 )

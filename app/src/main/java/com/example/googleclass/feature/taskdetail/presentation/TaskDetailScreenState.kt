@@ -134,6 +134,7 @@ sealed interface TaskDetailUiEffect {
     data class NavigateToPeerReview(
         val courseId: String,
         val postId: String,
+        val appraisingType: String?,
     ) : TaskDetailUiEffect
     data class NavigateToAppraisals(
         val courseId: String,

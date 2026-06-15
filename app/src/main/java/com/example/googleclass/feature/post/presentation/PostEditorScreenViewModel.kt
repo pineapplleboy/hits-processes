@@ -165,7 +165,7 @@ class PostEditorScreenViewModel(
                                 },
                                 isSaving = false,
                                 isPostTypeEditable = false,
-                                peerReviewEnabled = (post.studentAppraisingNumber ?: 0) > 0,
+                                peerReviewEnabled = post.taskAnswerAppraisingType != null,
                                 studentAppraisingNumber = post.studentAppraisingNumber
                                     ?.takeIf { it > 0 }?.toString() ?: "",
                                 appraiserDeadline = post.appraiserDeadline?.takeIf { it.isNotBlank() }
@@ -283,12 +283,16 @@ class PostEditorScreenViewModel(
             } else {
                 null
             }
-            val appraisingNumber = if (peerReviewActive) {
+            val appraisingType = if (peerReviewActive) state.taskAnswerAppraisingType else null
+            // Количество работ актуально только для свободного выбора (ANY);
+            // в режиме «по цепочке» (CHAIN) распределение задаёт сервер.
+            val appraisingNumber = if (peerReviewActive &&
+                appraisingType == TaskAnswerAppraisingType.ANY
+            ) {
                 state.studentAppraisingNumber.toIntOrNull()
             } else {
                 null
             }
-            val appraisingType = if (peerReviewActive) state.taskAnswerAppraisingType else null
             val canSeeAppraiser = if (peerReviewActive) state.canSeeAppraiser else null
             val canSeeAppraised = if (peerReviewActive) state.canSeeAppraised else null
 

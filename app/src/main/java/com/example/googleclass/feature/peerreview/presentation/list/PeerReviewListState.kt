@@ -11,7 +11,7 @@ sealed interface PeerReviewListUiState {
         val assigned: List<PeerEvaluation>,
         val available: List<AvailableWork>,
         val isRefreshing: Boolean = false,
-        val selectingTaskAnswerId: String? = null,
+        val openingTaskAnswerId: String? = null,
     ) : PeerReviewListUiState
 
     data class Error(val message: String) : PeerReviewListUiState
@@ -20,8 +20,12 @@ sealed interface PeerReviewListUiState {
 sealed interface PeerReviewListUiEvent {
     data object NavigateBack : PeerReviewListUiEvent
     data object Refresh : PeerReviewListUiEvent
-    data class SelectWork(val taskAnswerId: String) : PeerReviewListUiEvent
+
+    /** Открыть уже назначенную работу (режим CHAIN) — id оценивания известен. */
     data class OpenEvaluation(val evaluationId: String) : PeerReviewListUiEvent
+
+    /** Открыть выбранную работу (режим ANY) — при необходимости берём её на оценку. */
+    data class OpenWork(val taskAnswerId: String) : PeerReviewListUiEvent
 }
 
 sealed interface PeerReviewListUiEffect {
