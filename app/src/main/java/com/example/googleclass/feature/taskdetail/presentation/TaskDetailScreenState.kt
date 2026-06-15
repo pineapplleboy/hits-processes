@@ -100,6 +100,7 @@ sealed interface TaskDetailUiEvent {
     data class DownloadFile(val fileId: String) : TaskDetailUiEvent
     data class EvaluateStudent(val taskAnswerId: String, val studentName: String, val maxScore: Int) : TaskDetailUiEvent
     data class OpenCriteriaEvaluation(val taskAnswerId: String) : TaskDetailUiEvent
+    data class OpenAppraisals(val taskAnswerId: String) : TaskDetailUiEvent
     data class SetEvaluateScore(val score: Int) : TaskDetailUiEvent
     data object SubmitEvaluate : TaskDetailUiEvent
     data object DismissEvaluateDialog : TaskDetailUiEvent
@@ -133,6 +134,11 @@ sealed interface TaskDetailUiEffect {
     data class NavigateToPeerReview(
         val courseId: String,
         val postId: String,
+    ) : TaskDetailUiEffect
+    data class NavigateToAppraisals(
+        val courseId: String,
+        val postId: String,
+        val taskAnswerId: String,
     ) : TaskDetailUiEffect
     data class ShowError(val message: String) : TaskDetailUiEffect
     data class StartFileUpload(val uris: List<Uri>) : TaskDetailUiEffect

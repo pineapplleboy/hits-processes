@@ -80,6 +80,7 @@ fun TaskDetailScreen(
     onNavigateToStudentChat: (taskAnswerId: String, studentName: String, studentUserId: String, currentUserId: String) -> Unit = { _, _, _, _ -> },
     onNavigateToCriteriaEvaluation: (courseId: String, postId: String, taskAnswerId: String) -> Unit = { _, _, _ -> },
     onNavigateToPeerReview: (courseId: String, postId: String) -> Unit = { _, _ -> },
+    onNavigateToAppraisals: (courseId: String, postId: String, taskAnswerId: String) -> Unit = { _, _, _ -> },
 ) {
     val viewModel: TaskDetailScreenViewModel = koinViewModel(
         parameters = { parametersOf(courseId, postId, userRole) }
@@ -132,6 +133,10 @@ fun TaskDetailScreen(
 
                 is TaskDetailUiEffect.NavigateToPeerReview -> {
                     onNavigateToPeerReview(effect.courseId, effect.postId)
+                }
+
+                is TaskDetailUiEffect.NavigateToAppraisals -> {
+                    onNavigateToAppraisals(effect.courseId, effect.postId, effect.taskAnswerId)
                 }
 
                 is TaskDetailUiEffect.ShowError -> {
@@ -452,6 +457,7 @@ private fun TeacherViewContent(
                 com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType.TEACHER_DECISION,
                 com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL,
             ),
+            peerReviewEnabled = state.task.peerReviewEnabled,
             onEvent = onEvent,
         )
 

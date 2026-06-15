@@ -37,6 +37,7 @@ internal fun TeacherCommentsSection(
     showTabs: Boolean = true,
     canEvaluateByCriteria: Boolean = false,
     canEvaluateDirectly: Boolean = true,
+    peerReviewEnabled: Boolean = false,
     onEvent: (TaskDetailUiEvent) -> Unit,
 ) {
     Card(
@@ -101,6 +102,7 @@ internal fun TeacherCommentsSection(
                         maxScore = maxScore,
                         canEvaluateByCriteria = canEvaluateByCriteria,
                         canEvaluateDirectly = canEvaluateDirectly,
+                        peerReviewEnabled = peerReviewEnabled,
                         onEvent = onEvent,
                     )
                 }

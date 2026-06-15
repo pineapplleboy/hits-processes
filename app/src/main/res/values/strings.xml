@@ -303,4 +303,11 @@
     <string name="peer_appraiser_anonymous">Аноним</string>
     <string name="peer_appraiser_score">Оценка: %1$s</string>
     <string name="peer_appraiser_not_scored">Ещё не оценил</string>
+
+    <!-- Peer review: teacher appraisals -->
+    <string name="appraisals_open_button">Peer-оценки</string>
+    <string name="appraisals_title">Оценки студентов</string>
+    <string name="appraisals_empty">Работу пока никто не оценил</string>
+    <string name="appraisals_override">Переопределить</string>
+    <string name="appraisals_override_title">Переопределить оценку</string>
 </resources>

@@ -125,6 +125,13 @@ class TaskDetailScreenViewModel(
                     taskAnswerId = event.taskAnswerId,
                 )
             )
+            is TaskDetailUiEvent.OpenAppraisals -> sendEffect(
+                TaskDetailUiEffect.NavigateToAppraisals(
+                    courseId = courseId,
+                    postId = postId,
+                    taskAnswerId = event.taskAnswerId,
+                )
+            )
             is TaskDetailUiEvent.SetEvaluateScore -> handleSetEvaluateScore(event.score)
             is TaskDetailUiEvent.SubmitEvaluate -> handleSubmitEvaluate()
             is TaskDetailUiEvent.DismissEvaluateDialog -> handleDismissEvaluateDialog()
