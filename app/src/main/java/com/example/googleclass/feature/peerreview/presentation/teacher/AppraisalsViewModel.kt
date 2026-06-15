@@ -115,8 +115,9 @@ class AppraisalsViewModel(
         viewModelScope.launch {
             overrideAppraiserUseCase(dialog.appraiserId, score)
                 .onSuccess {
+                    _uiState.value = state.copy(overrideDialog = null)
                     _uiEffect.tryEmit(AppraisalsUiEffect.ShowMessage("Оценка переопределена"))
-                    load(showLoading = false)
+                    _uiEffect.tryEmit(AppraisalsUiEffect.NavigateBack)
                 }
                 .onFailure {
                     val current = _uiState.value as? AppraisalsUiState.Content
