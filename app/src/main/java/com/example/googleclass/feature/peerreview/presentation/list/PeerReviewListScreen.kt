@@ -50,12 +50,21 @@ fun PeerReviewListScreen(
     postId: String,
     onNavigateBack: () -> Unit,
     onOpenEvaluation: (evaluationId: String) -> Unit,
+    refreshSignal: Boolean = false,
+    onRefreshSignalConsumed: () -> Unit = {},
 ) {
     val viewModel: PeerReviewListViewModel = koinViewModel(
         parameters = { parametersOf(courseId, postId) },
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    LaunchedEffect(refreshSignal) {
+        if (refreshSignal) {
+            viewModel.onEvent(PeerReviewListUiEvent.Refresh)
+            onRefreshSignalConsumed()
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->

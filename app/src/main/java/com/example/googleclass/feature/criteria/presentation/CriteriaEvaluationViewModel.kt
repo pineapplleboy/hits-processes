@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.googleclass.feature.criteria.domain.model.CriteriaScoreDraft
 import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
 import com.example.googleclass.feature.criteria.domain.model.TaskAnswerCriteriaScore
+import com.example.googleclass.feature.criteria.domain.usecase.CriterionScoreInput
 import com.example.googleclass.feature.criteria.domain.usecase.GetMarkCriteriaUseCase
 import com.example.googleclass.feature.criteria.domain.usecase.GetTaskAnswerCriteriaScoresUseCase
 import com.example.googleclass.feature.criteria.domain.usecase.PutCriteriaScoreUseCase
+import com.example.googleclass.feature.criteria.domain.usecase.calculateCriteriaScore
 import com.example.googleclass.feature.post.data.model.PostDto
 import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 import com.example.googleclass.feature.post.data.model.supportsCriteria
@@ -250,39 +252,18 @@ class CriteriaEvaluationViewModel(
         criteria: List<CriteriaEvaluationFieldState>,
         evaluationType: TaskMarkEvaluationType?,
         taskMaxScore: Float,
-    ): Float? {
-        if (criteria.isEmpty()) return null
-
-        val parsedScores = criteria.map { criterion ->
-            val score = criterion.input.toNormalizedFloatOrNull() ?: return null
-            if (score < criterion.minScore || score > criterion.maxScore) return null
-            score
-        }
-
-        val rawScore = when (evaluationType) {
-            TaskMarkEvaluationType.MEAN_VALUE -> parsedScores.average().toFloat()
-            TaskMarkEvaluationType.COEFFICIENTS_SUM -> criteria.indices.sumOf { index ->
-                val multiplier = criteria[index].multiplier ?: 1f
-                (parsedScores[index] * multiplier).toDouble()
-            }.toFloat()
-
-            TaskMarkEvaluationType.COEFFICIENTS_MEAN_VALUE -> {
-                val weightedScores = criteria.mapIndexed { index, criterion ->
-                    parsedScores[index] * (criterion.multiplier ?: 1f)
-                }
-                val totalWeight = criteria.sumOf { (it.multiplier ?: 1f).toDouble() }.toFloat()
-                if (totalWeight > 0f) {
-                    weightedScores.sum() / totalWeight
-                } else {
-                    parsedScores.average().toFloat()
-                }
-            }
-
-            else -> parsedScores.sum()
-        }
-
-        return rawScore.coerceIn(0f, taskMaxScore)
-    }
+    ): Float? = calculateCriteriaScore(
+        inputs = criteria.map { criterion ->
+            CriterionScoreInput(
+                rawInput = criterion.input,
+                minScore = criterion.minScore,
+                maxScore = criterion.maxScore,
+                multiplier = criterion.multiplier,
+            )
+        },
+        evaluationType = evaluationType,
+        taskMaxScore = taskMaxScore,
+    )
 
     private fun sendEffect(effect: CriteriaEvaluationUiEffect) {
         _uiEffect.tryEmit(effect)

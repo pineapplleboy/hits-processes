@@ -290,4 +290,11 @@
     <string name="peer_reason_limit">Достигнут лимит оцениваний</string>
     <string name="peer_reason_reciprocal">Взаимное оценивание недоступно</string>
     <string name="peer_reason_unknown">Недоступно для оценки</string>
+
+    <!-- Peer review: evaluation screen -->
+    <string name="peer_eval_title">Оценка работы</string>
+    <string name="peer_eval_files">Файлы работы</string>
+    <string name="peer_eval_score_hint">Оценка</string>
+    <string name="peer_eval_total">Итог: %1$s</string>
+    <string name="peer_eval_save">Сохранить оценку</string>
 </resources>
