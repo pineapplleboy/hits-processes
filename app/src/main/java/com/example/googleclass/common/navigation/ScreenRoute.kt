@@ -37,8 +37,9 @@ sealed class ScreenRoute(val route: String) {
         fun createRoute(courseId: String, postId: String, evaluationId: String) =
             "peer_evaluation/$courseId/$postId/$evaluationId"
     }
-    data object Appraisals : ScreenRoute("appraisals/{taskAnswerId}") {
-        fun createRoute(taskAnswerId: String) = "appraisals/$taskAnswerId"
+    data object Appraisals : ScreenRoute("appraisals/{courseId}/{postId}/{taskAnswerId}") {
+        fun createRoute(courseId: String, postId: String, taskAnswerId: String) =
+            "appraisals/$courseId/$postId/$taskAnswerId"
     }
     data object AppraisersTop : ScreenRoute("appraisers_top/{courseId}") {
         fun createRoute(courseId: String) = "appraisers_top/$courseId"

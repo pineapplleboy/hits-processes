@@ -2,8 +2,10 @@ package com.example.googleclass.feature.peerreview.presentation.teacher
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.googleclass.feature.criteria.domain.usecase.GetMarkCriteriaUseCase
 import com.example.googleclass.feature.peerreview.domain.usecase.GetAllAppraisersUseCase
 import com.example.googleclass.feature.peerreview.domain.usecase.OverrideAppraiserUseCase
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,9 +15,12 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 class AppraisalsViewModel(
+    private val courseId: String,
+    private val postId: String,
     private val taskAnswerId: String,
     private val getAllAppraisersUseCase: GetAllAppraisersUseCase,
     private val overrideAppraiserUseCase: OverrideAppraiserUseCase,
+    private val getMarkCriteriaUseCase: GetMarkCriteriaUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<AppraisalsUiState>(AppraisalsUiState.Loading)
@@ -36,6 +41,9 @@ class AppraisalsViewModel(
             is AppraisalsUiEvent.OverrideScoreChanged -> updateOverrideScore(event.value)
             AppraisalsUiEvent.SubmitOverride -> submitOverride()
             AppraisalsUiEvent.DismissOverride -> dismissOverride()
+            AppraisalsUiEvent.OpenCriteriaOverride -> _uiEffect.tryEmit(
+                AppraisalsUiEffect.NavigateToCriteriaEvaluation(courseId, postId, taskAnswerId),
+            )
         }
     }
 
@@ -49,11 +57,16 @@ class AppraisalsViewModel(
                 }
             }
 
-            getAllAppraisersUseCase(taskAnswerId)
+            val appraisersDeferred = async { getAllAppraisersUseCase(taskAnswerId) }
+            val criteriaDeferred = async { getMarkCriteriaUseCase(courseId, postId) }
+
+            appraisersDeferred.await()
                 .onSuccess { appraisers ->
+                    val usesCriteria = criteriaDeferred.await().getOrNull()?.isNotEmpty() == true
                     _uiState.value = AppraisalsUiState.Content(
                         studentName = appraisers.firstOrNull()?.studentName,
                         appraisers = appraisers,
+                        usesCriteria = usesCriteria,
                         isRefreshing = false,
                         overrideDialog = null,
                     )
@@ -102,8 +115,9 @@ class AppraisalsViewModel(
         viewModelScope.launch {
             overrideAppraiserUseCase(dialog.appraiserId, score)
                 .onSuccess {
+                    _uiState.value = state.copy(overrideDialog = null)
                     _uiEffect.tryEmit(AppraisalsUiEffect.ShowMessage("Оценка переопределена"))
-                    load(showLoading = false)
+                    _uiEffect.tryEmit(AppraisalsUiEffect.NavigateBack)
                 }
                 .onFailure {
                     val current = _uiState.value as? AppraisalsUiState.Content

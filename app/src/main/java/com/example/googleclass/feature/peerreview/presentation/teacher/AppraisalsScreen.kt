@@ -18,6 +18,7 @@ import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -46,14 +47,26 @@ import kotlin.math.roundToInt
 
 @Composable
 fun AppraisalsScreen(
+    courseId: String,
+    postId: String,
     taskAnswerId: String,
     onNavigateBack: () -> Unit,
+    onOpenCriteriaEvaluation: (courseId: String, postId: String, taskAnswerId: String) -> Unit,
+    refreshSignal: Boolean = false,
+    onRefreshSignalConsumed: () -> Unit = {},
 ) {
     val viewModel: AppraisalsViewModel = koinViewModel(
-        parameters = { parametersOf(taskAnswerId) },
+        parameters = { parametersOf(courseId, postId, taskAnswerId) },
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    LaunchedEffect(refreshSignal) {
+        if (refreshSignal) {
+            viewModel.onEvent(AppraisalsUiEvent.Refresh)
+            onRefreshSignalConsumed()
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
@@ -61,6 +74,8 @@ fun AppraisalsScreen(
                 AppraisalsUiEffect.NavigateBack -> onNavigateBack()
                 is AppraisalsUiEffect.ShowMessage ->
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                is AppraisalsUiEffect.NavigateToCriteriaEvaluation ->
+                    onOpenCriteriaEvaluation(effect.courseId, effect.postId, effect.taskAnswerId)
             }
         }
     }
@@ -107,9 +122,20 @@ private fun AppraisalsContent(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
+                            if (state.usesCriteria) {
+                                item {
+                                    Button(
+                                        onClick = { onEvent(AppraisalsUiEvent.OpenCriteriaOverride) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Text(stringResource(R.string.appraisals_override_criteria))
+                                    }
+                                }
+                            }
                             items(state.appraisers, key = { it.id }) { appraiser ->
                                 AppraiserCard(
                                     appraiser = appraiser,
+                                    showOverride = !state.usesCriteria,
                                     onOverride = {
                                         onEvent(
                                             AppraisalsUiEvent.OpenOverride(
@@ -153,6 +179,7 @@ private fun AppraisalsContent(
 @Composable
 private fun AppraiserCard(
     appraiser: PeerEvaluation,
+    showOverride: Boolean,
     onOverride: () -> Unit,
 ) {
     InfoCard {
@@ -196,12 +223,14 @@ private fun AppraiserCard(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedButton(
-            onClick = onOverride,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.appraisals_override))
+        if (showOverride) {
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onOverride,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.appraisals_override))
+            }
         }
     }
 }

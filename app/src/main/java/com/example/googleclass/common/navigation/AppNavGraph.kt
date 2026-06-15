@@ -144,8 +144,8 @@ fun AppNavGraph(
                 onNavigateToPeerReview = { cId, pId, appraisingType ->
                     navController.navigate(ScreenRoute.PeerReviewList.createRoute(cId, pId, appraisingType))
                 },
-                onNavigateToAppraisals = { _, _, taskAnswerId ->
-                    navController.navigate(ScreenRoute.Appraisals.createRoute(taskAnswerId))
+                onNavigateToAppraisals = { cId, pId, taskAnswerId ->
+                    navController.navigate(ScreenRoute.Appraisals.createRoute(cId, pId, taskAnswerId))
                 },
             )
         }
@@ -311,12 +311,32 @@ fun AppNavGraph(
         }
         composable(
             route = ScreenRoute.Appraisals.route,
-            arguments = listOf(navArgument("taskAnswerId") { defaultValue = "" }),
+            arguments = listOf(
+                navArgument("courseId") { defaultValue = "" },
+                navArgument("postId") { defaultValue = "" },
+                navArgument("taskAnswerId") { defaultValue = "" },
+            ),
         ) { backStackEntry ->
+            val courseId = backStackEntry.arguments?.getString("courseId") ?: ""
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
             val taskAnswerId = backStackEntry.arguments?.getString("taskAnswerId") ?: ""
+            val criteriaUpdated by backStackEntry.savedStateHandle
+                .getStateFlow(CRITERIA_EVALUATION_UPDATED_KEY, false)
+                .collectAsState()
             AppraisalsScreen(
+                courseId = courseId,
+                postId = postId,
                 taskAnswerId = taskAnswerId,
                 onNavigateBack = { navController.popBackStack() },
+                onOpenCriteriaEvaluation = { cId, pId, taId ->
+                    navController.navigate(
+                        ScreenRoute.CriteriaEvaluation.createRoute(cId, pId, taId)
+                    )
+                },
+                refreshSignal = criteriaUpdated,
+                onRefreshSignalConsumed = {
+                    backStackEntry.savedStateHandle[CRITERIA_EVALUATION_UPDATED_KEY] = false
+                },
             )
         }
         composable(

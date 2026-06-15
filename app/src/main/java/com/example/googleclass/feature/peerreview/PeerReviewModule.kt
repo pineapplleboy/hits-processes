@@ -59,11 +59,14 @@ val peerReviewModule = module {
         )
     }
 
-    viewModel { (taskAnswerId: String) ->
+    viewModel { (courseId: String, postId: String, taskAnswerId: String) ->
         AppraisalsViewModel(
+            courseId = courseId,
+            postId = postId,
             taskAnswerId = taskAnswerId,
             getAllAppraisersUseCase = get(),
             overrideAppraiserUseCase = get(),
+            getMarkCriteriaUseCase = get(),
         )
     }
 
