@@ -82,6 +82,7 @@ fun CourseScreenRoute(
     onAssignmentClick: (taskId: String, userRole: UserRole) -> Unit,
     onCreatePublicationClick: () -> Unit,
     onMarksClick: () -> Unit = {},
+    onAppraisersTopClick: () -> Unit = {},
 ) {
     val viewModel: CourseScreenViewModel = koinViewModel(parameters = { parametersOf(courseId) })
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -161,6 +162,7 @@ fun CourseScreenRoute(
                 onDemoteClick = { userId, role -> viewModel.onDemoteClick(userId, role) },
                 onRefresh = { viewModel.refresh() },
                 onMarksClick = onMarksClick,
+                onAppraisersTopClick = onAppraisersTopClick,
             )
         }
     }
@@ -190,6 +192,7 @@ fun CourseScreen(
     onDemoteClick: (String, UserRole) -> Unit,
     onRefresh: () -> Unit,
     onMarksClick: () -> Unit = {},
+    onAppraisersTopClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -209,6 +212,12 @@ fun CourseScreen(
                 title = course.name,
                 onNavigateBack = onNavigateBack,
                 actions = {
+                    IconButton(onClick = onAppraisersTopClick) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_swap),
+                            contentDescription = stringResource(R.string.appraisers_top_title),
+                        )
+                    }
                     if (isTeacher) {
                         IconButton(onClick = onMarksClick) {
                             Icon(
