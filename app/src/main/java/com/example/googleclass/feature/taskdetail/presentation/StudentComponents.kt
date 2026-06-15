@@ -47,6 +47,7 @@ internal fun StudentsList(
     maxScore: Int,
     canEvaluateByCriteria: Boolean = false,
     canEvaluateDirectly: Boolean = true,
+    peerReviewEnabled: Boolean = false,
     onEvent: (TaskDetailUiEvent) -> Unit,
 ) {
     Column(
@@ -59,6 +60,10 @@ internal fun StudentsList(
                 maxScore = maxScore,
                 canEvaluateByCriteria = canEvaluateByCriteria,
                 canEvaluateDirectly = canEvaluateDirectly,
+                peerReviewEnabled = peerReviewEnabled,
+                onOpenPeerReviews = {
+                    onEvent(TaskDetailUiEvent.OpenAppraisals(student.taskAnswerId))
+                },
                 onDownloadFile = { fileId -> onEvent(TaskDetailUiEvent.DownloadFile(fileId)) },
                 onOpenChat = {
                     onEvent(
@@ -93,6 +98,8 @@ internal fun StudentItem(
     maxScore: Int,
     canEvaluateByCriteria: Boolean = true,
     canEvaluateDirectly: Boolean = true,
+    peerReviewEnabled: Boolean = false,
+    onOpenPeerReviews: () -> Unit = {},
     onDownloadFile: (fileId: String) -> Unit,
     onOpenChat: () -> Unit,
     onEvaluate: () -> Unit,
@@ -240,6 +247,29 @@ internal fun StudentItem(
                     text = stringResource(R.string.criteria_evaluation_chat_button),
                     style = MaterialTheme.typography.labelLarge,
                 )
+            }
+
+            if (peerReviewEnabled) {
+                OutlinedButton(
+                    onClick = onOpenPeerReviews,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                ) {
+                    androidx.compose.material3.Icon(
+                        painter = painterResource(R.drawable.ic_assignment),
+                        contentDescription = null,
+                        tint = MediumGray,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.appraisals_open_button),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
             }
         }
     }

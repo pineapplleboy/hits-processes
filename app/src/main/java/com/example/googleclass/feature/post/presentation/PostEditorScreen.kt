@@ -313,6 +313,18 @@ private fun PostEditorForm(
                     }
                 }
             }
+
+            PeerReviewSection(
+                state = state,
+                onEvent = onEvent,
+                appraiserDeadlinePicker = {
+                    DeadlinePicker(
+                        value = state.appraiserDeadline,
+                        onValueChange = { onEvent(PostEditorUiEvent.AppraiserDeadlineChanged(it)) },
+                        labelRes = R.string.appraiser_deadline_hint,
+                    )
+                },
+            )
         }
 
         PostAttachmentSection(
@@ -385,6 +397,7 @@ private val futureDatesOnly = object : SelectableDates {
 private fun DeadlinePicker(
     value: String,
     onValueChange: (String) -> Unit,
+    labelRes: Int = R.string.deadline_hint,
 ) {
     val context = LocalContext.current
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
@@ -395,7 +408,7 @@ private fun DeadlinePicker(
         value = value,
         onValueChange = {},
         readOnly = true,
-        label = { Text(stringResource(R.string.deadline_hint)) },
+        label = { Text(stringResource(labelRes)) },
         trailingIcon = {
             IconButton(onClick = { showDatePicker = true }) {
                 Icon(

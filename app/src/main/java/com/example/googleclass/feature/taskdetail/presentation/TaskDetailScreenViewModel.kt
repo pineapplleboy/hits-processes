@@ -9,6 +9,7 @@ import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
 import com.example.googleclass.feature.criteria.domain.usecase.GetMarkCriteriaUseCase
 import com.example.googleclass.feature.criteria.domain.usecase.GetTaskAnswerCriteriaScoresUseCase
 import com.example.googleclass.feature.course.domain.model.UserRole
+import com.example.googleclass.feature.peerreview.domain.usecase.GetMyAppraisersUseCase
 import com.example.googleclass.feature.post.data.model.PostDto
 import com.example.googleclass.feature.post.data.model.PostType
 import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
@@ -63,6 +64,7 @@ class TaskDetailScreenViewModel(
     private val userApi: UserApi,
     private val getMarkCriteriaUseCase: GetMarkCriteriaUseCase,
     private val getTaskAnswerCriteriaScoresUseCase: GetTaskAnswerCriteriaScoresUseCase,
+    private val getMyAppraisersUseCase: GetMyAppraisersUseCase,
 ) : ViewModel() {
 
     private val _uiState: MutableStateFlow<TaskDetailScreenState> =
@@ -123,11 +125,29 @@ class TaskDetailScreenViewModel(
                     taskAnswerId = event.taskAnswerId,
                 )
             )
+            is TaskDetailUiEvent.OpenAppraisals -> sendEffect(
+                TaskDetailUiEffect.NavigateToAppraisals(
+                    courseId = courseId,
+                    postId = postId,
+                    taskAnswerId = event.taskAnswerId,
+                )
+            )
             is TaskDetailUiEvent.SetEvaluateScore -> handleSetEvaluateScore(event.score)
             is TaskDetailUiEvent.SubmitEvaluate -> handleSubmitEvaluate()
             is TaskDetailUiEvent.DismissEvaluateDialog -> handleDismissEvaluateDialog()
             is TaskDetailUiEvent.OpenSelfAssessment -> handleOpenSelfAssessment()
             is TaskDetailUiEvent.DismissSelfAssessment -> handleDismissSelfAssessment()
+            is TaskDetailUiEvent.OpenPeerReview -> {
+                val appraisingType = (_uiState.value as? TaskDetailScreenState.StudentView)
+                    ?.task?.appraisingType?.name
+                sendEffect(
+                    TaskDetailUiEffect.NavigateToPeerReview(
+                        courseId = courseId,
+                        postId = postId,
+                        appraisingType = appraisingType,
+                    )
+                )
+            }
         }
     }
 
@@ -248,6 +268,9 @@ class TaskDetailScreenViewModel(
                             loadPrivateComments(tid)
                             if (criteria.isNotEmpty()) {
                                 loadStudentCriteriaScores(tid)
+                            }
+                            if (task.peerReviewEnabled) {
+                                loadMyAppraisers(tid)
                             }
                         }
                         UserRole.TEACHER, UserRole.MAIN_TEACHER -> {
@@ -751,6 +774,16 @@ class TaskDetailScreenViewModel(
         }
     }
 
+    private fun loadMyAppraisers(taskAnswerId: String) {
+        viewModelScope.launch {
+            val appraisers = getMyAppraisersUseCase(taskAnswerId).getOrNull().orEmpty()
+            val state = _uiState.value
+            if (state is TaskDetailScreenState.StudentView && state.taskAnswerId == taskAnswerId) {
+                _uiState.value = state.copy(myAppraisers = appraisers)
+            }
+        }
+    }
+
     private fun sendEffect(effect: TaskDetailUiEffect) {
         viewModelScope.launch {
             _uiEffect.tryEmit(effect)
@@ -811,4 +844,6 @@ private fun PostDto.toTaskDetail(): TaskDetail = TaskDetail(
     files = files.map { TaskFile(id = it.id, fileName = it.fileName) },
     postType = postType.name,
     taskMarkEvaluationType = taskMarkEvaluationType,
+    peerReviewEnabled = taskAnswerAppraisingType != null,
+    appraisingType = taskAnswerAppraisingType,
 )

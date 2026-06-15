@@ -3,6 +3,7 @@ package com.example.googleclass.feature.post.presentation
 import android.net.Uri
 import com.example.googleclass.feature.post.data.model.PostCreateDto
 import com.example.googleclass.feature.post.data.model.PostType
+import com.example.googleclass.feature.post.data.model.TaskAnswerAppraisingType
 import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 
 // -- Mode --
@@ -34,6 +35,12 @@ sealed interface PostEditorScreenState {
         val existingAttachments: List<ExistingAttachment>,
         val isSaving: Boolean,
         val isPostTypeEditable: Boolean,
+        val peerReviewEnabled: Boolean = false,
+        val studentAppraisingNumber: String = "",
+        val appraiserDeadline: String = "",
+        val taskAnswerAppraisingType: TaskAnswerAppraisingType = TaskAnswerAppraisingType.CHAIN,
+        val canSeeAppraiser: Boolean = false,
+        val canSeeAppraised: Boolean = false,
     ) : PostEditorScreenState
 }
 
@@ -61,6 +68,12 @@ sealed interface PostEditorUiEvent {
     data class FileRemoved(val uri: Uri) : PostEditorUiEvent
     data class ExistingAttachmentRemoved(val attachmentId: String) : PostEditorUiEvent
     data class DeadlineChanged(val deadline: String) : PostEditorUiEvent
+    data class PeerReviewToggled(val enabled: Boolean) : PostEditorUiEvent
+    data class StudentAppraisingNumberChanged(val value: String) : PostEditorUiEvent
+    data class AppraiserDeadlineChanged(val deadline: String) : PostEditorUiEvent
+    data class TaskAnswerAppraisingTypeSelected(val type: TaskAnswerAppraisingType) : PostEditorUiEvent
+    data class CanSeeAppraiserToggled(val value: Boolean) : PostEditorUiEvent
+    data class CanSeeAppraisedToggled(val value: Boolean) : PostEditorUiEvent
 }
 
 // -- Effects --

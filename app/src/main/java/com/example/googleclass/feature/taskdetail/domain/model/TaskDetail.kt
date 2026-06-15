@@ -1,5 +1,6 @@
 package com.example.googleclass.feature.taskdetail.domain.model
 
+import com.example.googleclass.feature.post.data.model.TaskAnswerAppraisingType
 import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
 
 data class TaskDetail(
@@ -14,6 +15,8 @@ data class TaskDetail(
     val files: List<TaskFile> = emptyList(),
     val postType: String = "",
     val taskMarkEvaluationType: TaskMarkEvaluationType? = null,
+    val peerReviewEnabled: Boolean = false,
+    val appraisingType: TaskAnswerAppraisingType? = null,
 )
 
 data class TaskFile(

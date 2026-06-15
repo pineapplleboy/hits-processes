@@ -17,6 +17,10 @@ import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.course.presentation.CourseScreenRoute
 import com.example.googleclass.feature.criteria.presentation.CriteriaEvaluationScreen
 import com.example.googleclass.feature.criteria.presentation.CriteriaScreen
+import com.example.googleclass.feature.peerreview.presentation.evaluate.PeerEvaluationScreen
+import com.example.googleclass.feature.peerreview.presentation.list.PeerReviewListScreen
+import com.example.googleclass.feature.peerreview.presentation.teacher.AppraisalsScreen
+import com.example.googleclass.feature.peerreview.presentation.top.AppraisersTopScreen
 import com.example.googleclass.feature.courses.presentation.CoursesScreen
 import com.example.googleclass.feature.post.presentation.PostEditorMode
 import com.example.googleclass.feature.post.presentation.PostEditorScreen
@@ -28,6 +32,7 @@ import com.example.googleclass.feature.taskdetail.presentation.TaskDetailScreen
 import androidx.navigation.NavType
 
 private const val CRITERIA_EVALUATION_UPDATED_KEY = "criteria_evaluation_updated"
+private const val PEER_EVALUATION_UPDATED_KEY = "peer_evaluation_updated"
 
 @Composable
 fun AppNavGraph(
@@ -91,6 +96,9 @@ fun AppNavGraph(
                 onMarksClick = {
                     navController.navigate(ScreenRoute.Marks.createRoute(courseId))
                 },
+                onAppraisersTopClick = {
+                    navController.navigate(ScreenRoute.AppraisersTop.createRoute(courseId))
+                },
             )
         }
         composable(ScreenRoute.TaskDetail.route) { backStackEntry ->
@@ -132,6 +140,12 @@ fun AppNavGraph(
                     navController.navigate(
                         ScreenRoute.CriteriaEvaluation.createRoute(cId, pId, taskAnswerId)
                     )
+                },
+                onNavigateToPeerReview = { cId, pId, appraisingType ->
+                    navController.navigate(ScreenRoute.PeerReviewList.createRoute(cId, pId, appraisingType))
+                },
+                onNavigateToAppraisals = { _, _, taskAnswerId ->
+                    navController.navigate(ScreenRoute.Appraisals.createRoute(taskAnswerId))
                 },
             )
         }
@@ -236,6 +250,83 @@ fun AppNavGraph(
                         ?.set(CRITERIA_EVALUATION_UPDATED_KEY, true)
                     navController.popBackStack()
                 },
+            )
+        }
+        composable(
+            route = ScreenRoute.PeerReviewList.route,
+            arguments = listOf(
+                navArgument("courseId") { defaultValue = "" },
+                navArgument("postId") { defaultValue = "" },
+                navArgument("appraisingType") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+            ),
+        ) { backStackEntry ->
+            val courseId = backStackEntry.arguments?.getString("courseId") ?: ""
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            val appraisingType = backStackEntry.arguments?.getString("appraisingType")
+            val peerEvaluationUpdated by backStackEntry.savedStateHandle
+                .getStateFlow(PEER_EVALUATION_UPDATED_KEY, false)
+                .collectAsState()
+            PeerReviewListScreen(
+                courseId = courseId,
+                postId = postId,
+                appraisingType = appraisingType,
+                onNavigateBack = { navController.popBackStack() },
+                onOpenEvaluation = { evaluationId ->
+                    navController.navigate(
+                        ScreenRoute.PeerEvaluation.createRoute(courseId, postId, evaluationId)
+                    )
+                },
+                refreshSignal = peerEvaluationUpdated,
+                onRefreshSignalConsumed = {
+                    backStackEntry.savedStateHandle[PEER_EVALUATION_UPDATED_KEY] = false
+                },
+            )
+        }
+        composable(
+            route = ScreenRoute.PeerEvaluation.route,
+            arguments = listOf(
+                navArgument("courseId") { defaultValue = "" },
+                navArgument("postId") { defaultValue = "" },
+                navArgument("evaluationId") { defaultValue = "" },
+            ),
+        ) { backStackEntry ->
+            val courseId = backStackEntry.arguments?.getString("courseId") ?: ""
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            val evaluationId = backStackEntry.arguments?.getString("evaluationId") ?: ""
+            PeerEvaluationScreen(
+                courseId = courseId,
+                postId = postId,
+                evaluationId = evaluationId,
+                onNavigateBack = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set(PEER_EVALUATION_UPDATED_KEY, true)
+                    navController.popBackStack()
+                },
+            )
+        }
+        composable(
+            route = ScreenRoute.Appraisals.route,
+            arguments = listOf(navArgument("taskAnswerId") { defaultValue = "" }),
+        ) { backStackEntry ->
+            val taskAnswerId = backStackEntry.arguments?.getString("taskAnswerId") ?: ""
+            AppraisalsScreen(
+                taskAnswerId = taskAnswerId,
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable(
+            route = ScreenRoute.AppraisersTop.route,
+            arguments = listOf(navArgument("courseId") { defaultValue = "" }),
+        ) { backStackEntry ->
+            val courseId = backStackEntry.arguments?.getString("courseId") ?: ""
+            AppraisersTopScreen(
+                courseId = courseId,
+                onNavigateBack = { navController.popBackStack() },
             )
         }
         composable(ScreenRoute.Profile.route) {

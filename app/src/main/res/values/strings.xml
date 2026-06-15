@@ -260,4 +260,61 @@
     <string name="self_assessment_button">Самооценка по критериям</string>
     <string name="self_assessment_sheet_title">Самооценка</string>
     <string name="self_assessment_sheet_subtitle">Оцените свою работу по каждому критерию</string>
+
+    <!-- Peer review: post editor config -->
+    <string name="peer_review_title">Взаимное оценивание</string>
+    <string name="peer_review_subtitle">Студенты оценивают работы друг друга</string>
+    <string name="peer_review_count_hint">Сколько работ оценивает каждый студент</string>
+    <string name="appraiser_deadline_hint">Срок оценивания (дд.мм.гггг чч:мм)</string>
+    <string name="peer_review_distribution_label">Распределение работ</string>
+    <string name="peer_review_type_chain">По цепочке</string>
+    <string name="peer_review_type_any">Свободный выбор</string>
+    <string name="peer_review_can_see_appraiser">Студент видит, кто его оценил</string>
+    <string name="peer_review_can_see_appraised">Оценщик видит автора работы</string>
+
+    <!-- Peer review: works to appraise -->
+    <string name="peer_review_open_button">Оценить работы</string>
+    <string name="peer_review_list_title">Оценивание работ</string>
+    <string name="peer_review_assigned_section">Назначенные работы</string>
+    <string name="peer_review_available_section">Доступные работы</string>
+    <string name="peer_review_take">Взять на оценку</string>
+    <string name="peer_review_evaluated">Оценено</string>
+    <string name="peer_review_not_evaluated">Ожидает оценки</string>
+    <string name="peer_review_empty">Нет работ для оценивания</string>
+    <string name="peer_review_anonymous_student">Студент</string>
+    <string name="peer_reason_task_deadline">Дедлайн сдачи ещё не наступил</string>
+    <string name="peer_reason_appraiser_deadline">Срок оценивания истёк</string>
+    <string name="peer_reason_not_submitted">Работа не сдана</string>
+    <string name="peer_reason_own">Это ваша работа</string>
+    <string name="peer_reason_already_selected">Уже выбрана для оценки</string>
+    <string name="peer_reason_limit">Достигнут лимит оцениваний</string>
+    <string name="peer_reason_reciprocal">Взаимное оценивание недоступно</string>
+    <string name="peer_reason_unknown">Недоступно для оценки</string>
+
+    <!-- Peer review: evaluation screen -->
+    <string name="peer_eval_title">Оценка работы</string>
+    <string name="peer_eval_files">Файлы работы</string>
+    <string name="peer_eval_score_hint">Оценка</string>
+    <string name="peer_eval_total">Итог: %1$s</string>
+    <string name="peer_eval_save">Сохранить оценку</string>
+
+    <!-- Peer review: who evaluated my answer -->
+    <string name="peer_my_appraisers_title">Кто оценил мою работу</string>
+    <string name="peer_appraiser_anonymous">Аноним</string>
+    <string name="peer_appraiser_score">Оценка: %1$s</string>
+    <string name="peer_appraiser_not_scored">Ещё не оценил</string>
+
+    <!-- Peer review: teacher appraisals -->
+    <string name="appraisals_open_button">Peer-оценки</string>
+    <string name="appraisals_title">Оценки студентов</string>
+    <string name="appraisals_empty">Работу пока никто не оценил</string>
+    <string name="appraisals_override">Переопределить</string>
+    <string name="appraisals_override_title">Переопределить оценку</string>
+
+    <!-- Peer review: appraisers top -->
+    <string name="appraisers_top_title">Топ оценщиков</string>
+    <string name="appraisers_top_open">Топ оценщиков</string>
+    <string name="appraisers_top_empty">Пока нет данных по оценщикам</string>
+    <string name="appraisers_top_appraised">Оценено работ: %1$d</string>
+    <string name="appraisers_top_match">Совпадение оценок: %1$d%%</string>
 </resources>

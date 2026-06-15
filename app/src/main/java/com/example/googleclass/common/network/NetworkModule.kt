@@ -11,6 +11,7 @@ import com.example.googleclass.feature.course.data.remote.CourseDetailApi
 import com.example.googleclass.feature.courses.data.remote.CoursesApi
 import com.example.googleclass.feature.courses.data.remote.TaskAnswerApi
 import com.example.googleclass.feature.criteria.data.api.CriteriaApi
+import com.example.googleclass.feature.peerreview.data.api.PeerReviewApi
 import com.example.googleclass.feature.post.data.api.PostApi
 import com.example.googleclass.feature.taskdetail.data.api.CommentApi
 import com.example.googleclass.feature.taskdetail.data.api.FileApi
@@ -133,5 +134,9 @@ val networkModule = module {
 
     single<CriteriaApi> {
         get<Retrofit>(named("authenticatedRetrofit")).create(CriteriaApi::class.java)
+    }
+
+    single<PeerReviewApi> {
+        get<Retrofit>(named("authenticatedRetrofit")).create(PeerReviewApi::class.java)
     }
 }

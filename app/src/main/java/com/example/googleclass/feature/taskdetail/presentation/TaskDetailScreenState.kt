@@ -3,6 +3,7 @@ package com.example.googleclass.feature.taskdetail.presentation
 import android.net.Uri
 import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
 import com.example.googleclass.feature.course.domain.model.UserRole
+import com.example.googleclass.feature.peerreview.domain.model.PeerEvaluation
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
 import com.example.googleclass.feature.taskdetail.domain.model.StudentCriteriaScoreInfo
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
@@ -30,6 +31,7 @@ sealed interface TaskDetailScreenState {
         val criteria: List<EvaluationCriterion> = emptyList(),
         val criteriaScores: List<StudentCriteriaScoreInfo> = emptyList(),
         val showSelfAssessmentSheet: Boolean = false,
+        val myAppraisers: List<PeerEvaluation> = emptyList(),
     ) : TaskDetailScreenState
 
     data class TeacherView(
@@ -98,11 +100,13 @@ sealed interface TaskDetailUiEvent {
     data class DownloadFile(val fileId: String) : TaskDetailUiEvent
     data class EvaluateStudent(val taskAnswerId: String, val studentName: String, val maxScore: Int) : TaskDetailUiEvent
     data class OpenCriteriaEvaluation(val taskAnswerId: String) : TaskDetailUiEvent
+    data class OpenAppraisals(val taskAnswerId: String) : TaskDetailUiEvent
     data class SetEvaluateScore(val score: Int) : TaskDetailUiEvent
     data object SubmitEvaluate : TaskDetailUiEvent
     data object DismissEvaluateDialog : TaskDetailUiEvent
     data object OpenSelfAssessment : TaskDetailUiEvent
     data object DismissSelfAssessment : TaskDetailUiEvent
+    data object OpenPeerReview : TaskDetailUiEvent
 }
 
 sealed interface TaskDetailUiEffect {
@@ -123,6 +127,16 @@ sealed interface TaskDetailUiEffect {
         val currentUserId: String,
     ) : TaskDetailUiEffect
     data class NavigateToCriteriaEvaluation(
+        val courseId: String,
+        val postId: String,
+        val taskAnswerId: String,
+    ) : TaskDetailUiEffect
+    data class NavigateToPeerReview(
+        val courseId: String,
+        val postId: String,
+        val appraisingType: String?,
+    ) : TaskDetailUiEffect
+    data class NavigateToAppraisals(
         val courseId: String,
         val postId: String,
         val taskAnswerId: String,

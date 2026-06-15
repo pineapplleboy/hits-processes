@@ -79,6 +79,8 @@ fun TaskDetailScreen(
     onNavigateToCourseFeed: (courseId: String) -> Unit = {},
     onNavigateToStudentChat: (taskAnswerId: String, studentName: String, studentUserId: String, currentUserId: String) -> Unit = { _, _, _, _ -> },
     onNavigateToCriteriaEvaluation: (courseId: String, postId: String, taskAnswerId: String) -> Unit = { _, _, _ -> },
+    onNavigateToPeerReview: (courseId: String, postId: String, appraisingType: String?) -> Unit = { _, _, _ -> },
+    onNavigateToAppraisals: (courseId: String, postId: String, taskAnswerId: String) -> Unit = { _, _, _ -> },
 ) {
     val viewModel: TaskDetailScreenViewModel = koinViewModel(
         parameters = { parametersOf(courseId, postId, userRole) }
@@ -127,6 +129,14 @@ fun TaskDetailScreen(
                         effect.postId,
                         effect.taskAnswerId,
                     )
+                }
+
+                is TaskDetailUiEffect.NavigateToPeerReview -> {
+                    onNavigateToPeerReview(effect.courseId, effect.postId, effect.appraisingType)
+                }
+
+                is TaskDetailUiEffect.NavigateToAppraisals -> {
+                    onNavigateToAppraisals(effect.courseId, effect.postId, effect.taskAnswerId)
                 }
 
                 is TaskDetailUiEffect.ShowError -> {
@@ -356,6 +366,10 @@ private fun StudentViewContent(
             CriteriaScoreSummaryCard(criteriaScores = state.criteriaScores)
         }
 
+        if (state.myAppraisers.isNotEmpty()) {
+            MyAppraisersCard(appraisers = state.myAppraisers)
+        }
+
         if (canSelfAssess) {
             Button(
                 onClick = { onEvent(TaskDetailUiEvent.OpenSelfAssessment) },
@@ -370,6 +384,26 @@ private fun StudentViewContent(
             ) {
                 Text(
                     text = stringResource(R.string.self_assessment_button),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+
+        if (state.task.postType == "TASK" && state.task.peerReviewEnabled) {
+            Button(
+                onClick = { onEvent(TaskDetailUiEvent.OpenPeerReview) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryBlue,
+                    contentColor = Color.White,
+                ),
+            ) {
+                Text(
+                    text = stringResource(R.string.peer_review_open_button),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -423,6 +457,7 @@ private fun TeacherViewContent(
                 com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType.TEACHER_DECISION,
                 com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType.TEACHER_DECISION_PASS_FAIL,
             ),
+            peerReviewEnabled = state.task.peerReviewEnabled,
             onEvent = onEvent,
         )
 
