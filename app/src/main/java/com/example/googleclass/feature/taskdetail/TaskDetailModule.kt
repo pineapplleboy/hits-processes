@@ -4,6 +4,7 @@ import com.example.googleclass.feature.course.domain.model.UserRole
 import com.example.googleclass.feature.criteria.domain.usecase.GetMarkCriteriaUseCase
 import com.example.googleclass.feature.criteria.domain.usecase.GetTaskAnswerCriteriaScoresUseCase
 import com.example.googleclass.feature.courses.data.remote.TaskAnswerApi
+import com.example.googleclass.feature.peerreview.domain.usecase.GetMyAppraisersUseCase
 import com.example.googleclass.feature.taskdetail.data.repository.CommentRepositoryImpl
 import com.example.googleclass.feature.taskdetail.data.repository.FileRepositoryImpl
 import com.example.googleclass.feature.taskdetail.data.repository.TaskAnswerRepositoryImpl
@@ -32,6 +33,7 @@ val taskDetailModule = module {
             userApi = get(),
             getMarkCriteriaUseCase = get<GetMarkCriteriaUseCase>(),
             getTaskAnswerCriteriaScoresUseCase = get<GetTaskAnswerCriteriaScoresUseCase>(),
+            getMyAppraisersUseCase = get<GetMyAppraisersUseCase>(),
         )
     }
 }

@@ -297,4 +297,10 @@
     <string name="peer_eval_score_hint">Оценка</string>
     <string name="peer_eval_total">Итог: %1$s</string>
     <string name="peer_eval_save">Сохранить оценку</string>
+
+    <!-- Peer review: who evaluated my answer -->
+    <string name="peer_my_appraisers_title">Кто оценил мою работу</string>
+    <string name="peer_appraiser_anonymous">Аноним</string>
+    <string name="peer_appraiser_score">Оценка: %1$s</string>
+    <string name="peer_appraiser_not_scored">Ещё не оценил</string>
 </resources>

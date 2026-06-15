@@ -3,6 +3,7 @@ package com.example.googleclass.feature.taskdetail.presentation
 import android.net.Uri
 import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
 import com.example.googleclass.feature.course.domain.model.UserRole
+import com.example.googleclass.feature.peerreview.domain.model.PeerEvaluation
 import com.example.googleclass.feature.taskdetail.domain.model.Comment
 import com.example.googleclass.feature.taskdetail.domain.model.StudentCriteriaScoreInfo
 import com.example.googleclass.feature.taskdetail.domain.model.StudentSubmissionInfo
@@ -30,6 +31,7 @@ sealed interface TaskDetailScreenState {
         val criteria: List<EvaluationCriterion> = emptyList(),
         val criteriaScores: List<StudentCriteriaScoreInfo> = emptyList(),
         val showSelfAssessmentSheet: Boolean = false,
+        val myAppraisers: List<PeerEvaluation> = emptyList(),
     ) : TaskDetailScreenState
 
     data class TeacherView(

@@ -9,6 +9,7 @@ import com.example.googleclass.feature.criteria.domain.model.EvaluationCriterion
 import com.example.googleclass.feature.criteria.domain.usecase.GetMarkCriteriaUseCase
 import com.example.googleclass.feature.criteria.domain.usecase.GetTaskAnswerCriteriaScoresUseCase
 import com.example.googleclass.feature.course.domain.model.UserRole
+import com.example.googleclass.feature.peerreview.domain.usecase.GetMyAppraisersUseCase
 import com.example.googleclass.feature.post.data.model.PostDto
 import com.example.googleclass.feature.post.data.model.PostType
 import com.example.googleclass.feature.post.data.model.TaskMarkEvaluationType
@@ -63,6 +64,7 @@ class TaskDetailScreenViewModel(
     private val userApi: UserApi,
     private val getMarkCriteriaUseCase: GetMarkCriteriaUseCase,
     private val getTaskAnswerCriteriaScoresUseCase: GetTaskAnswerCriteriaScoresUseCase,
+    private val getMyAppraisersUseCase: GetMyAppraisersUseCase,
 ) : ViewModel() {
 
     private val _uiState: MutableStateFlow<TaskDetailScreenState> =
@@ -251,6 +253,9 @@ class TaskDetailScreenViewModel(
                             loadPrivateComments(tid)
                             if (criteria.isNotEmpty()) {
                                 loadStudentCriteriaScores(tid)
+                            }
+                            if (task.peerReviewEnabled) {
+                                loadMyAppraisers(tid)
                             }
                         }
                         UserRole.TEACHER, UserRole.MAIN_TEACHER -> {
@@ -750,6 +755,16 @@ class TaskDetailScreenViewModel(
             val state = _uiState.value
             if (state is TaskDetailScreenState.StudentView) {
                 _uiState.value = state.copy(criteriaScores = scores)
+            }
+        }
+    }
+
+    private fun loadMyAppraisers(taskAnswerId: String) {
+        viewModelScope.launch {
+            val appraisers = getMyAppraisersUseCase(taskAnswerId).getOrNull().orEmpty()
+            val state = _uiState.value
+            if (state is TaskDetailScreenState.StudentView && state.taskAnswerId == taskAnswerId) {
+                _uiState.value = state.copy(myAppraisers = appraisers)
             }
         }
     }

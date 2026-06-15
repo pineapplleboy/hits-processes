@@ -361,6 +361,10 @@ private fun StudentViewContent(
             CriteriaScoreSummaryCard(criteriaScores = state.criteriaScores)
         }
 
+        if (state.myAppraisers.isNotEmpty()) {
+            MyAppraisersCard(appraisers = state.myAppraisers)
+        }
+
         if (canSelfAssess) {
             Button(
                 onClick = { onEvent(TaskDetailUiEvent.OpenSelfAssessment) },
