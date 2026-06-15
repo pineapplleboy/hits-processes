@@ -310,6 +310,7 @@
     <string name="appraisals_empty">Работу пока никто не оценил</string>
     <string name="appraisals_override">Переопределить</string>
     <string name="appraisals_override_title">Переопределить оценку</string>
+    <string name="appraisals_override_criteria">Переопределить по критериям</string>
 
     <!-- Peer review: appraisers top -->
     <string name="appraisers_top_title">Топ оценщиков</string>
